@@ -8892,6 +8892,9 @@ public class GameView extends View {
         if (dailyChallengeMode) {
             return "下一目标 回到主线继续推进";
         }
+        if (!dailyGoalClaimed && dailyGoalProgress >= 6) {
+            return "下一目标 每日目标可领取";
+        }
         int chapter = getChapterIndex(levelIndex);
         if (canClaimChapterChest(chapter)) {
             return "下一目标 " + chapterNames[chapter] + "宝箱可领取";
