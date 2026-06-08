@@ -6887,11 +6887,18 @@ public class GameView extends View {
             RectF rect = new RectF(left, rowTop, left + buttonWidth, rowTop + dp(48));
             propRects[prop] = rect;
 
+            boolean recommended = isRecommendedPropForLevel(prop);
             paint.setColor(activeProp == prop ? Color.argb(235, 255, 255, 255) : Color.argb(120, 255, 255, 255));
             canvas.drawRoundRect(rect, dp(12), dp(12), paint);
+            if (recommended) {
+                drawRecommendedPropGlow(canvas, rect);
+            }
 
             paint.setColor(Color.argb(propInventory[prop] > 0 ? 220 : 85, 33, 37, 56));
             drawPropIcon(canvas, prop, rect.centerX(), rect.centerY() - dp(6));
+            if (recommended) {
+                drawRecommendedPropBadge(canvas, rect);
+            }
 
             textPaint.setTextAlign(Paint.Align.CENTER);
             textPaint.setTextSize(sp(9));
@@ -6901,6 +6908,69 @@ public class GameView extends View {
                     : getPropName(prop) + " " + PROP_COSTS[prop] + "币";
             canvas.drawText(label, rect.centerX(), rect.bottom - dp(7), textPaint);
         }
+    }
+
+    private boolean isRecommendedPropForLevel(int prop) {
+        if (levelComplete || levelFailed) {
+            return false;
+        }
+
+        Level level = levels.get(levelIndex);
+        int obstaclePressure = iceRemaining + honeyRemaining + stoneRemaining + vineRemaining
+                + chainRemaining + shellRemaining + coralReefRemaining + flowerRemaining;
+        if (movesLeft <= Math.max(3, level.moves / 5)
+                && (prop == PROP_EXTRA_MOVES || prop == PROP_CLOCK || prop == PROP_MOON_TICKET)) {
+            return true;
+        }
+        if (level.countdownBombCount > 0
+                && (prop == PROP_SHIELD || prop == PROP_CLOCK || prop == PROP_SNOW_GLOBE)) {
+            return true;
+        }
+        if (chainRemaining > 0 && prop == PROP_CHAIN_BREAKER) {
+            return true;
+        }
+        if (honeyRemaining > 0 && (prop == PROP_FREEZE || prop == PROP_SNOW_GLOBE)) {
+            return true;
+        }
+        if (targetRemaining > level.targetAmount / 2 && movesLeft <= level.moves / 2
+                && (prop == PROP_MAGNET || prop == PROP_COLOR_BLAST || prop == PROP_TARGET_BRUSH || prop == PROP_BRUSH)) {
+            return true;
+        }
+        if (obstaclePressure >= Math.max(5, getLevelObstacleCount(level) / 3) && movesLeft <= level.moves * 2 / 3
+                && (prop == PROP_CLEANSE || prop == PROP_STARFISH_PICK || prop == PROP_BUBBLE_WAND
+                || prop == PROP_METEOR || prop == PROP_LIGHTNING)) {
+            return true;
+        }
+        if (level.comboGoal > 0 && bestCombo < level.comboGoal
+                && (prop == PROP_MAGIC_WAND || prop == PROP_BOMB || prop == PROP_ROCKET || prop == PROP_STAR_HARP)) {
+            return true;
+        }
+        if (level.scoreGoal > 0 && score < level.scoreGoal && movesLeft <= level.moves / 2
+                && (prop == PROP_BOMB || prop == PROP_ROCKET || prop == PROP_FIREWORK_CANNON || prop == PROP_STAR_COMPASS)) {
+            return true;
+        }
+        return level.moveLimitGoal > 0 && movesUsed + 2 >= getMoveLimitGoal(level)
+                && (prop == PROP_EXTRA_MOVES || prop == PROP_CLOCK || prop == PROP_MOON_TICKET);
+    }
+
+    private void drawRecommendedPropGlow(Canvas canvas, RectF rect) {
+        // 推荐框只做视觉提示，不自动消耗道具，避免打断玩家的主动选择。
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(2));
+        paint.setColor(Color.argb(220, 255, 236, 133));
+        canvas.drawRoundRect(new RectF(rect.left + dp(2), rect.top + dp(2),
+                rect.right - dp(2), rect.bottom - dp(2)), dp(10), dp(10), paint);
+        paint.setStyle(Paint.Style.FILL);
+    }
+
+    private void drawRecommendedPropBadge(Canvas canvas, RectF rect) {
+        RectF badge = new RectF(rect.right - dp(20), rect.top + dp(4), rect.right - dp(4), rect.top + dp(18));
+        paint.setColor(Color.argb(225, 255, 236, 133));
+        canvas.drawRoundRect(badge, dp(5), dp(5), paint);
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setTextSize(sp(8));
+        textPaint.setColor(Color.rgb(33, 37, 56));
+        canvas.drawText("荐", badge.centerX(), badge.centerY() + dp(3), textPaint);
     }
 
     private void drawPropIcon(Canvas canvas, int prop, float centerX, float centerY) {
