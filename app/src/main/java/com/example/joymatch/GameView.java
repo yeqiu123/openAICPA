@@ -3289,6 +3289,20 @@ public class GameView extends View {
         }
     }
 
+    private String buildComebackAssistPreviewText() {
+        int failStreak = levelFailStreaks[levelIndex];
+        if (dailyChallengeMode || failStreak <= 0) {
+            return "";
+        }
+
+        // 失败结算提前展示下局助力，降低反复尝试时的不确定感。
+        String text = "下局助力 +" + Math.min(3, failStreak) + "步";
+        if (failStreak >= 2) {
+            text += " " + getPropName(failStreak >= 4 ? PROP_STAR_HARP : PROP_BOMB) + "+1";
+        }
+        return text;
+    }
+
     private int getClaimedChapterMasteryCount() {
         int count = 0;
         for (boolean claimed : chapterMasteryClaimed) {
@@ -8314,18 +8328,25 @@ public class GameView extends View {
             String scoreText = dailyChallengeMode ? "挑战分 " + score : "最佳分 " + levelBestScores[levelIndex];
             canvas.drawText(scoreText, getWidth() / 2f, getHeight() * 0.55f, textPaint);
             drawRewardLines(canvas);
-        } else if (countdownBombExploded) {
-            String text = pickContinueProp() == NONE ? "炸弹爆炸，点击重试" : "炸弹爆炸，点击消耗" + getPropName(pickContinueProp()) + "续步";
-            canvas.drawText(text, getWidth() / 2f, getHeight() * 0.49f, textPaint);
-        } else if (coins >= CONTINUE_COST) {
-            canvas.drawText("点击续步 -10金币", getWidth() / 2f, getHeight() * 0.49f, textPaint);
-        } else if (pickContinueProp() != NONE) {
-            canvas.drawText("金币不足，点击消耗" + getPropName(pickContinueProp()) + "续步",
-                    getWidth() / 2f, getHeight() * 0.49f, textPaint);
-        } else if (dailyChallengeMode) {
-            canvas.drawText("金币不足，返回主线", getWidth() / 2f, getHeight() * 0.49f, textPaint);
         } else {
-            canvas.drawText("金币不足，点击重试", getWidth() / 2f, getHeight() * 0.49f, textPaint);
+            String failText;
+            if (countdownBombExploded) {
+                failText = pickContinueProp() == NONE ? "炸弹爆炸，点击重试" : "炸弹爆炸，点击消耗" + getPropName(pickContinueProp()) + "续步";
+            } else if (coins >= CONTINUE_COST) {
+                failText = "点击续步 -10金币";
+            } else if (pickContinueProp() != NONE) {
+                failText = "金币不足，点击消耗" + getPropName(pickContinueProp()) + "续步";
+            } else if (dailyChallengeMode) {
+                failText = "金币不足，返回主线";
+            } else {
+                failText = "金币不足，点击重试";
+            }
+            canvas.drawText(failText, getWidth() / 2f, getHeight() * 0.49f, textPaint);
+            String assistText = buildComebackAssistPreviewText();
+            if (assistText.length() > 0) {
+                textPaint.setTextSize(sp(14));
+                canvas.drawText(assistText, getWidth() / 2f, getHeight() * 0.55f, textPaint);
+            }
         }
     }
 
