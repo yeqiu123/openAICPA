@@ -8112,6 +8112,9 @@ public class GameView extends View {
                 goalText += " " + getPropName(lastComebackAssistProp) + "+" + lastComebackAssistAmount;
             }
         }
+        if (!dailyChallengeMode && levelRanks[levelIndex] > 0) {
+            goalText += "  最佳" + buildRankText(levelRanks[levelIndex]);
+        }
         canvas.drawText(goalText,
                 getWidth() / 2f, centerY + dp(32), textPaint);
         postInvalidateOnAnimation();
