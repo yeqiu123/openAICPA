@@ -57,7 +57,7 @@ public class GameView extends View {
     private static final int CHAPTER_SIZE = 20;
     private static final int CHAPTER_COUNT = 8;
     private static final int CHAPTER_CHEST_STARS = 45;
-    private static final int ACHIEVEMENT_COUNT = 10;
+    private static final int ACHIEVEMENT_COUNT = 14;
     private static final int NONE = -1;
     private static final int SPECIAL_NORMAL = 0;
     private static final int SPECIAL_ROW = 1;
@@ -1890,6 +1890,10 @@ public class GameView extends View {
         checkAchievement(9, lastGemReward > 0 || lastCoinPouchReward > 0 || lastWishLampReward > 0
                 || lastResonanceDrumReward > 0 || lastAuroraPrismReward > 0 || lastPortalReward > 0
                 || lastLuckyStarRewardProp != NONE || lastLuckyCloverRewardType > 0 || lastMysteryRewardType > 0, 90);
+        checkAchievement(10, getTotalStars() >= 300, 220);
+        checkAchievement(11, getTotalRankScore() >= 420, 240);
+        checkAchievement(12, getFullyClearedChapterCount() >= 3, 260);
+        checkAchievement(13, getTotalClearedEliteCount() >= 8, 220);
     }
 
     private void checkAchievement(int index, boolean reached, int reward) {
@@ -4287,6 +4291,14 @@ public class GameView extends View {
             if (isEliteLevel(level) && levelStars[level] > 0) {
                 total++;
             }
+        }
+        return total;
+    }
+
+    private int getTotalClearedEliteCount() {
+        int total = 0;
+        for (int chapter = 0; chapter < chapterNames.length; chapter++) {
+            total += getChapterClearedEliteCount(chapter);
         }
         return total;
     }
