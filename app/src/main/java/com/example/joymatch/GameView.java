@@ -49,8 +49,9 @@ public class GameView extends View {
     private static final int PROP_SHUFFLE = 2;
     private static final int PROP_ROW_BLAST = 3;
     private static final int PROP_COLOR_BLAST = 4;
-    private static final int PROP_COUNT = 5;
-    private static final int[] PROP_COSTS = {8, 12, 10, 16, 18};
+    private static final int PROP_EXTRA_MOVES = 5;
+    private static final int PROP_COUNT = 6;
+    private static final int[] PROP_COSTS = {8, 12, 10, 16, 18, 14};
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -293,12 +294,13 @@ public class GameView extends View {
             int shuffle = 1 + (i % 6 == 0 ? 1 : 0);
             int rowBlast = i >= 5 ? 1 + (i % 8 == 0 ? 1 : 0) : 0;
             int colorBlast = i >= 10 ? 1 + (i % 12 == 0 ? 1 : 0) : 0;
+            int extraMoves = i >= 12 ? 1 + (i % 15 == 0 ? 1 : 0) : 0;
             int targetKind = i % TILE_KINDS;
             int targetAmount = 8 + (i % 7) + i / 10;
             int iceCount = i < 4 ? i * 2 : Math.min(24, 6 + i / 2);
             int honeyCount = i < 8 ? 0 : Math.min(18, 4 + i / 4);
             int stoneCount = i < 15 ? 0 : Math.min(12, 3 + i / 8);
-            levels.add(new Level(targetScore, moves, hammer, bomb, shuffle, rowBlast, colorBlast,
+            levels.add(new Level(targetScore, moves, hammer, bomb, shuffle, rowBlast, colorBlast, extraMoves,
                     targetKind, targetAmount, iceCount, honeyCount, stoneCount));
         }
     }
@@ -326,6 +328,7 @@ public class GameView extends View {
         propInventory[PROP_SHUFFLE] = level.shuffles;
         propInventory[PROP_ROW_BLAST] = level.rowBlasts;
         propInventory[PROP_COLOR_BLAST] = level.colorBlasts;
+        propInventory[PROP_EXTRA_MOVES] = level.extraMoves;
 
         // 初始化时避开天然三连，让玩家第一步更清晰。
         for (int row = 0; row < BOARD_SIZE; row++) {
@@ -362,6 +365,13 @@ public class GameView extends View {
                 if (prop == PROP_SHUFFLE) {
                     propInventory[prop]--;
                     shuffleBoard();
+                    activeProp = NONE;
+                    selectedRow = NONE;
+                    selectedCol = NONE;
+                } else if (prop == PROP_EXTRA_MOVES) {
+                    // 加步道具即时生效，适合低步数时救场。
+                    propInventory[prop]--;
+                    movesLeft += 5;
                     activeProp = NONE;
                     selectedRow = NONE;
                     selectedCol = NONE;
@@ -1335,7 +1345,7 @@ public class GameView extends View {
             drawPropIcon(canvas, prop, rect.centerX(), rect.centerY() - dp(7));
 
             textPaint.setTextAlign(Paint.Align.CENTER);
-            textPaint.setTextSize(sp(13));
+            textPaint.setTextSize(sp(11));
             textPaint.setColor(Color.WHITE);
             String label = propInventory[prop] > 0
                     ? getPropName(prop) + " x" + propInventory[prop]
@@ -1368,12 +1378,19 @@ public class GameView extends View {
         } else if (prop == PROP_ROW_BLAST) {
             canvas.drawLine(centerX - dp(16), centerY, centerX + dp(16), centerY, paint);
             canvas.drawLine(centerX, centerY - dp(16), centerX, centerY + dp(16), paint);
-        } else {
+        } else if (prop == PROP_COLOR_BLAST) {
             // 同色道具用圆环表示一键清掉同色棋子。
             paint.setStyle(Paint.Style.STROKE);
             canvas.drawCircle(centerX, centerY, dp(14), paint);
             paint.setStyle(Paint.Style.FILL);
             canvas.drawCircle(centerX, centerY, dp(5), paint);
+        } else {
+            canvas.drawCircle(centerX, centerY, dp(14), paint);
+            paint.setColor(Color.WHITE);
+            textPaint.setTextAlign(Paint.Align.CENTER);
+            textPaint.setTextSize(sp(14));
+            textPaint.setColor(Color.rgb(33, 37, 56));
+            canvas.drawText("+5", centerX, centerY + dp(5), textPaint);
         }
     }
 
@@ -1386,8 +1403,10 @@ public class GameView extends View {
             return "重排";
         } else if (prop == PROP_ROW_BLAST) {
             return "十字";
+        } else if (prop == PROP_COLOR_BLAST) {
+            return "同色";
         }
-        return "同色";
+        return "加步";
     }
 
     private void drawTileIcon(Canvas canvas, int kind, float centerX, float centerY) {
@@ -1630,6 +1649,7 @@ public class GameView extends View {
         final int shuffles;
         final int rowBlasts;
         final int colorBlasts;
+        final int extraMoves;
         final int targetKind;
         final int targetAmount;
         final int iceCount;
@@ -1637,6 +1657,7 @@ public class GameView extends View {
         final int stoneCount;
 
         Level(int targetScore, int moves, int hammers, int bombs, int shuffles, int rowBlasts, int colorBlasts,
+                int extraMoves,
                 int targetKind, int targetAmount, int iceCount, int honeyCount, int stoneCount) {
             this.targetScore = targetScore;
             this.moves = moves;
@@ -1645,6 +1666,7 @@ public class GameView extends View {
             this.shuffles = shuffles;
             this.rowBlasts = rowBlasts;
             this.colorBlasts = colorBlasts;
+            this.extraMoves = extraMoves;
             this.targetKind = targetKind;
             this.targetAmount = targetAmount;
             this.iceCount = iceCount;
