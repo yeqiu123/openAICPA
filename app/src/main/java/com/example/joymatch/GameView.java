@@ -28,6 +28,7 @@ public class GameView extends View {
     private static final String KEY_UNLOCKED_LEVEL = "unlocked_level";
     private static final String KEY_STARS_PREFIX = "stars_";
     private static final String KEY_BEST_SCORE_PREFIX = "best_score_";
+    private static final String KEY_RANK_PREFIX = "rank_";
     private static final String KEY_COINS = "coins";
     private static final String KEY_STAR_CHEST_CLAIMED = "star_chest_claimed";
     private static final String KEY_CHAPTER_CHEST_PREFIX = "chapter_chest_";
@@ -96,6 +97,7 @@ public class GameView extends View {
     private final RectF chapterChestRect = new RectF();
     private final int[] levelStars = new int[LEVEL_COUNT];
     private final int[] levelBestScores = new int[LEVEL_COUNT];
+    private final int[] levelRanks = new int[LEVEL_COUNT];
     private final boolean[] chapterChestClaimed = new boolean[6];
     private final boolean[] chapterMasteryClaimed = new boolean[6];
     private final boolean[] achievementsClaimed = new boolean[ACHIEVEMENT_COUNT];
@@ -160,6 +162,7 @@ public class GameView extends View {
     private int comboEnergy;
     private int bestCombo;
     private int lastStars;
+    private int lastRank;
     private int lastBonusScore;
     private boolean challengeCleared;
     private boolean comboChallengeCleared;
@@ -170,6 +173,7 @@ public class GameView extends View {
     private int winStreak;
     private int lastWinStreakReward;
     private int lastStarUpgradeReward;
+    private int lastRankUpgradeReward;
     private int starChestClaimed;
     private int lastChestReward;
     private int lastChapterChestReward;
@@ -396,10 +400,12 @@ public class GameView extends View {
         activeProp = NONE;
         comboEnergy = 0;
         bestCombo = 0;
+        lastRank = 0;
         lastCoinReward = 0;
         lastAchievementReward = 0;
         lastWinStreakReward = 0;
         lastStarUpgradeReward = 0;
+        lastRankUpgradeReward = 0;
         lastChestReward = 0;
         lastChapterChestReward = 0;
         lastChapterMasteryReward = 0;
@@ -934,6 +940,7 @@ public class GameView extends View {
             challengeCleared = level.moveLimitGoal > 0;
             comboChallengeCleared = level.comboGoal > 0;
             scoreChallengeCleared = level.scoreGoal > 0;
+            lastRank = calculateLevelRank(level);
             if (dailyChallengeMode) {
                 saveDailyChallengeReward();
             } else {
@@ -962,6 +969,39 @@ public class GameView extends View {
 
     private boolean isScoreGoalCleared(Level level) {
         return level.scoreGoal <= 0 || score >= level.scoreGoal;
+    }
+
+    private int calculateLevelRank(Level level) {
+        int rank = lastStars;
+        if (score >= level.targetScore * 2) {
+            rank++;
+        }
+        if (bestCombo >= 4) {
+            rank++;
+        }
+        if ((level.moveLimitGoal > 0 && challengeCleared)
+                || (level.comboGoal > 0 && comboChallengeCleared)
+                || (level.scoreGoal > 0 && scoreChallengeCleared)) {
+            rank++;
+        }
+        return Math.min(6, rank);
+    }
+
+    private String buildRankText(int rank) {
+        if (rank >= 6) {
+            return "SSS";
+        } else if (rank == 5) {
+            return "SS";
+        } else if (rank == 4) {
+            return "S";
+        } else if (rank == 3) {
+            return "A";
+        } else if (rank == 2) {
+            return "B";
+        } else if (rank == 1) {
+            return "C";
+        }
+        return "-";
     }
 
     private void saveDailyChallengeReward() {
@@ -1040,6 +1080,7 @@ public class GameView extends View {
         for (int i = 0; i < levels.size(); i++) {
             levelStars[i] = prefs.getInt(KEY_STARS_PREFIX + i, 0);
             levelBestScores[i] = prefs.getInt(KEY_BEST_SCORE_PREFIX + i, 0);
+            levelRanks[i] = prefs.getInt(KEY_RANK_PREFIX + i, 0);
         }
         for (int i = 0; i < chapterChestClaimed.length; i++) {
             chapterChestClaimed[i] = prefs.getBoolean(KEY_CHAPTER_CHEST_PREFIX + i, false);
@@ -1053,13 +1094,20 @@ public class GameView extends View {
     private void saveLevelProgress() {
         Level level = levels.get(levelIndex);
         int oldStars = levelStars[levelIndex];
+        int oldRank = levelRanks[levelIndex];
         levelStars[levelIndex] = Math.max(levelStars[levelIndex], lastStars);
         levelBestScores[levelIndex] = Math.max(levelBestScores[levelIndex], score);
+        levelRanks[levelIndex] = Math.max(levelRanks[levelIndex], lastRank);
         highestUnlockedLevel = Math.max(highestUnlockedLevel, Math.min(levelIndex + 1, levels.size() - 1));
         if (levelStars[levelIndex] > oldStars) {
             // 重玩补星给额外金币，鼓励把老关卡刷到满星。
             lastStarUpgradeReward = (levelStars[levelIndex] - oldStars) * 12;
             coins += lastStarUpgradeReward;
+        }
+        if (levelRanks[levelIndex] > oldRank) {
+            // 评级奖励鼓励玩家追求高分、连击和挑战目标。
+            lastRankUpgradeReward = (levelRanks[levelIndex] - oldRank) * 8;
+            coins += lastRankUpgradeReward;
         }
         grantAchievementRewards();
         grantChapterMasteryReward();
@@ -1067,6 +1115,7 @@ public class GameView extends View {
                 .putInt(KEY_UNLOCKED_LEVEL, highestUnlockedLevel)
                 .putInt(KEY_STARS_PREFIX + levelIndex, levelStars[levelIndex])
                 .putInt(KEY_BEST_SCORE_PREFIX + levelIndex, levelBestScores[levelIndex])
+                .putInt(KEY_RANK_PREFIX + levelIndex, levelRanks[levelIndex])
                 .putInt(KEY_COINS, coins)
                 .putInt(KEY_STAR_CHEST_CLAIMED, starChestClaimed)
                 .apply();
@@ -1879,6 +1928,11 @@ public class GameView extends View {
             if (levelBestScores[level] > 0) {
                 textPaint.setTextSize(sp(8));
                 canvas.drawText("高" + levelBestScores[level], rect.centerX(), rect.top + dp(12), textPaint);
+            }
+            if (levelRanks[level] > 0) {
+                textPaint.setTextSize(sp(8));
+                textPaint.setColor(Color.WHITE);
+                canvas.drawText(buildRankText(levelRanks[level]), rect.right - dp(10), rect.top + dp(12), textPaint);
             }
         }
 
@@ -2780,7 +2834,8 @@ public class GameView extends View {
         canvas.drawRect(0, 0, getWidth(), getHeight(), paint);
         paint.setColor(levelComplete ? Color.argb(110, 255, 213, 92) : Color.argb(95, 255, 107, 154));
         canvas.drawCircle(getWidth() / 2f, getHeight() * 0.42f - dp(12), dp(92), paint);
-        if (levelComplete && (lastAchievementReward > 0 || lastStarUpgradeReward > 0 || lastWinStreakReward > 0
+        if (levelComplete && (lastAchievementReward > 0 || lastStarUpgradeReward > 0 || lastRankUpgradeReward > 0
+                || lastWinStreakReward > 0
                 || lastChapterMasteryReward > 0)) {
             drawRewardSparkles(canvas, getWidth() / 2f, getHeight() * 0.42f - dp(12));
         }
@@ -2790,7 +2845,7 @@ public class GameView extends View {
         canvas.drawText(levelComplete ? "闯关成功" : "再试一次", getWidth() / 2f, getHeight() * 0.42f, textPaint);
         textPaint.setTextSize(sp(16));
         if (levelComplete) {
-            String bonusText = buildStars(lastStars) + "  步数奖励 +" + lastBonusScore;
+            String bonusText = buildStars(lastStars) + "  评级 " + buildRankText(lastRank) + "  步数奖励 +" + lastBonusScore;
             if (challengeCleared) {
                 bonusText += "  挑战达成";
             }
@@ -2814,6 +2869,8 @@ public class GameView extends View {
                 rewardText = "金币 +" + lastCoinReward + "  成就奖励+" + lastAchievementReward + "  点击继续";
             } else if (lastStarUpgradeReward > 0) {
                 rewardText = "金币 +" + lastCoinReward + "  补星+" + lastStarUpgradeReward + "  点击继续";
+            } else if (lastRankUpgradeReward > 0) {
+                rewardText = "金币 +" + lastCoinReward + "  评级+" + lastRankUpgradeReward + "  点击继续";
             } else if (lastWinStreakReward > 0) {
                 rewardText = "金币 +" + lastCoinReward + " 连胜+" + lastWinStreakReward + "  点击继续";
             }
