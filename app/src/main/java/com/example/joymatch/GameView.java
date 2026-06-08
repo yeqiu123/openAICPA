@@ -189,6 +189,7 @@ public class GameView extends View {
     private int lastHiddenReward;
     private int lastEliteReward;
     private int lastFirstClearReward;
+    private int lastFullStarReward;
     private int starChestClaimed;
     private int rankChestClaimed;
     private int lastChestReward;
@@ -447,6 +448,7 @@ public class GameView extends View {
         lastHiddenReward = 0;
         lastEliteReward = 0;
         lastFirstClearReward = 0;
+        lastFullStarReward = 0;
         lastChestReward = 0;
         lastRankChestReward = 0;
         lastChapterChestReward = 0;
@@ -1304,6 +1306,9 @@ public class GameView extends View {
             lastStarUpgradeReward = (levelStars[levelIndex] - oldStars) * 12;
             coins += lastStarUpgradeReward;
         }
+        if (oldStars < 3 && levelStars[levelIndex] >= 3) {
+            grantFullStarReward(level);
+        }
         if (levelRanks[levelIndex] > oldRank) {
             // 评级奖励鼓励玩家追求高分、连击和挑战目标。
             lastRankUpgradeReward = (levelRanks[levelIndex] - oldRank) * 8;
@@ -1328,6 +1333,13 @@ public class GameView extends View {
                 .putInt(KEY_STAR_CHEST_CLAIMED, starChestClaimed)
                 .putInt(KEY_RANK_CHEST_CLAIMED, rankChestClaimed)
                 .apply();
+    }
+
+    private void grantFullStarReward(Level level) {
+        // 首次满星额外给奖励，把补星目标转成更明确的正反馈。
+        lastFullStarReward = 24 + getChapterIndex(levelIndex) * 4 + (level.elite ? 12 : 0);
+        coins += lastFullStarReward;
+        propInventory[PROP_CLEANSE]++;
     }
 
     private void grantFirstClearReward(Level level, int oldStars) {
@@ -3545,7 +3557,8 @@ public class GameView extends View {
         canvas.drawCircle(getWidth() / 2f, getHeight() * 0.42f - dp(12), dp(92), paint);
         if (levelComplete && (lastAchievementReward > 0 || lastStarUpgradeReward > 0 || lastRankUpgradeReward > 0
                 || lastPerfectReward > 0 || lastHiddenReward > 0 || lastWinStreakReward > 0
-                || lastEliteReward > 0 || lastFirstClearReward > 0 || lastChapterMasteryReward > 0)) {
+                || lastEliteReward > 0 || lastFirstClearReward > 0 || lastFullStarReward > 0
+                || lastChapterMasteryReward > 0)) {
             drawRewardSparkles(canvas, getWidth() / 2f, getHeight() * 0.42f - dp(12));
         }
 
@@ -3573,6 +3586,9 @@ public class GameView extends View {
             if (lastFirstClearReward > 0) {
                 bonusText += "  首次通关";
             }
+            if (lastFullStarReward > 0) {
+                bonusText += "  满星达成";
+            }
             if (lastPerfectReward > 0) {
                 bonusText += "  完美通关";
             }
@@ -3590,6 +3606,8 @@ public class GameView extends View {
                 rewardText = "金币 +" + lastCoinReward + "  成就奖励+" + lastAchievementReward + "  点击继续";
             } else if (lastFirstClearReward > 0) {
                 rewardText = "金币 +" + lastCoinReward + "  首通+" + lastFirstClearReward + "  点击继续";
+            } else if (lastFullStarReward > 0) {
+                rewardText = "金币 +" + lastCoinReward + "  满星+" + lastFullStarReward + " 净化+1  点击继续";
             } else if (lastStarUpgradeReward > 0) {
                 rewardText = "金币 +" + lastCoinReward + "  补星+" + lastStarUpgradeReward + "  点击继续";
             } else if (lastEliteReward > 0) {
