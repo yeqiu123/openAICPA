@@ -1407,13 +1407,14 @@ public class GameView extends View {
         canvas.drawText("关卡地图 " + (levelMapPage + 1) + "/" + getLevelMapPageCount(), getWidth() / 2f, dp(54), textPaint);
         drawDailyChallengeEntry(canvas);
         drawChapterChestEntry(canvas);
+        drawChapterProgress(canvas);
 
         int columns = 6;
         int pageStart = levelMapPage * LEVELS_PER_PAGE;
         int pageCount = Math.min(LEVELS_PER_PAGE, levels.size() - pageStart);
         int rows = (int) Math.ceil(pageCount / (float) columns);
         float gap = dp(6);
-        float startY = dp(158);
+        float startY = dp(188);
         float pagerTop = getHeight() - dp(64);
         float sizeByWidth = (getWidth() - dp(32) - gap * (columns - 1)) / columns;
         float sizeByHeight = (pagerTop - startY - dp(10) - gap * (rows - 1)) / rows;
@@ -1485,6 +1486,25 @@ public class GameView extends View {
         String text = chapterChestClaimed[chapter] ? chapterNames[chapter] + " 已领"
                 : chapterNames[chapter] + " 宝箱 " + getChapterStars(chapter) + "/" + CHAPTER_CHEST_STARS;
         canvas.drawText(text, chapterChestRect.centerX(), chapterChestRect.centerY() + dp(5), textPaint);
+    }
+
+    private void drawChapterProgress(Canvas canvas) {
+        int chapter = getCurrentMapChapter();
+        float left = dp(34);
+        float top = dp(158);
+        float right = getWidth() - dp(34);
+        float progress = getChapterUnlockedCount(chapter) / (float) CHAPTER_SIZE;
+
+        paint.setColor(Color.argb(85, 33, 37, 56));
+        canvas.drawRoundRect(new RectF(left, top, right, top + dp(10)), dp(5), dp(5), paint);
+        paint.setColor(Color.argb(220, 255, 236, 133));
+        canvas.drawRoundRect(new RectF(left, top, left + (right - left) * progress, top + dp(10)), dp(5), dp(5), paint);
+
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setTextSize(sp(12));
+        textPaint.setColor(Color.WHITE);
+        canvas.drawText("章节进度 " + getChapterUnlockedCount(chapter) + "/" + CHAPTER_SIZE
+                + "  星 " + getChapterStars(chapter), getWidth() / 2f, top + dp(26), textPaint);
     }
 
     private void drawSettings(Canvas canvas) {
@@ -1598,6 +1618,18 @@ public class GameView extends View {
             total += levelStars[level];
         }
         return total;
+    }
+
+    private int getChapterUnlockedCount(int chapter) {
+        int start = chapter * CHAPTER_SIZE;
+        int end = Math.min(start + CHAPTER_SIZE, levels.size());
+        int unlocked = 0;
+        for (int level = start; level < end; level++) {
+            if (level <= highestUnlockedLevel) {
+                unlocked++;
+            }
+        }
+        return unlocked;
     }
 
     private int getCurrentMapChapter() {
