@@ -3399,29 +3399,38 @@ public class GameView extends View {
     private void grantDailyLoginPropReward() {
         lastDailyRewardProp = NONE;
         lastDailyRewardPropAmount = 0;
-        if (dailyStreak == 3) {
-            lastDailyRewardProp = PROP_ROCKET;
-            lastDailyRewardPropAmount = 1;
-        } else if (dailyStreak == 7) {
-            lastDailyRewardProp = PROP_AURORA_ORB;
-            lastDailyRewardPropAmount = 1;
-        } else if (dailyStreak == 14) {
-            lastDailyRewardProp = PROP_STAR_COMPASS;
-            lastDailyRewardPropAmount = 1;
-        } else if (dailyStreak == 21) {
-            lastDailyRewardProp = PROP_BUBBLE_WAND;
-            lastDailyRewardPropAmount = 1;
-        } else if (dailyStreak == 45) {
-            lastDailyRewardProp = PROP_STAR_HARP;
-            lastDailyRewardPropAmount = 1;
-        } else if (dailyStreak > 0 && dailyStreak % 30 == 0) {
-            lastDailyRewardProp = PROP_SNOW_GLOBE;
+        lastDailyRewardProp = getDailyLoginRewardProp(dailyStreak);
+        if (lastDailyRewardProp == PROP_SNOW_GLOBE) {
             lastDailyRewardPropAmount = 2;
+        } else if (lastDailyRewardProp != NONE) {
+            lastDailyRewardPropAmount = 1;
         }
         if (lastDailyRewardProp != NONE) {
             // 连签节点送稀有道具，给每日回访一个更明确的期待。
             addReserveProp(lastDailyRewardProp, lastDailyRewardPropAmount);
         }
+    }
+
+    private String buildNextDailyLoginRewardHint() {
+        int prop = getDailyLoginRewardProp(dailyStreak + 1);
+        return prop == NONE ? "" : " 奖" + getPropName(prop);
+    }
+
+    private int getDailyLoginRewardProp(int streak) {
+        if (streak == 3) {
+            return PROP_ROCKET;
+        } else if (streak == 7) {
+            return PROP_AURORA_ORB;
+        } else if (streak == 14) {
+            return PROP_STAR_COMPASS;
+        } else if (streak == 21) {
+            return PROP_BUBBLE_WAND;
+        } else if (streak == 45) {
+            return PROP_STAR_HARP;
+        } else if (streak > 0 && streak % 30 == 0) {
+            return PROP_SNOW_GLOBE;
+        }
+        return NONE;
     }
 
     private void loadDailyGoal() {
@@ -5603,6 +5612,7 @@ public class GameView extends View {
         if (dailyStreak > 1) {
             coinText += " 连" + dailyStreak;
         }
+        coinText += buildNextDailyLoginRewardHint();
         canvas.drawText(coinText, getWidth() - dp(22), dp(104), textPaint);
         String obstacleText = "冰" + iceRemaining + " 蜜" + honeyRemaining + " 石" + stoneRemaining
                 + " 藤" + vineRemaining + " 锁" + chainRemaining;
