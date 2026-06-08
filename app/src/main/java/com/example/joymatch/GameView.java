@@ -88,6 +88,7 @@ public class GameView extends View {
         prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         textPaint.setColor(Color.WHITE);
         textPaint.setTypeface(Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD));
+        paint.setStrokeCap(Paint.Cap.ROUND);
         setFocusable(true);
         buildLevels();
         loadProgress();
@@ -629,6 +630,12 @@ public class GameView extends View {
         paint.setColor(Color.argb(45, 255, 255, 255));
         canvas.drawCircle(getWidth() * 0.18f, getHeight() * 0.18f, getWidth() * 0.22f, paint);
         canvas.drawCircle(getWidth() * 0.82f, getHeight() * 0.76f, getWidth() * 0.28f, paint);
+        paint.setColor(Color.argb(36, 255, 255, 255));
+        for (int i = 0; i < 12; i++) {
+            float x = (i * 83 % Math.max(getWidth(), 1)) + dp(10);
+            float y = (i * 137 % Math.max(getHeight(), 1)) + dp(12);
+            canvas.drawCircle(x, y, dp(2 + i % 3), paint);
+        }
     }
 
     private void drawHud(Canvas canvas) {
@@ -668,6 +675,15 @@ public class GameView extends View {
         RectF boardRect = new RectF(boardLeft - dp(8), boardTop - dp(8),
                 boardLeft + tileSize * BOARD_SIZE + dp(8), boardTop + tileSize * BOARD_SIZE + dp(8));
         canvas.drawRoundRect(boardRect, dp(18), dp(18), paint);
+        paint.setColor(Color.argb(80, 33, 37, 56));
+        for (int row = 0; row <= BOARD_SIZE; row++) {
+            float y = boardTop + row * tileSize;
+            canvas.drawLine(boardLeft, y, boardLeft + tileSize * BOARD_SIZE, y, paint);
+        }
+        for (int col = 0; col <= BOARD_SIZE; col++) {
+            float x = boardLeft + col * tileSize;
+            canvas.drawLine(x, boardTop, x, boardTop + tileSize * BOARD_SIZE, paint);
+        }
 
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
@@ -930,6 +946,8 @@ public class GameView extends View {
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setTextSize(sp(feedbackCombo > 1 ? 24 : 19));
         textPaint.setColor(Color.argb(alpha, 255, 255, 255));
+        paint.setColor(Color.argb(alpha / 2, 33, 37, 56));
+        canvas.drawCircle(getWidth() / 2f, y - dp(8), dp(56 + feedbackCombo * 8), paint);
         canvas.drawText(text, getWidth() / 2f, y, textPaint);
         textPaint.setColor(Color.WHITE);
         postInvalidateOnAnimation();
@@ -948,6 +966,8 @@ public class GameView extends View {
 
         paint.setColor(Color.argb(185, 33, 37, 56));
         canvas.drawRect(0, 0, getWidth(), getHeight(), paint);
+        paint.setColor(levelComplete ? Color.argb(110, 255, 213, 92) : Color.argb(95, 255, 107, 154));
+        canvas.drawCircle(getWidth() / 2f, getHeight() * 0.42f - dp(12), dp(92), paint);
 
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setTextSize(sp(28));
