@@ -46,6 +46,7 @@ public class GameView extends View {
     private static final int STAR_CHEST_STEP = 30;
     private static final int CHAPTER_SIZE = 20;
     private static final int CHAPTER_CHEST_STARS = 45;
+    private static final int ACHIEVEMENT_COUNT = 6;
     private static final int NONE = -1;
     private static final int SPECIAL_NORMAL = 0;
     private static final int SPECIAL_ROW = 1;
@@ -90,7 +91,7 @@ public class GameView extends View {
     private final int[] levelStars = new int[LEVEL_COUNT];
     private final int[] levelBestScores = new int[LEVEL_COUNT];
     private final boolean[] chapterChestClaimed = new boolean[6];
-    private final boolean[] achievementsClaimed = new boolean[3];
+    private final boolean[] achievementsClaimed = new boolean[ACHIEVEMENT_COUNT];
     private final List<Particle> particles = new ArrayList<>();
     private final List<Level> levels = new ArrayList<>();
     private final ToneGenerator toneGenerator = new ToneGenerator(AudioManager.STREAM_MUSIC, 45);
@@ -938,6 +939,10 @@ public class GameView extends View {
         checkAchievement(0, getTotalStars() >= 30, 60);
         checkAchievement(1, highestUnlockedLevel >= 20, 80);
         checkAchievement(2, score >= 20000, 100);
+        // 更多长期成就覆盖星级、连胜和章节进度，强化反复挑战动力。
+        checkAchievement(3, getTotalStars() >= 120, 140);
+        checkAchievement(4, winStreak >= 5, 120);
+        checkAchievement(5, getFullyClearedChapterCount() >= 1, 160);
     }
 
     private void checkAchievement(int index, boolean reached, int reward) {
@@ -1837,6 +1842,16 @@ public class GameView extends View {
             total += levelStars[level];
         }
         return total;
+    }
+
+    private int getFullyClearedChapterCount() {
+        int count = 0;
+        for (int chapter = 0; chapter < chapterNames.length; chapter++) {
+            if (getChapterStars(chapter) >= CHAPTER_SIZE * 3) {
+                count++;
+            }
+        }
+        return count;
     }
 
     private int getChapterUnlockedCount(int chapter) {
