@@ -157,6 +157,8 @@ public class GameView extends View {
     private int dailyStreak;
     private int rewardTargetMilestone;
     private int rewardObstacleMilestone;
+    private int rewardComboMilestone;
+    private int lastTaskRewardType;
     private long feedbackStartTime;
     private long hintUntilTime;
     private long chestNoticeUntilTime;
@@ -364,6 +366,8 @@ public class GameView extends View {
         comboChallengeCleared = false;
         rewardTargetMilestone = 0;
         rewardObstacleMilestone = 0;
+        rewardComboMilestone = 0;
+        lastTaskRewardType = 0;
         targetKind = level.targetKind;
         targetRemaining = level.targetAmount;
         iceRemaining = level.iceCount;
@@ -518,7 +522,9 @@ public class GameView extends View {
         spawnParticles(cells);
         removeCells(cells);
         grantTaskRewards();
-        showFeedback(1, cells.size());
+        if (lastTaskRewardType == 0) {
+            showNormalFeedback(1, cells.size());
+        }
         collapseBoard();
         resolveMatches(findMatches());
     }
@@ -621,13 +627,17 @@ public class GameView extends View {
         ensurePlayableBoard();
         if (totalCleared > 0) {
             bestCombo = Math.max(bestCombo, combo);
+            grantTaskRewards();
             comboEnergy = Math.min(100, comboEnergy + combo * 12 + totalCleared / 2);
             if (comboEnergy >= 100) {
                 comboEnergy = 0;
                 propInventory[random.nextInt(PROP_COUNT)]++;
+                lastTaskRewardType = 3;
+                lastGiftReward = 0;
+                honeySpreadCount = 0;
                 showFeedback(combo + 1, totalCleared);
-            } else {
-                showFeedback(combo, totalCleared);
+            } else if (lastTaskRewardType == 0) {
+                showNormalFeedback(combo, totalCleared);
             }
         }
     }
@@ -1161,6 +1171,9 @@ public class GameView extends View {
             // 局内阶段奖励，让收集目标也能持续反馈玩家。
             propInventory[PROP_HAMMER] += targetMilestone - rewardTargetMilestone;
             rewardTargetMilestone = targetMilestone;
+            lastTaskRewardType = 1;
+            lastGiftReward = 0;
+            honeySpreadCount = 0;
             showFeedback(1, 5);
         }
 
@@ -1171,7 +1184,21 @@ public class GameView extends View {
             // 清障越积极，道具补给越快。
             propInventory[PROP_BOMB] += obstacleMilestone - rewardObstacleMilestone;
             rewardObstacleMilestone = obstacleMilestone;
+            lastTaskRewardType = 2;
+            lastGiftReward = 0;
+            honeySpreadCount = 0;
             showFeedback(1, 6);
+        }
+
+        int comboMilestone = bestCombo / 3;
+        if (comboMilestone > rewardComboMilestone) {
+            // 做出大连击时给随机补给，奖励更有技巧性的消除。
+            propInventory[random.nextInt(PROP_COUNT)] += comboMilestone - rewardComboMilestone;
+            rewardComboMilestone = comboMilestone;
+            lastTaskRewardType = 3;
+            lastGiftReward = 0;
+            honeySpreadCount = 0;
+            showFeedback(Math.max(2, bestCombo), 3);
         }
     }
 
@@ -1962,6 +1989,12 @@ public class GameView extends View {
             text = "礼盒奖励 +" + lastGiftReward;
         } else if (honeySpreadCount > 0 && age < 900) {
             text = "蜂蜜蔓延";
+        } else if (lastTaskRewardType == 1 && age < 900) {
+            text = "收集奖励";
+        } else if (lastTaskRewardType == 2 && age < 900) {
+            text = "清障奖励";
+        } else if (lastTaskRewardType == 3 && age < 900) {
+            text = "连击奖励";
         }
 
         textPaint.setTextAlign(Paint.Align.CENTER);
@@ -1978,6 +2011,11 @@ public class GameView extends View {
         feedbackCombo = combo;
         feedbackCleared = cleared;
         feedbackStartTime = System.currentTimeMillis();
+    }
+
+    private void showNormalFeedback(int combo, int cleared) {
+        lastTaskRewardType = 0;
+        showFeedback(combo, cleared);
     }
 
     private void playClickTone() {
