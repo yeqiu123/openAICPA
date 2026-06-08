@@ -170,6 +170,7 @@ public class GameView extends View {
     private boolean challengeCleared;
     private boolean comboChallengeCleared;
     private boolean scoreChallengeCleared;
+    private boolean hiddenChallengeCleared;
     private int coins;
     private int lastCoinReward;
     private int lastAchievementReward;
@@ -178,6 +179,7 @@ public class GameView extends View {
     private int lastStarUpgradeReward;
     private int lastRankUpgradeReward;
     private int lastPerfectReward;
+    private int lastHiddenReward;
     private int starChestClaimed;
     private int rankChestClaimed;
     private int lastChestReward;
@@ -416,6 +418,7 @@ public class GameView extends View {
         lastStarUpgradeReward = 0;
         lastRankUpgradeReward = 0;
         lastPerfectReward = 0;
+        lastHiddenReward = 0;
         lastChestReward = 0;
         lastRankChestReward = 0;
         lastChapterChestReward = 0;
@@ -430,6 +433,7 @@ public class GameView extends View {
         challengeCleared = false;
         comboChallengeCleared = false;
         scoreChallengeCleared = false;
+        hiddenChallengeCleared = false;
         usedContinueThisLevel = false;
         rewardTargetMilestone = 0;
         rewardObstacleMilestone = 0;
@@ -953,6 +957,7 @@ public class GameView extends View {
             challengeCleared = level.moveLimitGoal > 0;
             comboChallengeCleared = level.comboGoal > 0;
             scoreChallengeCleared = level.scoreGoal > 0;
+            hiddenChallengeCleared = isHiddenChallengeCleared(level);
             lastRank = calculateLevelRank(level);
             if (dailyChallengeMode) {
                 saveDailyChallengeReward();
@@ -984,6 +989,14 @@ public class GameView extends View {
         return level.scoreGoal <= 0 || score >= level.scoreGoal;
     }
 
+    private boolean isHiddenChallengeCleared(Level level) {
+        return isHiddenChallengeLevel() && !usedContinueThisLevel && movesUsed <= Math.max(7, level.moves - 4);
+    }
+
+    private boolean isHiddenChallengeLevel() {
+        return levelIndex >= 10 && levelIndex % 11 == 0;
+    }
+
     private int calculateLevelRank(Level level) {
         int rank = lastStars;
         if (score >= level.targetScore * 2) {
@@ -998,6 +1011,9 @@ public class GameView extends View {
         if ((level.moveLimitGoal > 0 && challengeCleared)
                 || (level.comboGoal > 0 && comboChallengeCleared)
                 || (level.scoreGoal > 0 && scoreChallengeCleared)) {
+            rank++;
+        }
+        if (hiddenChallengeCleared) {
             rank++;
         }
         return Math.min(6, rank);
@@ -1136,6 +1152,11 @@ public class GameView extends View {
             // 评级奖励鼓励玩家追求高分、连击和挑战目标。
             lastRankUpgradeReward = (levelRanks[levelIndex] - oldRank) * 8;
             coins += lastRankUpgradeReward;
+        }
+        if (hiddenChallengeCleared) {
+            lastHiddenReward = 20;
+            coins += lastHiddenReward;
+            propInventory[PROP_BOMB]++;
         }
         grantPerfectClearReward(level);
         grantAchievementRewards();
@@ -1889,6 +1910,9 @@ public class GameView extends View {
         }
         if (level.scoreGoal > 0) {
             starText += " 分" + score / 1000 + "k/" + level.scoreGoal / 1000 + "k";
+        }
+        if (isHiddenChallengeLevel()) {
+            starText += " 隐" + movesUsed + "/" + Math.max(7, level.moves - 4);
         }
         canvas.drawText(starText, getWidth() - dp(22), dp(154), textPaint);
         drawComboEnergy(canvas);
@@ -2879,6 +2903,9 @@ public class GameView extends View {
         if (level.scoreGoal > 0) {
             goalText += "  高分 " + level.scoreGoal;
         }
+        if (isHiddenChallengeLevel()) {
+            goalText += "  隐藏步限 " + Math.max(7, level.moves - 4);
+        }
         canvas.drawText(goalText,
                 getWidth() / 2f, centerY + dp(32), textPaint);
         postInvalidateOnAnimation();
@@ -2944,7 +2971,7 @@ public class GameView extends View {
         paint.setColor(levelComplete ? Color.argb(110, 255, 213, 92) : Color.argb(95, 255, 107, 154));
         canvas.drawCircle(getWidth() / 2f, getHeight() * 0.42f - dp(12), dp(92), paint);
         if (levelComplete && (lastAchievementReward > 0 || lastStarUpgradeReward > 0 || lastRankUpgradeReward > 0
-                || lastPerfectReward > 0 || lastWinStreakReward > 0
+                || lastPerfectReward > 0 || lastHiddenReward > 0 || lastWinStreakReward > 0
                 || lastChapterMasteryReward > 0)) {
             drawRewardSparkles(canvas, getWidth() / 2f, getHeight() * 0.42f - dp(12));
         }
@@ -2963,6 +2990,9 @@ public class GameView extends View {
             }
             if (scoreChallengeCleared) {
                 bonusText += "  高分达成";
+            }
+            if (hiddenChallengeCleared) {
+                bonusText += "  隐藏达成";
             }
             if (lastPerfectReward > 0) {
                 bonusText += "  完美通关";
@@ -2983,6 +3013,8 @@ public class GameView extends View {
                 rewardText = "金币 +" + lastCoinReward + "  补星+" + lastStarUpgradeReward + "  点击继续";
             } else if (lastPerfectReward > 0) {
                 rewardText = "金币 +" + lastCoinReward + "  完美+" + lastPerfectReward + "  点击继续";
+            } else if (lastHiddenReward > 0) {
+                rewardText = "金币 +" + lastCoinReward + "  隐藏+" + lastHiddenReward + "  点击继续";
             } else if (lastRankUpgradeReward > 0) {
                 rewardText = "金币 +" + lastCoinReward + "  评级+" + lastRankUpgradeReward + "  点击继续";
             } else if (lastWinStreakReward > 0) {
@@ -3014,7 +3046,8 @@ public class GameView extends View {
     }
 
     private void drawChallengeBadges(Canvas canvas, float centerX, float centerY) {
-        int count = (challengeCleared ? 1 : 0) + (comboChallengeCleared ? 1 : 0) + (scoreChallengeCleared ? 1 : 0);
+        int count = (challengeCleared ? 1 : 0) + (comboChallengeCleared ? 1 : 0) + (scoreChallengeCleared ? 1 : 0)
+                + (hiddenChallengeCleared ? 1 : 0);
         if (count <= 0) {
             return;
         }
