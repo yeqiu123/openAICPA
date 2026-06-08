@@ -328,6 +328,28 @@ th {
   line-height: 1.5;
 }
 
+.format-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.format-grid div {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8faf9;
+}
+
+.format-grid span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -465,6 +487,7 @@ th {
   .nav,
   .stats,
   .toolbar,
+  .format-grid,
   .form-grid {
     grid-template-columns: 1fr;
   }

@@ -3,6 +3,7 @@ const STORAGE_KEY = "openai-account-panel:v1";
 const state = {
   view: "accounts",
   accounts: [],
+  proxies: [],
   selectedIds: new Set(),
   filters: {
     keyword: "",
@@ -36,7 +37,7 @@ function readStore() {
 function writeStore() {
   localStorage.setItem(
     STORAGE_KEY,
-    JSON.stringify({ version: 1, updatedAt: nowISO(), accounts: state.accounts })
+    JSON.stringify({ version: 1, updatedAt: nowISO(), accounts: state.accounts, proxies: state.proxies })
   );
 }
 
@@ -96,6 +97,8 @@ function normalizeAccount(input = {}) {
         ? input.modelMapping
         : extra.model_mapping || extra.modelMapping || {},
     extra,
+    proxyKey: input.proxyKey || extra.proxy_key || "",
+    expiresAt: input.expiresAt || input.expires_at || extra.expires_at || "",
     source: String(input.source || "manual"),
     createdAt: input.createdAt || nowISO(),
     updatedAt: nowISO(),
@@ -388,6 +391,11 @@ function renderTransferView() {
       </div>
       <div class="actions" style="justify-content:flex-start;margin-top:12px">
         <button class="primary" id="importBtn">导入 JSON</button>
+      </div>
+      <div class="format-grid">
+        <div><strong>new-api</strong><span>识别 channels/data 数组，字段包含 key、base_url、models、group、used_quota。</span></div>
+        <div><strong>sub2api</strong><span>识别 data.accounts/accounts 与 proxies，保留 credentials、extra、proxy_key。</span></div>
+        <div><strong>CPA</strong><span>识别 openai-compatibility、api-keys、gemini/codex/claude/vertex 配置。</span></div>
       </div>
     </section>
     <section class="card section" style="margin-top:14px">
@@ -733,37 +741,43 @@ function buildUnifiedExport(accounts = state.accounts) {
     type: "openai-account-panel",
     version: 1,
     exported_at: nowISO(),
+    proxies: state.proxies,
     accounts,
   };
 }
 
-function buildNewApiExport() {
+function buildNewApiExport(accounts = state.accounts) {
   return {
-    channels: state.accounts.map((account) => ({
+    channels: accounts.map((account) => ({
       id: Number(account.extra?.newApiId || 0),
-      type: Number(account.extra?.newApiType || 1),
+      type: account.extra?.newApiType ? Number(account.extra.newApiType) : providerToNewApiType(account.provider),
       key: account.apiKey,
       status: account.status === "active" ? 1 : 2,
       name: account.name,
+      openai_organization: account.extra?.openai_organization || undefined,
+      test_model: account.extra?.test_model || account.models[0] || undefined,
       base_url: account.baseUrl,
       balance: account.quotaLimit ? Math.max(account.quotaLimit - account.quotaUsed, 0) : 0,
       models: account.models.join(","),
       group: account.tags.length ? account.tags.join(",") : "default",
       used_quota: account.quotaUsed,
       priority: account.priority,
+      weight: account.extra?.weight || 0,
+      model_mapping: Object.keys(account.modelMapping || {}).length ? JSON.stringify(account.modelMapping) : undefined,
+      header_override: Object.keys(account.headers || {}).length ? JSON.stringify(account.headers) : undefined,
       other_info: JSON.stringify(account.extra || {}),
       remark: account.notes,
     })),
   };
 }
 
-function buildSub2ApiExport() {
+function buildSub2ApiExport(accounts = state.accounts) {
   return {
     type: "sub2api-data",
     version: 1,
     exported_at: nowISO(),
-    proxies: [],
-    accounts: state.accounts.map((account) => ({
+    proxies: state.proxies,
+    accounts: accounts.map((account) => ({
       name: account.name,
       notes: account.notes || undefined,
       platform: account.provider,
@@ -772,6 +786,7 @@ function buildSub2ApiExport() {
         ...(account.credentials || {}),
         api_key: account.apiKey || account.credentials?.api_key,
         base_url: account.baseUrl,
+        model_mapping: Object.keys(account.modelMapping || {}).length ? account.modelMapping : undefined,
       },
       extra: {
         ...(account.extra || {}),
@@ -781,27 +796,51 @@ function buildSub2ApiExport() {
         token_used: account.tokenUsed,
         models: account.models,
         tags: account.tags,
+        headers: account.headers,
       },
+      proxy_key: account.proxyKey || undefined,
       concurrency: account.concurrency,
       priority: account.priority,
       rate_multiplier: account.extra?.rate_multiplier,
+      expires_at: account.expiresAt || undefined,
     })),
   };
 }
 
-function buildCpaExport() {
-  const openaiCompatibility = state.accounts.map((account) => ({
+function buildCpaExport(accounts = state.accounts) {
+  const openaiCompatibility = accounts
+    .filter((account) => !["gemini", "codex", "claude", "anthropic", "vertex"].includes(account.provider))
+    .map((account) => ({
     name: account.name,
     prefix: account.extra?.prefix || account.provider,
     "base-url": account.baseUrl,
-    "api-key-entries": [{ "api-key": account.apiKey, "auth-index": account.id }],
+    "api-key-entries": [{ "api-key": account.apiKey, "auth-index": account.extra?.authIndex || account.id }],
     disabled: account.status !== "active",
+    headers: account.headers && Object.keys(account.headers).length ? account.headers : undefined,
     models: account.models.map((name) => ({ name })),
     priority: account.priority,
   }));
   return {
-    "api-keys": state.accounts.map((account) => account.apiKey).filter(Boolean),
+    "api-keys": accounts.map((account) => account.apiKey).filter(Boolean),
+    "gemini-api-key": accounts.filter((account) => account.provider === "gemini").map(toCpaProviderKey),
+    "codex-api-key": accounts.filter((account) => account.provider === "codex").map(toCpaProviderKey),
+    "claude-api-key": accounts.filter((account) => account.provider === "claude" || account.provider === "anthropic").map(toCpaProviderKey),
+    "vertex-api-key": accounts.filter((account) => account.provider === "vertex").map(toCpaProviderKey),
     "openai-compatibility": openaiCompatibility,
+  };
+}
+
+function toCpaProviderKey(account) {
+  return {
+    "api-key": account.apiKey,
+    priority: account.priority,
+    prefix: account.extra?.prefix || undefined,
+    "base-url": account.baseUrl,
+    "proxy-url": account.extra?.proxyUrl || account.extra?.["proxy-url"] || undefined,
+    headers: account.headers && Object.keys(account.headers).length ? account.headers : undefined,
+    models: account.models.map((name) => ({ name })),
+    "excluded-models": account.extra?.excludedModels || account.extra?.["excluded-models"] || undefined,
+    "auth-index": account.extra?.authIndex || account.id,
   };
 }
 
@@ -813,36 +852,55 @@ function importFromText() {
   }
   try {
     const parsed = JSON.parse(text);
-    const accounts = detectImportAccounts(parsed);
-    if (!accounts.length) {
+    const result = detectImportAccounts(parsed);
+    if (!result.items.length) {
       showToast("没有识别到账号数据");
       return;
     }
     if (document.querySelector("#importMode").value === "replace") {
       state.accounts = [];
+      state.proxies = [];
     }
-    state.accounts = [...accounts, ...state.accounts];
+    if (result.proxies?.length) {
+      state.proxies = mergeProxies(result.proxies, state.proxies);
+    }
+    state.accounts = [...result.items, ...state.accounts];
     writeStore();
     renderLayout();
-    showToast(`已导入 ${accounts.length} 个账号`);
+    showToast(`已导入 ${result.items.length} 个账号`);
   } catch (error) {
     showToast(`JSON 解析失败：${error.message}`);
   }
 }
 
 function detectImportAccounts(payload) {
-  if (Array.isArray(payload)) return payload.map(fromUnknownAccount).filter(Boolean);
+  if (!payload || typeof payload !== "object") return importResult([]);
+  if (Array.isArray(payload)) return importResult(payload.map(fromUnknownAccount).filter(Boolean));
   if (Array.isArray(payload.accounts) && payload.type === "openai-account-panel") {
-    return payload.accounts.map(fromUnknownAccount).filter(Boolean);
+    return importResult(payload.accounts.map(fromUnknownAccount).filter(Boolean), payload.proxies);
   }
-  if (Array.isArray(payload.channels)) return payload.channels.map(fromNewApiChannel).filter(Boolean);
-  if (Array.isArray(payload.data)) return payload.data.map(fromNewApiChannel).filter(Boolean);
-  if (payload.data?.accounts) return payload.data.accounts.map(fromSub2ApiAccount).filter(Boolean);
-  if (Array.isArray(payload.accounts)) return payload.accounts.map(fromSub2ApiAccount).filter(Boolean);
+  if (payload.data?.accounts) return importResult(payload.data.accounts.map(fromSub2ApiAccount).filter(Boolean), payload.data.proxies);
+  if (Array.isArray(payload.channels)) return importResult(payload.channels.map(fromNewApiChannel).filter(Boolean));
+  if (Array.isArray(payload.data)) return importResult(payload.data.map(fromNewApiChannel).filter(Boolean));
   if (payload["openai-compatibility"] || payload.openaiCompatibility || payload["api-keys"]) {
-    return fromCpaConfig(payload);
+    return importResult(fromCpaConfig(payload));
   }
-  return [];
+  if (Array.isArray(payload.accounts)) return importResult(payload.accounts.map(fromSub2ApiAccount).filter(Boolean), payload.proxies);
+  return importResult([]);
+}
+
+function importResult(items, proxies = []) {
+  return { items: items.filter(Boolean), proxies: Array.isArray(proxies) ? proxies : [] };
+}
+
+function mergeProxies(next, current) {
+  const seen = new Set();
+  return [...next, ...current].filter((proxy) => {
+    const key = proxy.proxy_key || proxy.proxyKey || `${proxy.protocol}|${proxy.host}|${proxy.port}|${proxy.username || ""}|${proxy.password || ""}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 function fromUnknownAccount(item) {
@@ -864,8 +922,17 @@ function fromNewApiChannel(channel) {
     quotaLimit: Number(channel.balance || 0) + Number(channel.used_quota || 0),
     models: splitList(channel.models),
     tags: splitList(channel.group),
+    headers: parseMaybeJson(channel.header_override),
+    modelMapping: parseMaybeJson(channel.model_mapping),
     notes: channel.remark,
-    extra: { newApiId: channel.id, newApiType: channel.type, other_info: channel.other_info },
+    extra: {
+      ...parseMaybeJson(channel.other_info),
+      newApiId: channel.id,
+      newApiType: channel.type,
+      openai_organization: channel.openai_organization,
+      test_model: channel.test_model,
+      weight: channel.weight,
+    },
     source: "new-api",
   });
 }
@@ -889,9 +956,13 @@ function fromSub2ApiAccount(account) {
     tokenUsed: extra.token_used,
     models: extra.models || [],
     tags: extra.tags || [],
+    headers: extra.headers || credentials.headers || {},
+    modelMapping: credentials.model_mapping || extra.model_mapping || {},
     notes: account.notes,
     credentials,
     extra,
+    proxyKey: account.proxy_key,
+    expiresAt: account.expires_at,
     source: "sub2api",
   });
 }
@@ -912,12 +983,17 @@ function fromCpaConfig(config) {
           status: provider.disabled ? "disabled" : "active",
           priority: provider.priority,
           models: (provider.models || []).map((item) => item.name || item),
-          extra: { prefix: provider.prefix, authIndex: entry["auth-index"] || entry.authIndex },
+          headers: provider.headers || {},
+          extra: { prefix: provider.prefix, authIndex: entry["auth-index"] || entry.authIndex, test_model: provider["test-model"] },
           source: "cpa",
         })
       );
     });
   });
+  addCpaProviderKeyAccounts(accounts, "gemini", config["gemini-api-key"] || config.geminiApiKeys);
+  addCpaProviderKeyAccounts(accounts, "codex", config["codex-api-key"] || config.codexApiKeys);
+  addCpaProviderKeyAccounts(accounts, "claude", config["claude-api-key"] || config.claudeApiKeys);
+  addCpaProviderKeyAccounts(accounts, "vertex", config["vertex-api-key"] || config.vertexApiKeys);
   const keys = config["api-keys"] || config.apiKeys || [];
   keys.forEach((key, index) => {
     if (accounts.some((account) => account.apiKey === key)) return;
@@ -935,13 +1011,71 @@ function fromCpaConfig(config) {
   return accounts;
 }
 
+function addCpaProviderKeyAccounts(accounts, provider, list) {
+  if (!Array.isArray(list)) return;
+  list.forEach((item, index) => {
+    const record = typeof item === "string" ? { "api-key": item } : item || {};
+    const apiKey = record["api-key"] || record.apiKey;
+    if (!apiKey) return;
+    accounts.push(
+      normalizeAccount({
+        name: `${provider} ${index + 1}`,
+        provider,
+        accountType: "api_key",
+        baseUrl: record["base-url"] || record.baseUrl || defaultBaseUrl(provider),
+        apiKey,
+        priority: record.priority,
+        models: (record.models || []).map((model) => model.name || model),
+        headers: record.headers || {},
+        extra: {
+          prefix: record.prefix,
+          proxyUrl: record["proxy-url"] || record.proxyUrl,
+          excludedModels: record["excluded-models"] || record.excludedModels,
+          authIndex: record["auth-index"] || record.authIndex,
+        },
+        source: "cpa",
+      })
+    );
+  });
+}
+
+function parseMaybeJson(value) {
+  if (!value) return {};
+  if (typeof value === "object" && !Array.isArray(value)) return value;
+  try {
+    const parsed = JSON.parse(String(value));
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
 function inferProvider(type, baseUrl) {
   const url = String(baseUrl || "").toLowerCase();
   if (url.includes("anthropic")) return "anthropic";
+  if (url.includes("openrouter")) return "openrouter";
+  if (url.includes("vertex")) return "vertex";
+  if (url.includes("codex")) return "codex";
   if (url.includes("gemini") || url.includes("google")) return "gemini";
   if (url.includes("openai")) return "openai";
-  if (type === 14) return "anthropic";
+  const map = { 14: "anthropic", 20: "openrouter", 24: "gemini", 41: "vertex", 57: "codex" };
+  if (map[type]) return map[type];
   return "openai";
+}
+
+function providerToNewApiType(provider) {
+  return { openai: 1, anthropic: 14, claude: 14, openrouter: 20, gemini: 24, vertex: 41, codex: 57 }[provider] || 1;
+}
+
+function defaultBaseUrl(provider) {
+  return {
+    openai: "https://api.openai.com/v1",
+    anthropic: "https://api.anthropic.com",
+    claude: "https://api.anthropic.com",
+    gemini: "https://generativelanguage.googleapis.com",
+    codex: "https://chatgpt.com",
+    vertex: "https://aiplatform.googleapis.com",
+  }[provider] || "https://api.openai.com/v1";
 }
 
 function seedIfEmpty() {
@@ -965,5 +1099,12 @@ function seedIfEmpty() {
 }
 
 state.accounts = readStore();
+try {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  const parsed = raw ? JSON.parse(raw) : {};
+  state.proxies = Array.isArray(parsed.proxies) ? parsed.proxies : [];
+} catch {
+  state.proxies = [];
+}
 seedIfEmpty();
 renderLayout();
