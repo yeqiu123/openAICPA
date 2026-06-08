@@ -2224,6 +2224,9 @@ public class GameView extends View {
         chapterMasteryClaimed[chapter] = true;
         lastChapterMasteryReward = 120 + chapter * 30;
         coins += lastChapterMasteryReward;
+        if (isFireworksChapter(chapter)) {
+            propInventory[PROP_FIREWORK_CANNON]++;
+        }
         prefs.edit()
                 .putBoolean(KEY_CHAPTER_MASTERY_PREFIX + chapter, true)
                 .putInt(KEY_COINS, coins)
@@ -2242,6 +2245,9 @@ public class GameView extends View {
         lastChapterEliteReward = 90 + chapter * 24;
         coins += lastChapterEliteReward;
         propInventory[PROP_METEOR]++;
+        if (isFireworksChapter(chapter)) {
+            propInventory[PROP_FIREWORK_CANNON]++;
+        }
         prefs.edit()
                 .putBoolean(KEY_CHAPTER_ELITE_PREFIX + chapter, true)
                 .putInt(KEY_COINS, coins)
@@ -2260,10 +2266,17 @@ public class GameView extends View {
         lastChapterRankReward = 100 + chapter * 26;
         coins += lastChapterRankReward;
         propInventory[PROP_TIDE]++;
+        if (isFireworksChapter(chapter)) {
+            propInventory[PROP_FIREWORK_CANNON]++;
+        }
         prefs.edit()
                 .putBoolean(KEY_CHAPTER_RANK_PREFIX + chapter, true)
                 .putInt(KEY_COINS, coins)
                 .apply();
+    }
+
+    private boolean isFireworksChapter(int chapter) {
+        return chapterNames[chapter].equals("烟花星港");
     }
 
     private int getChapterRankRewardTarget() {
@@ -6403,6 +6416,10 @@ public class GameView extends View {
         return "幸运草 " + getPropName(lastLuckyCloverRewardProp);
     }
 
+    private String buildFireworksChapterRewardText() {
+        return isFireworksChapter(getChapterIndex(levelIndex)) ? " 礼炮+1" : "";
+    }
+
     private void playClickTone() {
         if (!soundEnabled) {
             return;
@@ -6501,11 +6518,14 @@ public class GameView extends View {
                             + getPropName(lastDailyChallengeMilestoneProp) + "+" + lastDailyChallengeMilestoneAmount + "  返回主线";
                 }
             } else if (lastChapterMasteryReward > 0) {
-                rewardText = "金币 +" + lastCoinReward + " 满星大师+" + lastChapterMasteryReward + "  点击继续";
+                rewardText = "金币 +" + lastCoinReward + " 满星大师+" + lastChapterMasteryReward
+                        + buildFireworksChapterRewardText() + "  点击继续";
             } else if (lastChapterEliteReward > 0) {
-                rewardText = "金币 +" + lastCoinReward + " 章节精英+" + lastChapterEliteReward + " 流星+1  点击继续";
+                rewardText = "金币 +" + lastCoinReward + " 章节精英+" + lastChapterEliteReward + " 流星+1"
+                        + buildFireworksChapterRewardText() + "  点击继续";
             } else if (lastChapterRankReward > 0) {
-                rewardText = "金币 +" + lastCoinReward + " 章节评级+" + lastChapterRankReward + " 潮汐+1  点击继续";
+                rewardText = "金币 +" + lastCoinReward + " 章节评级+" + lastChapterRankReward + " 潮汐+1"
+                        + buildFireworksChapterRewardText() + "  点击继续";
             } else if (lastAchievementReward > 0) {
                 rewardText = "金币 +" + lastCoinReward + "  成就奖励+" + lastAchievementReward + "  点击继续";
             } else if (lastFirstClearReward > 0) {
