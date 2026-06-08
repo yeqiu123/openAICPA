@@ -7681,6 +7681,40 @@ public class GameView extends View {
         return lastSeasonRewardProp == NONE ? "" : " " + getPropName(lastSeasonRewardProp) + "+" + lastSeasonRewardAmount;
     }
 
+    private List<String> buildRewardLines() {
+        List<String> lines = new ArrayList<>();
+        lines.add("金币 +" + lastCoinReward);
+        addRewardLine(lines, "首通", lastFirstClearReward, "");
+        addRewardLine(lines, "满星", lastFullStarReward, lastFullStarReward > 0 ? " 净化+1" : "");
+        addRewardLine(lines, "补星", lastStarUpgradeReward, "");
+        addRewardLine(lines, "评级", lastRankUpgradeReward, "");
+        addRewardLine(lines, "完美", lastPerfectReward, "");
+        addRewardLine(lines, "隐藏", lastHiddenReward, "");
+        addRewardLine(lines, "精英", lastEliteReward, "");
+        addRewardLine(lines, "成就", lastAchievementReward, buildAchievementPropRewardText());
+        addRewardLine(lines, "连胜", lastWinStreakReward, buildWinStreakPropRewardText());
+        addRewardLine(lines, "赛季", lastSeasonReward, buildSeasonPropRewardText());
+        addRewardLine(lines, "满星大师", lastChapterMasteryReward,
+                lastChapterMasteryReward > 0 ? " 净化+1" + buildChapterMasteryPropRewardText() : "");
+        addRewardLine(lines, "章节精英", lastChapterEliteReward,
+                lastChapterEliteReward > 0 ? " 流星+1" + buildChapterElitePropRewardText() : "");
+        addRewardLine(lines, "章节评级", lastChapterRankReward,
+                lastChapterRankReward > 0 ? " 潮汐+1" + buildChapterRankPropRewardText() : "");
+        if (lastDailyChallengeMilestoneProp != NONE) {
+            lines.add("每日连胜 " + getPropName(lastDailyChallengeMilestoneProp) + "+" + lastDailyChallengeMilestoneAmount);
+        }
+        while (lines.size() > 4) {
+            lines.remove(1);
+        }
+        return lines;
+    }
+
+    private void addRewardLine(List<String> lines, String label, int amount, String extra) {
+        if (amount > 0 || extra.length() > 0) {
+            lines.add(label + "+" + amount + extra);
+        }
+    }
+
     private void playClickTone() {
         if (!soundEnabled) {
             return;
@@ -7774,48 +7808,7 @@ public class GameView extends View {
             drawChallengeBadges(canvas, getWidth() / 2f, getHeight() * 0.515f);
             String scoreText = dailyChallengeMode ? "挑战分 " + score : "最佳分 " + levelBestScores[levelIndex];
             canvas.drawText(scoreText, getWidth() / 2f, getHeight() * 0.55f, textPaint);
-            String rewardText = "金币 +" + lastCoinReward + "  点击继续";
-            if (dailyChallengeMode) {
-                rewardText = lastCoinReward > 0 ? "每日金币 +" + lastCoinReward + " 连" + dailyChallengeStreak + "  返回主线"
-                        : "今日已领奖  返回主线";
-                if (lastDailyChallengeMilestoneProp != NONE) {
-                    rewardText = "每日金币 +" + lastCoinReward + " 连" + dailyChallengeStreak + " "
-                            + getPropName(lastDailyChallengeMilestoneProp) + "+" + lastDailyChallengeMilestoneAmount + "  返回主线";
-                }
-            } else if (lastChapterMasteryReward > 0) {
-                rewardText = "金币 +" + lastCoinReward + " 满星大师+" + lastChapterMasteryReward
-                        + " 净化+1" + buildChapterMasteryPropRewardText() + "  点击继续";
-            } else if (lastChapterEliteReward > 0) {
-                rewardText = "金币 +" + lastCoinReward + " 章节精英+" + lastChapterEliteReward + " 流星+1"
-                        + buildChapterElitePropRewardText() + "  点击继续";
-            } else if (lastChapterRankReward > 0) {
-                rewardText = "金币 +" + lastCoinReward + " 章节评级+" + lastChapterRankReward + " 潮汐+1"
-                        + buildChapterRankPropRewardText() + "  点击继续";
-            } else if (lastAchievementReward > 0) {
-                rewardText = "金币 +" + lastCoinReward + "  成就奖励+" + lastAchievementReward
-                        + buildAchievementPropRewardText() + "  点击继续";
-            } else if (lastSeasonReward > 0) {
-                rewardText = "金币 +" + lastCoinReward + "  赛季+" + lastSeasonReward
-                        + buildSeasonPropRewardText() + "  点击继续";
-            } else if (lastFirstClearReward > 0) {
-                rewardText = "金币 +" + lastCoinReward + "  首通+" + lastFirstClearReward + "  点击继续";
-            } else if (lastFullStarReward > 0) {
-                rewardText = "金币 +" + lastCoinReward + "  满星+" + lastFullStarReward + " 净化+1  点击继续";
-            } else if (lastStarUpgradeReward > 0) {
-                rewardText = "金币 +" + lastCoinReward + "  补星+" + lastStarUpgradeReward + "  点击继续";
-            } else if (lastEliteReward > 0) {
-                rewardText = "金币 +" + lastCoinReward + "  精英+" + lastEliteReward + "  点击继续";
-            } else if (lastPerfectReward > 0) {
-                rewardText = "金币 +" + lastCoinReward + "  完美+" + lastPerfectReward + "  点击继续";
-            } else if (lastHiddenReward > 0) {
-                rewardText = "金币 +" + lastCoinReward + "  隐藏+" + lastHiddenReward + "  点击继续";
-            } else if (lastRankUpgradeReward > 0) {
-                rewardText = "金币 +" + lastCoinReward + "  评级+" + lastRankUpgradeReward + "  点击继续";
-            } else if (lastWinStreakReward > 0 || lastWinStreakRewardProp != NONE) {
-                rewardText = "金币 +" + lastCoinReward + " 连胜+" + lastWinStreakReward
-                        + buildWinStreakPropRewardText() + "  点击继续";
-            }
-            canvas.drawText(rewardText, getWidth() / 2f, getHeight() * 0.61f, textPaint);
+            drawRewardLines(canvas);
         } else if (countdownBombExploded) {
             String text = pickContinueProp() == NONE ? "炸弹爆炸，点击重试" : "炸弹爆炸，点击消耗" + getPropName(pickContinueProp()) + "续步";
             canvas.drawText(text, getWidth() / 2f, getHeight() * 0.49f, textPaint);
@@ -7829,6 +7822,18 @@ public class GameView extends View {
         } else {
             canvas.drawText("金币不足，点击重试", getWidth() / 2f, getHeight() * 0.49f, textPaint);
         }
+    }
+
+    private void drawRewardLines(Canvas canvas) {
+        List<String> lines = buildRewardLines();
+        float startY = getHeight() * 0.6f;
+        textPaint.setTextSize(sp(14));
+        for (int i = 0; i < lines.size(); i++) {
+            canvas.drawText(lines.get(i), getWidth() / 2f, startY + i * dp(18), textPaint);
+        }
+        textPaint.setTextSize(sp(13));
+        canvas.drawText(dailyChallengeMode ? "点击返回主线" : "点击继续",
+                getWidth() / 2f, startY + lines.size() * dp(18) + dp(4), textPaint);
     }
 
     private float dp(float value) {
