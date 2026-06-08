@@ -2687,7 +2687,8 @@ public class GameView extends View {
         lastChestRewardAmount = 0;
         lastChapterChestReward = 0;
         coins += lastDailyGoalReward;
-        addProp(PROP_MOON_TICKET, 1);
+        // 每日目标奖励进入长期储备，确保回到关卡后仍能使用。
+        addReserveProp(PROP_MOON_TICKET, 1);
         dailyGoalClaimed = true;
         prefs.edit()
                 .putLong(KEY_DAILY_GOAL_DAY, getToday())
