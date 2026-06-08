@@ -78,8 +78,9 @@ public class GameView extends View {
     private static final int PROP_ROCKET = 14;
     private static final int PROP_TARGET_BRUSH = 15;
     private static final int PROP_SHIELD = 16;
-    private static final int PROP_COUNT = 17;
-    private static final int[] PROP_COSTS = {8, 12, 10, 16, 18, 14, 22, 20, 24, 20, 18, 16, 18, 26, 18, 20, 22};
+    private static final int PROP_ENERGY_CORE = 17;
+    private static final int PROP_COUNT = 18;
+    private static final int[] PROP_COSTS = {8, 12, 10, 16, 18, 14, 22, 20, 24, 20, 18, 16, 18, 26, 18, 20, 22, 24};
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -440,6 +441,7 @@ public class GameView extends View {
             int rocket = i >= 48 && i % 16 == 5 ? 1 : 0;
             int targetBrush = i >= 66 && i % 18 == 9 ? 1 : 0;
             int shield = i >= 72 && i % 21 == 12 ? 1 : 0;
+            int energyCore = i >= 86 && i % 22 == 14 ? 1 : 0;
             int targetKind = i % TILE_KINDS;
             int targetAmount = 8 + (i % 7) + i / 10;
             int iceCount = i < 4 ? i * 2 : Math.min(24, 6 + i / 2);
@@ -480,7 +482,7 @@ public class GameView extends View {
                 honeyCount = Math.min(20, honeyCount + 2);
             }
             levels.add(new Level(targetScore, moves, hammer, bomb, shuffle, rowBlast, colorBlast, extraMoves,
-                    magicWand, brush, portalProp, cleanse, freeze, magnet, clock, starHammer, rocket, targetBrush, shield, targetKind, targetAmount, iceCount, honeyCount, stoneCount, vineCount, giftCount,
+                    magicWand, brush, portalProp, cleanse, freeze, magnet, clock, starHammer, rocket, targetBrush, shield, energyCore, targetKind, targetAmount, iceCount, honeyCount, stoneCount, vineCount, giftCount,
                     chainCount, shellCount, flowerCount, keyCount, moveChestCount, cloudCount, gemCount, goldenEggCount, coinPouchCount, paintBucketCount, windmillCount, jewelBowCount, stardustJarCount, rainbowBottleCount, energyPotionCount, butterflyCount, portalCount, hourglassCount, luckyStarCount, mysteryBoxCount, countdownBombCount,
                     moveLimitGoal, comboGoal, scoreGoal, elite));
         }
@@ -581,6 +583,7 @@ public class GameView extends View {
         propInventory[PROP_ROCKET] = level.rockets;
         propInventory[PROP_TARGET_BRUSH] = level.targetBrushes;
         propInventory[PROP_SHIELD] = level.shields;
+        propInventory[PROP_ENERGY_CORE] = level.energyCores;
         applyChapterMasteryStarterPerks();
 
         // 初始化时避开天然三连，让玩家第一步更清晰。
@@ -728,6 +731,17 @@ public class GameView extends View {
                     lastShieldReward = bombShieldCount;
                     lastTaskRewardType = 10;
                     showFeedback(1, bombShieldCount);
+                    activeProp = NONE;
+                    selectedRow = NONE;
+                    selectedCol = NONE;
+                } else if (prop == PROP_ENERGY_CORE) {
+                    // 能量核心直接填满能量并补给随机道具，制造一次主动爆发机会。
+                    propInventory[prop]--;
+                    comboEnergy = 100;
+                    lastEnergyRewardProp = random.nextInt(PROP_COUNT);
+                    propInventory[lastEnergyRewardProp]++;
+                    lastTaskRewardType = 11;
+                    showFeedback(1, 100);
                     activeProp = NONE;
                     selectedRow = NONE;
                     selectedCol = NONE;
@@ -4086,6 +4100,14 @@ public class GameView extends View {
             canvas.drawPath(shield, paint);
             paint.setColor(Color.WHITE);
             canvas.drawCircle(centerX, centerY, dp(5), paint);
+        } else if (prop == PROP_ENERGY_CORE) {
+            paint.setStyle(Paint.Style.STROKE);
+            canvas.drawCircle(centerX, centerY, dp(14), paint);
+            paint.setStyle(Paint.Style.FILL);
+            paint.setColor(Color.WHITE);
+            drawPropStar(canvas, centerX, centerY, dp(8));
+            paint.setColor(Color.argb(220, 255, 236, 118));
+            canvas.drawCircle(centerX, centerY, dp(4), paint);
         } else {
             canvas.drawRoundRect(new RectF(centerX - dp(13), centerY - dp(10), centerX + dp(13), centerY - dp(2)),
                     dp(4), dp(4), paint);
@@ -4143,6 +4165,8 @@ public class GameView extends View {
             return "目标刷";
         } else if (prop == PROP_SHIELD) {
             return "护盾";
+        } else if (prop == PROP_ENERGY_CORE) {
+            return "核心";
         }
         return "加步";
     }
@@ -4796,6 +4820,8 @@ public class GameView extends View {
             text = "目标刷 +" + feedbackCleared;
         } else if (lastTaskRewardType == 10 && age < 900) {
             text = "护盾生效 x" + lastShieldReward;
+        } else if (lastTaskRewardType == 11 && age < 900) {
+            text = "能量核心 " + getPropName(lastEnergyRewardProp);
         }
 
         textPaint.setTextAlign(Paint.Align.CENTER);
@@ -5104,6 +5130,7 @@ public class GameView extends View {
         final int rockets;
         final int targetBrushes;
         final int shields;
+        final int energyCores;
         final int targetKind;
         final int targetAmount;
         final int iceCount;
@@ -5139,7 +5166,7 @@ public class GameView extends View {
 
         Level(int targetScore, int moves, int hammers, int bombs, int shuffles, int rowBlasts, int colorBlasts,
                 int extraMoves, int magicWands, int brushes, int portalProps, int cleanses, int freezes,
-                int magnets, int clocks, int starHammers, int rockets, int targetBrushes, int shields, int targetKind, int targetAmount, int iceCount, int honeyCount, int stoneCount, int vineCount,
+                int magnets, int clocks, int starHammers, int rockets, int targetBrushes, int shields, int energyCores, int targetKind, int targetAmount, int iceCount, int honeyCount, int stoneCount, int vineCount,
                 int giftCount, int chainCount, int shellCount, int flowerCount, int keyCount, int moveChestCount,
                 int cloudCount, int gemCount, int goldenEggCount, int coinPouchCount, int paintBucketCount, int windmillCount, int jewelBowCount, int stardustJarCount, int rainbowBottleCount, int energyPotionCount, int butterflyCount,
                 int portalCount, int hourglassCount, int luckyStarCount,
@@ -5163,6 +5190,7 @@ public class GameView extends View {
             this.rockets = rockets;
             this.targetBrushes = targetBrushes;
             this.shields = shields;
+            this.energyCores = energyCores;
             this.targetKind = targetKind;
             this.targetAmount = targetAmount;
             this.iceCount = iceCount;
