@@ -11,6 +11,7 @@ import android.graphics.RadialGradient;
 import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.Typeface;
+import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -161,11 +162,13 @@ public class GameView extends View {
 
         if (showingLevelMap) {
             handleLevelMapTap(event.getX(), event.getY());
+            performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
             invalidate();
             return true;
         }
 
         if (levelComplete) {
+            performHapticFeedback(HapticFeedbackConstants.CONFIRM);
             startLevel((levelIndex + 1) % levels.size());
             invalidate();
             return true;
@@ -178,8 +181,10 @@ public class GameView extends View {
                 movesLeft = 5;
                 levelFailed = false;
                 saveCoins();
+                performHapticFeedback(HapticFeedbackConstants.CONFIRM);
             } else {
                 startLevel(levelIndex);
+                performHapticFeedback(HapticFeedbackConstants.REJECT);
             }
             invalidate();
             return true;
@@ -188,12 +193,14 @@ public class GameView extends View {
         if (mapButtonRect.contains(event.getX(), event.getY())) {
             levelMapPage = levelIndex / LEVELS_PER_PAGE;
             showingLevelMap = true;
+            performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
             invalidate();
             return true;
         }
 
         if (hintButtonRect.contains(event.getX(), event.getY())) {
             showAvailableHint();
+            performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
             invalidate();
             return true;
         }
@@ -319,6 +326,7 @@ public class GameView extends View {
                     selectedRow = NONE;
                     selectedCol = NONE;
                 }
+                performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
                 return true;
             }
         }
@@ -339,6 +347,7 @@ public class GameView extends View {
             propInventory[PROP_COLOR_BLAST]--;
             clearCells(buildColorCells(colorOf(board[row][col])), 220);
         }
+        performHapticFeedback(HapticFeedbackConstants.CONFIRM);
         activeProp = NONE;
         selectedRow = NONE;
         selectedCol = NONE;
@@ -353,6 +362,7 @@ public class GameView extends View {
             clearHint();
             clearCells(buildSpecialComboCells(selectedRow, selectedCol, row, col), 360);
             checkLevelState();
+            performHapticFeedback(HapticFeedbackConstants.CONFIRM);
             selectedRow = NONE;
             selectedCol = NONE;
             return;
@@ -362,12 +372,14 @@ public class GameView extends View {
         Set<Cell> matches = findMatches();
         if (matches.isEmpty()) {
             swap(selectedRow, selectedCol, row, col);
+            performHapticFeedback(HapticFeedbackConstants.REJECT);
         } else {
             movesLeft--;
             clearHint();
             createSpecialFromMatch(matches, row, col);
             resolveMatches(matches);
             checkLevelState();
+            performHapticFeedback(HapticFeedbackConstants.CONFIRM);
         }
         selectedRow = NONE;
         selectedCol = NONE;
