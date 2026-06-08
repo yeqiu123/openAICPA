@@ -81,8 +81,9 @@ public class GameView extends View {
     private static final int PROP_ENERGY_CORE = 17;
     private static final int PROP_CHAIN_BREAKER = 18;
     private static final int PROP_LIGHTNING = 19;
-    private static final int PROP_COUNT = 20;
-    private static final int[] PROP_COSTS = {8, 12, 10, 16, 18, 14, 22, 20, 24, 20, 18, 16, 18, 26, 18, 20, 22, 24, 20, 22};
+    private static final int PROP_METEOR = 20;
+    private static final int PROP_COUNT = 21;
+    private static final int[] PROP_COSTS = {8, 12, 10, 16, 18, 14, 22, 20, 24, 20, 18, 16, 18, 26, 18, 20, 22, 24, 20, 22, 24};
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -454,6 +455,7 @@ public class GameView extends View {
             int energyCore = i >= 86 && i % 22 == 14 ? 1 : 0;
             int chainBreaker = i >= 74 && i % 18 == 16 ? 1 : 0;
             int lightning = i >= 80 && i % 17 == 13 ? 1 : 0;
+            int meteor = i >= 90 && i % 19 == 14 ? 1 : 0;
             int targetKind = i % TILE_KINDS;
             int targetAmount = 8 + (i % 7) + i / 10;
             int iceCount = i < 4 ? i * 2 : Math.min(24, 6 + i / 2);
@@ -497,7 +499,7 @@ public class GameView extends View {
                 honeyCount = Math.min(20, honeyCount + 2);
             }
             levels.add(new Level(targetScore, moves, hammer, bomb, shuffle, rowBlast, colorBlast, extraMoves,
-                    magicWand, brush, portalProp, cleanse, freeze, magnet, clock, starHammer, rocket, targetBrush, shield, energyCore, chainBreaker, lightning, targetKind, targetAmount, iceCount, honeyCount, stoneCount, vineCount, giftCount,
+                    magicWand, brush, portalProp, cleanse, freeze, magnet, clock, starHammer, rocket, targetBrush, shield, energyCore, chainBreaker, lightning, meteor, targetKind, targetAmount, iceCount, honeyCount, stoneCount, vineCount, giftCount,
                     chainCount, shellCount, flowerCount, keyCount, moveChestCount, cloudCount, gemCount, goldenEggCount, coinPouchCount, paintBucketCount, windmillCount, jewelBowCount, stardustJarCount, wishLampCount, resonanceDrumCount, rainbowBottleCount, energyPotionCount, butterflyCount, portalCount, hourglassCount, luckyStarCount, luckyCloverCount, mysteryBoxCount, countdownBombCount,
                     moveLimitGoal, comboGoal, scoreGoal, elite));
         }
@@ -606,6 +608,7 @@ public class GameView extends View {
         propInventory[PROP_ENERGY_CORE] = level.energyCores;
         propInventory[PROP_CHAIN_BREAKER] = level.chainBreakers;
         propInventory[PROP_LIGHTNING] = level.lightnings;
+        propInventory[PROP_METEOR] = level.meteors;
         applyChapterMasteryStarterPerks();
 
         // 初始化时避开天然三连，让玩家第一步更清晰。
@@ -770,6 +773,14 @@ public class GameView extends View {
                     propInventory[lastEnergyRewardProp]++;
                     lastTaskRewardType = 11;
                     showFeedback(1, 100);
+                    activeProp = NONE;
+                    selectedRow = NONE;
+                    selectedCol = NONE;
+                } else if (prop == PROP_METEOR) {
+                    // 流星随机砸开多处棋盘格，适合临近失败时制造翻盘机会。
+                    propInventory[prop]--;
+                    clearCells(buildRandomCells(8), 240);
+                    checkLevelState();
                     activeProp = NONE;
                     selectedRow = NONE;
                     selectedCol = NONE;
@@ -1120,6 +1131,14 @@ public class GameView extends View {
                     cells.add(new Cell(nearRow, nearCol));
                 }
             }
+        }
+        return cells;
+    }
+
+    private Set<Cell> buildRandomCells(int count) {
+        Set<Cell> cells = new HashSet<>();
+        while (cells.size() < count && cells.size() < BOARD_SIZE * BOARD_SIZE) {
+            cells.add(new Cell(random.nextInt(BOARD_SIZE), random.nextInt(BOARD_SIZE)));
         }
         return cells;
     }
@@ -4221,7 +4240,7 @@ public class GameView extends View {
     private void drawPropBar(Canvas canvas) {
         float top = boardTop + tileSize * BOARD_SIZE + dp(18);
         float gap = dp(6);
-        int columns = PROP_COUNT > 10 ? 4 : (PROP_COUNT > 9 ? 5 : PROP_COUNT);
+        int columns = PROP_COUNT > 20 ? 5 : (PROP_COUNT > 10 ? 4 : (PROP_COUNT > 9 ? 5 : PROP_COUNT));
         float buttonWidth = (getWidth() - dp(32) - gap * (columns - 1)) / columns;
         for (int prop = 0; prop < PROP_COUNT; prop++) {
             int row = prop / columns;
@@ -4386,6 +4405,12 @@ public class GameView extends View {
             bolt.lineTo(centerX + dp(2), centerY - dp(4));
             bolt.close();
             canvas.drawPath(bolt, paint);
+        } else if (prop == PROP_METEOR) {
+            drawPropStar(canvas, centerX - dp(5), centerY - dp(5), dp(10));
+            paint.setStrokeWidth(dp(4));
+            canvas.drawLine(centerX + dp(12), centerY - dp(16), centerX - dp(12), centerY + dp(16), paint);
+            paint.setColor(Color.WHITE);
+            canvas.drawCircle(centerX - dp(7), centerY + dp(8), dp(4), paint);
         } else {
             canvas.drawRoundRect(new RectF(centerX - dp(13), centerY - dp(10), centerX + dp(13), centerY - dp(2)),
                     dp(4), dp(4), paint);
@@ -4449,6 +4474,8 @@ public class GameView extends View {
             return "破锁";
         } else if (prop == PROP_LIGHTNING) {
             return "闪电";
+        } else if (prop == PROP_METEOR) {
+            return "流星";
         }
         return "加步";
     }
@@ -5498,6 +5525,7 @@ public class GameView extends View {
         final int energyCores;
         final int chainBreakers;
         final int lightnings;
+        final int meteors;
         final int targetKind;
         final int targetAmount;
         final int iceCount;
@@ -5536,7 +5564,7 @@ public class GameView extends View {
 
         Level(int targetScore, int moves, int hammers, int bombs, int shuffles, int rowBlasts, int colorBlasts,
                 int extraMoves, int magicWands, int brushes, int portalProps, int cleanses, int freezes,
-                int magnets, int clocks, int starHammers, int rockets, int targetBrushes, int shields, int energyCores, int chainBreakers, int lightnings, int targetKind, int targetAmount, int iceCount, int honeyCount, int stoneCount, int vineCount,
+                int magnets, int clocks, int starHammers, int rockets, int targetBrushes, int shields, int energyCores, int chainBreakers, int lightnings, int meteors, int targetKind, int targetAmount, int iceCount, int honeyCount, int stoneCount, int vineCount,
                 int giftCount, int chainCount, int shellCount, int flowerCount, int keyCount, int moveChestCount,
                 int cloudCount, int gemCount, int goldenEggCount, int coinPouchCount, int paintBucketCount, int windmillCount, int jewelBowCount, int stardustJarCount, int wishLampCount, int resonanceDrumCount, int rainbowBottleCount, int energyPotionCount, int butterflyCount,
                 int portalCount, int hourglassCount, int luckyStarCount, int luckyCloverCount,
@@ -5563,6 +5591,7 @@ public class GameView extends View {
             this.energyCores = energyCores;
             this.chainBreakers = chainBreakers;
             this.lightnings = lightnings;
+            this.meteors = meteors;
             this.targetKind = targetKind;
             this.targetAmount = targetAmount;
             this.iceCount = iceCount;
