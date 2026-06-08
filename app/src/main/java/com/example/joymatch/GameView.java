@@ -1271,7 +1271,7 @@ public class GameView extends View {
         checkAchievement(6, getTotalRankScore() >= 180, 150);
         checkAchievement(7, lastRank >= 6, 120);
         checkAchievement(8, hiddenChallengeCleared, 100);
-        checkAchievement(9, lastGemReward > 0 || lastPortalReward > 0, 90);
+        checkAchievement(9, lastGemReward > 0 || lastPortalReward > 0 || lastLuckyStarRewardProp != NONE, 90);
     }
 
     private void checkAchievement(int index, boolean reached, int reward) {
