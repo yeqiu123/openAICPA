@@ -73,6 +73,7 @@ public class GameView extends View {
     private final int[][] gift = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[][] chain = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[][] keys = new int[BOARD_SIZE][BOARD_SIZE];
+    private final int[][] moveChest = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[] propInventory = new int[PROP_COUNT];
     private final RectF[] propRects = new RectF[PROP_COUNT];
     private final RectF[] levelRects = new RectF[LEVELS_PER_PAGE];
@@ -161,6 +162,7 @@ public class GameView extends View {
     private int lastChestReward;
     private int lastChapterChestReward;
     private int lastGiftReward;
+    private int lastMoveChestReward;
     private int dailyRewardAmount;
     private int dailyStreak;
     private int rewardTargetMilestone;
@@ -349,11 +351,12 @@ public class GameView extends View {
             int giftCount = i < 12 ? 0 : Math.min(8, 2 + i / 18);
             int chainCount = i < 35 ? 0 : Math.min(14, 3 + i / 9);
             int keyCount = i < 28 ? 0 : Math.min(6, 1 + i / 24 + (i % 9 == 0 ? 1 : 0));
+            int moveChestCount = i >= 16 && i % 6 == 0 ? 1 + (i % 18 == 0 ? 1 : 0) : 0;
             int moveLimitGoal = i >= 18 && i % 4 == 0 ? Math.max(8, moves - 5) : 0;
             int comboGoal = i >= 22 && i % 5 == 0 ? 3 + (i / 25) : 0;
             levels.add(new Level(targetScore, moves, hammer, bomb, shuffle, rowBlast, colorBlast, extraMoves,
                     magicWand, targetKind, targetAmount, iceCount, honeyCount, stoneCount, vineCount, giftCount,
-                    chainCount, keyCount, moveLimitGoal, comboGoal));
+                    chainCount, keyCount, moveChestCount, moveLimitGoal, comboGoal));
         }
     }
 
@@ -376,6 +379,7 @@ public class GameView extends View {
         lastChestReward = 0;
         lastChapterChestReward = 0;
         lastGiftReward = 0;
+        lastMoveChestReward = 0;
         honeySpreadCount = 0;
         challengeCleared = false;
         comboChallengeCleared = false;
@@ -411,6 +415,7 @@ public class GameView extends View {
                 gift[row][col] = 0;
                 chain[row][col] = 0;
                 keys[row][col] = 0;
+                moveChest[row][col] = 0;
                 do {
                     board[row][col] = makePiece(random.nextInt(TILE_KINDS), SPECIAL_NORMAL);
                 } while (createsInitialMatch(row, col));
@@ -423,6 +428,7 @@ public class GameView extends View {
         placeGift(level.giftCount);
         placeChain(level.chainCount);
         placeKeys(level.keyCount);
+        placeMoveChest(level.moveChestCount);
         ensurePlayableBoard();
         levelIntroUntilTime = System.currentTimeMillis() + 1400;
     }
@@ -501,6 +507,7 @@ public class GameView extends View {
             lastTaskRewardType = 5;
             lastGiftReward = 0;
             honeySpreadCount = 0;
+            lastMoveChestReward = 0;
             showFeedback(1, 1);
         }
         playHaptic(HapticFeedbackConstants.CONFIRM);
@@ -570,6 +577,7 @@ public class GameView extends View {
     }
 
     private void clearCells(Set<Cell> cells, int bonusScore) {
+        lastMoveChestReward = 0;
         cells = expandSpecialCells(cells);
         score += bonusScore + cells.size() * 45;
         spawnParticles(cells);
@@ -695,6 +703,7 @@ public class GameView extends View {
     private void resolveMatches(Set<Cell> matches) {
         int combo = 0;
         int totalCleared = 0;
+        lastMoveChestReward = 0;
         while (!matches.isEmpty()) {
             combo++;
             matches = expandSpecialCells(matches);
@@ -1205,6 +1214,18 @@ public class GameView extends View {
         }
     }
 
+    private void placeMoveChest(int count) {
+        int placed = 0;
+        while (placed < count) {
+            int row = random.nextInt(BOARD_SIZE);
+            int col = random.nextInt(BOARD_SIZE);
+            if (moveChest[row][col] == 0 && gift[row][col] == 0 && stone[row][col] == 0 && vine[row][col] == 0) {
+                moveChest[row][col] = 1;
+                placed++;
+            }
+        }
+    }
+
     private void removeCells(Set<Cell> cells) {
         for (Cell cell : cells) {
             int piece = board[cell.row][cell.col];
@@ -1242,6 +1263,13 @@ public class GameView extends View {
                 keys[cell.row][cell.col] = 0;
                 keyRemaining--;
             }
+            if (moveChest[cell.row][cell.col] > 0) {
+                // 步数宝箱提供翻盘空间，清到就返还少量步数。
+                moveChest[cell.row][cell.col] = 0;
+                movesLeft += 2;
+                moveLimitBonus += 2;
+                lastMoveChestReward += 2;
+            }
             board[cell.row][cell.col] = NONE;
         }
     }
@@ -1253,11 +1281,13 @@ public class GameView extends View {
             coins += reward;
             lastGiftReward += reward;
             honeySpreadCount = 0;
+            lastMoveChestReward = 0;
             saveCoins();
         } else {
             propInventory[random.nextInt(PROP_COUNT)]++;
             lastGiftReward++;
             honeySpreadCount = 0;
+            lastMoveChestReward = 0;
         }
     }
 
@@ -1286,6 +1316,7 @@ public class GameView extends View {
         honeyRemaining++;
         honeySpreadCount++;
         lastGiftReward = 0;
+        lastMoveChestReward = 0;
         showFeedback(1, honeySpreadCount);
     }
 
@@ -1314,6 +1345,7 @@ public class GameView extends View {
             lastTaskRewardType = 1;
             lastGiftReward = 0;
             honeySpreadCount = 0;
+            lastMoveChestReward = 0;
             showFeedback(1, 5);
         }
 
@@ -1327,6 +1359,7 @@ public class GameView extends View {
             lastTaskRewardType = 2;
             lastGiftReward = 0;
             honeySpreadCount = 0;
+            lastMoveChestReward = 0;
             showFeedback(1, 6);
         }
 
@@ -1338,6 +1371,7 @@ public class GameView extends View {
             lastTaskRewardType = 3;
             lastGiftReward = 0;
             honeySpreadCount = 0;
+            lastMoveChestReward = 0;
             showFeedback(Math.max(2, bestCombo), 3);
         }
 
@@ -1348,6 +1382,7 @@ public class GameView extends View {
             lastTaskRewardType = 4;
             lastGiftReward = 0;
             honeySpreadCount = 0;
+            lastMoveChestReward = 0;
             showFeedback(1, level.keyCount);
         }
     }
@@ -1884,6 +1919,7 @@ public class GameView extends View {
         drawGift(canvas, row, col, rect);
         drawChain(canvas, row, col, rect);
         drawKey(canvas, row, col, rect);
+        drawMoveChest(canvas, row, col, rect);
     }
 
     private void drawTargetSwatch(Canvas canvas, float centerX, float centerY) {
@@ -2195,6 +2231,22 @@ public class GameView extends View {
         paint.setStyle(Paint.Style.FILL);
     }
 
+    private void drawMoveChest(Canvas canvas, int row, int col, RectF rect) {
+        if (moveChest[row][col] <= 0) {
+            return;
+        }
+
+        paint.setColor(Color.argb(205, 116, 219, 214));
+        RectF box = new RectF(rect.left + dp(10), rect.bottom - dp(24), rect.right - dp(10), rect.bottom - dp(8));
+        canvas.drawRoundRect(box, dp(5), dp(5), paint);
+        paint.setColor(Color.WHITE);
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setTextSize(sp(12));
+        textPaint.setColor(Color.rgb(33, 37, 56));
+        canvas.drawText("+2", box.centerX(), box.centerY() + dp(4), textPaint);
+        textPaint.setColor(Color.WHITE);
+    }
+
     private void spawnParticles(Set<Cell> cells) {
         if (tileSize <= 0) {
             return;
@@ -2264,6 +2316,8 @@ public class GameView extends View {
         String text = feedbackCombo > 1 ? "连击 x" + feedbackCombo : "消除 +" + feedbackCleared;
         if (lastGiftReward > 0 && age < 900) {
             text = "礼盒奖励 +" + lastGiftReward;
+        } else if (lastMoveChestReward > 0 && age < 900) {
+            text = "步数 +" + lastMoveChestReward;
         } else if (honeySpreadCount > 0 && age < 900) {
             text = "蜂蜜蔓延";
         } else if (lastTaskRewardType == 1 && age < 900) {
@@ -2314,6 +2368,9 @@ public class GameView extends View {
         String goalText = "收集 " + level.targetAmount + "  清障 " + getLevelObstacleCount(level);
         if (level.keyCount > 0) {
             goalText += "  钥匙 " + level.keyCount;
+        }
+        if (level.moveChestCount > 0) {
+            goalText += "  步箱 " + level.moveChestCount;
         }
         canvas.drawText(goalText,
                 getWidth() / 2f, centerY + dp(32), textPaint);
@@ -2438,13 +2495,14 @@ public class GameView extends View {
         final int giftCount;
         final int chainCount;
         final int keyCount;
+        final int moveChestCount;
         final int moveLimitGoal;
         final int comboGoal;
 
         Level(int targetScore, int moves, int hammers, int bombs, int shuffles, int rowBlasts, int colorBlasts,
                 int extraMoves, int magicWands,
                 int targetKind, int targetAmount, int iceCount, int honeyCount, int stoneCount, int vineCount,
-                int giftCount, int chainCount, int keyCount, int moveLimitGoal, int comboGoal) {
+                int giftCount, int chainCount, int keyCount, int moveChestCount, int moveLimitGoal, int comboGoal) {
             this.targetScore = targetScore;
             this.moves = moves;
             this.hammers = hammers;
@@ -2463,6 +2521,7 @@ public class GameView extends View {
             this.giftCount = giftCount;
             this.chainCount = chainCount;
             this.keyCount = keyCount;
+            this.moveChestCount = moveChestCount;
             this.moveLimitGoal = moveLimitGoal;
             this.comboGoal = comboGoal;
         }
