@@ -6163,11 +6163,13 @@ public class GameView extends View {
                 ? (chapterEliteClaimed[chapter] ? " 已领" : " 奖励") : "";
         String rankStatus = getChapterRankScore(chapter) >= getChapterRankRewardTarget()
                 ? (chapterRankClaimed[chapter] ? " 已领" : " 奖励") : "";
-        canvas.drawText("章节进度 " + getChapterUnlockedCount(chapter) + "/" + CHAPTER_SIZE
-                + "  星 " + getChapterStars(chapter) + status, getWidth() / 2f, top + dp(26), textPaint);
-        canvas.drawText("章节评级 " + getChapterRankScore(chapter) + "/" + getChapterRankRewardTarget() + rankStatus
+        RectF progressTextRect = new RectF(left, top + dp(14), right, top + dp(34));
+        RectF rankTextRect = new RectF(left, top + dp(28), right, top + dp(50));
+        drawTextFit(canvas, "章节进度 " + getChapterUnlockedCount(chapter) + "/" + CHAPTER_SIZE
+                + "  星 " + getChapterStars(chapter) + status, progressTextRect, 12, Color.WHITE);
+        drawTextFit(canvas, "章节评级 " + getChapterRankScore(chapter) + "/" + getChapterRankRewardTarget() + rankStatus
                         + "  精英 " + getChapterClearedEliteCount(chapter) + "/" + getChapterEliteCount(chapter) + eliteStatus,
-                getWidth() / 2f, top + dp(40), textPaint);
+                rankTextRect, 12, Color.WHITE);
     }
 
     private void drawAchievementProgress(Canvas canvas) {
