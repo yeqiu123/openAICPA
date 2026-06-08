@@ -177,6 +177,7 @@ public class GameView extends View {
     private int lastWinStreakReward;
     private int lastStarUpgradeReward;
     private int lastRankUpgradeReward;
+    private int lastPerfectReward;
     private int starChestClaimed;
     private int rankChestClaimed;
     private int lastChestReward;
@@ -211,6 +212,7 @@ public class GameView extends View {
     private boolean soundEnabled = true;
     private boolean hapticEnabled = true;
     private boolean dailyChallengeMode;
+    private boolean usedContinueThisLevel;
     private SharedPreferences prefs;
 
     public GameView(Context context) {
@@ -284,6 +286,7 @@ public class GameView extends View {
                 coins -= CONTINUE_COST;
                 movesLeft = 5;
                 moveLimitBonus += 5;
+                usedContinueThisLevel = true;
                 levelFailed = false;
                 saveCoins();
                 playHaptic(HapticFeedbackConstants.CONFIRM);
@@ -412,6 +415,7 @@ public class GameView extends View {
         lastWinStreakReward = 0;
         lastStarUpgradeReward = 0;
         lastRankUpgradeReward = 0;
+        lastPerfectReward = 0;
         lastChestReward = 0;
         lastRankChestReward = 0;
         lastChapterChestReward = 0;
@@ -426,6 +430,7 @@ public class GameView extends View {
         challengeCleared = false;
         comboChallengeCleared = false;
         scoreChallengeCleared = false;
+        usedContinueThisLevel = false;
         rewardTargetMilestone = 0;
         rewardObstacleMilestone = 0;
         rewardComboMilestone = 0;
@@ -987,6 +992,9 @@ public class GameView extends View {
         if (bestCombo >= 4) {
             rank++;
         }
+        if (!usedContinueThisLevel && movesUsed <= Math.max(6, level.moves / 2)) {
+            rank++;
+        }
         if ((level.moveLimitGoal > 0 && challengeCleared)
                 || (level.comboGoal > 0 && comboChallengeCleared)
                 || (level.scoreGoal > 0 && scoreChallengeCleared)) {
@@ -1010,6 +1018,17 @@ public class GameView extends View {
             return "C";
         }
         return "-";
+    }
+
+    private void grantPerfectClearReward(Level level) {
+        if (dailyChallengeMode || usedContinueThisLevel || movesUsed > Math.max(6, level.moves / 2) || lastRank < 5) {
+            return;
+        }
+
+        // 完美通关奖励少步数、高评级的打法，给重玩提供更明确的冲刺目标。
+        lastPerfectReward = 18 + lastRank * 4;
+        coins += lastPerfectReward;
+        propInventory[PROP_ROW_BLAST]++;
     }
 
     private void saveDailyChallengeReward() {
@@ -1118,6 +1137,7 @@ public class GameView extends View {
             lastRankUpgradeReward = (levelRanks[levelIndex] - oldRank) * 8;
             coins += lastRankUpgradeReward;
         }
+        grantPerfectClearReward(level);
         grantAchievementRewards();
         grantChapterMasteryReward();
         prefs.edit()
@@ -2924,7 +2944,7 @@ public class GameView extends View {
         paint.setColor(levelComplete ? Color.argb(110, 255, 213, 92) : Color.argb(95, 255, 107, 154));
         canvas.drawCircle(getWidth() / 2f, getHeight() * 0.42f - dp(12), dp(92), paint);
         if (levelComplete && (lastAchievementReward > 0 || lastStarUpgradeReward > 0 || lastRankUpgradeReward > 0
-                || lastWinStreakReward > 0
+                || lastPerfectReward > 0 || lastWinStreakReward > 0
                 || lastChapterMasteryReward > 0)) {
             drawRewardSparkles(canvas, getWidth() / 2f, getHeight() * 0.42f - dp(12));
         }
@@ -2944,6 +2964,9 @@ public class GameView extends View {
             if (scoreChallengeCleared) {
                 bonusText += "  高分达成";
             }
+            if (lastPerfectReward > 0) {
+                bonusText += "  完美通关";
+            }
             canvas.drawText(bonusText, getWidth() / 2f, getHeight() * 0.49f, textPaint);
             drawChallengeBadges(canvas, getWidth() / 2f, getHeight() * 0.515f);
             String scoreText = dailyChallengeMode ? "挑战分 " + score : "最佳分 " + levelBestScores[levelIndex];
@@ -2958,6 +2981,8 @@ public class GameView extends View {
                 rewardText = "金币 +" + lastCoinReward + "  成就奖励+" + lastAchievementReward + "  点击继续";
             } else if (lastStarUpgradeReward > 0) {
                 rewardText = "金币 +" + lastCoinReward + "  补星+" + lastStarUpgradeReward + "  点击继续";
+            } else if (lastPerfectReward > 0) {
+                rewardText = "金币 +" + lastCoinReward + "  完美+" + lastPerfectReward + "  点击继续";
             } else if (lastRankUpgradeReward > 0) {
                 rewardText = "金币 +" + lastCoinReward + "  评级+" + lastRankUpgradeReward + "  点击继续";
             } else if (lastWinStreakReward > 0) {
