@@ -3,6 +3,7 @@ const STORAGE_KEY = "openai-account-panel:v1";
 const state = {
   view: "accounts",
   accounts: [],
+  selectedIds: new Set(),
   filters: {
     keyword: "",
     provider: "all",
@@ -39,6 +40,13 @@ function writeStore() {
   );
 }
 
+function parseJsonObject(text, fallback = {}) {
+  const trimmed = String(text || "").trim();
+  if (!trimmed) return fallback;
+  const parsed = JSON.parse(trimmed);
+  return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : fallback;
+}
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -63,6 +71,7 @@ function splitList(value) {
 }
 
 function normalizeAccount(input = {}) {
+  const extra = input.extra && typeof input.extra === "object" ? input.extra : {};
   return {
     id: input.id || uid(),
     name: String(input.name || "未命名账号"),
@@ -81,7 +90,12 @@ function normalizeAccount(input = {}) {
     tags: Array.isArray(input.tags) ? input.tags : splitList(input.tags || ""),
     notes: String(input.notes || ""),
     credentials: input.credentials && typeof input.credentials === "object" ? input.credentials : {},
-    extra: input.extra && typeof input.extra === "object" ? input.extra : {},
+    headers: input.headers && typeof input.headers === "object" ? input.headers : extra.headers || {},
+    modelMapping:
+      input.modelMapping && typeof input.modelMapping === "object"
+        ? input.modelMapping
+        : extra.model_mapping || extra.modelMapping || {},
+    extra,
     source: String(input.source || "manual"),
     createdAt: input.createdAt || nowISO(),
     updatedAt: nowISO(),
@@ -227,16 +241,28 @@ function renderToolbar() {
 
 function renderAccountTable() {
   const rows = filteredAccounts();
+  const selected = selectedAccounts();
+  const allVisibleSelected = rows.length > 0 && rows.every((item) => state.selectedIds.has(item.id));
   return `
     <section class="card section">
       <div class="section-head">
         <div class="section-title">${state.view === "usage" ? "用量概览" : "账号列表"}</div>
         <div class="muted">${rows.length} 个结果</div>
       </div>
+      <div class="batchbar ${selected.length ? "show" : ""}">
+        <div>已选择 ${selected.length} 个账号</div>
+        <div class="actions">
+          <button class="small" id="batchEnableBtn">启用</button>
+          <button class="small" id="batchDisableBtn">停用</button>
+          <button class="small" id="batchExportBtn">导出所选</button>
+          <button class="small danger" id="batchDeleteBtn">删除</button>
+        </div>
+      </div>
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
+              <th class="check-cell"><input id="selectAllVisible" type="checkbox" ${allVisibleSelected ? "checked" : ""} /></th>
               <th>账号</th>
               <th>提供商</th>
               <th>地址</th>
@@ -248,7 +274,7 @@ function renderAccountTable() {
             </tr>
           </thead>
           <tbody>
-            ${rows.map(renderAccountRow).join("") || `<tr><td colspan="8"><div class="empty">暂无账号</div></td></tr>`}
+            ${rows.map(renderAccountRow).join("") || `<tr><td colspan="9"><div class="empty">暂无账号</div></td></tr>`}
           </tbody>
         </table>
       </div>
@@ -260,6 +286,7 @@ function renderAccountRow(account) {
   const percent = quotaPercent(account);
   return `
     <tr>
+      <td class="check-cell"><input type="checkbox" data-select="${account.id}" ${state.selectedIds.has(account.id) ? "checked" : ""} /></td>
       <td>
         <strong>${escapeHtml(account.name)}</strong>
         <div class="muted">${escapeHtml(account.models.slice(0, 3).join(", "))}</div>
@@ -274,8 +301,12 @@ function renderAccountRow(account) {
       <td>${formatNumber(account.priority)}<div class="muted">并发 ${formatNumber(account.concurrency)}</div></td>
       <td><span class="pill ${statusClass(account.status)}">${statusText(account.status)}</span></td>
       <td>
-        <button data-edit="${account.id}">编辑</button>
-        <button class="danger" data-delete="${account.id}">删除</button>
+        <div class="row-actions">
+          <button class="small" data-copy="${account.id}">复制</button>
+          <button class="small" data-clone="${account.id}">克隆</button>
+          <button class="small" data-edit="${account.id}">编辑</button>
+          <button class="small danger" data-delete="${account.id}">删除</button>
+        </div>
       </td>
     </tr>
   `;
@@ -411,9 +442,40 @@ function bindViewEvents() {
       openAccountModal(account);
     });
   });
+  document.querySelectorAll("[data-select]").forEach((input) => {
+    input.addEventListener("change", () => {
+      if (input.checked) state.selectedIds.add(input.dataset.select);
+      else state.selectedIds.delete(input.dataset.select);
+      renderView();
+    });
+  });
+  const selectAll = document.querySelector("#selectAllVisible");
+  if (selectAll) {
+    selectAll.addEventListener("change", () => {
+      filteredAccounts().forEach((account) => {
+        if (selectAll.checked) state.selectedIds.add(account.id);
+        else state.selectedIds.delete(account.id);
+      });
+      renderView();
+    });
+  }
+  document.querySelectorAll("[data-copy]").forEach((button) => {
+    button.addEventListener("click", () => copyAccountConfig(button.dataset.copy));
+  });
+  document.querySelectorAll("[data-clone]").forEach((button) => {
+    button.addEventListener("click", () => cloneAccount(button.dataset.clone));
+  });
   document.querySelectorAll("[data-delete]").forEach((button) => {
     button.addEventListener("click", () => deleteAccount(button.dataset.delete));
   });
+  const batchEnable = document.querySelector("#batchEnableBtn");
+  const batchDisable = document.querySelector("#batchDisableBtn");
+  const batchExport = document.querySelector("#batchExportBtn");
+  const batchDelete = document.querySelector("#batchDeleteBtn");
+  if (batchEnable) batchEnable.addEventListener("click", () => batchSetStatus("active"));
+  if (batchDisable) batchDisable.addEventListener("click", () => batchSetStatus("disabled"));
+  if (batchExport) batchExport.addEventListener("click", () => downloadJson("selected-accounts.json", buildUnifiedExport(selectedAccounts())));
+  if (batchDelete) batchDelete.addEventListener("click", batchDeleteAccounts);
 }
 
 function bindTransferEvents() {
@@ -457,6 +519,8 @@ function openAccountModal(account) {
             ${formInput("tokenUsed", "Token 用量", item.tokenUsed, "number")}
             ${formTextarea("models", "模型（逗号或换行分隔）", item.models.join(","))}
             ${formTextarea("tags", "标签（逗号或换行分隔）", item.tags.join(","))}
+            ${formTextarea("headers", "请求头 JSON", JSON.stringify(item.headers || {}, null, 2))}
+            ${formTextarea("modelMapping", "模型映射 JSON", JSON.stringify(item.modelMapping || {}, null, 2))}
             ${formTextarea("notes", "备注", item.notes)}
           </div>
         </div>
@@ -512,6 +576,15 @@ function closeModal() {
 
 function saveAccount(form, id) {
   const existing = state.accounts.find((item) => item.id === id);
+  let headers = {};
+  let modelMapping = {};
+  try {
+    headers = parseJsonObject(form.get("headers"));
+    modelMapping = parseJsonObject(form.get("modelMapping"));
+  } catch (error) {
+    showToast(`JSON 字段格式错误：${error.message}`);
+    return;
+  }
   const next = normalizeAccount({
     ...existing,
     id,
@@ -529,6 +602,8 @@ function saveAccount(form, id) {
     tokenUsed: form.get("tokenUsed"),
     models: splitList(form.get("models")),
     tags: splitList(form.get("tags")),
+    headers,
+    modelMapping,
     notes: form.get("notes"),
   });
   if (!next.name.trim()) {
@@ -548,9 +623,89 @@ function saveAccount(form, id) {
 
 function deleteAccount(id) {
   state.accounts = state.accounts.filter((item) => item.id !== id);
+  state.selectedIds.delete(id);
   writeStore();
   renderView();
   showToast("账号已删除");
+}
+
+function selectedAccounts() {
+  return state.accounts.filter((item) => state.selectedIds.has(item.id));
+}
+
+function cloneAccount(id) {
+  const account = state.accounts.find((item) => item.id === id);
+  if (!account) return;
+  const cloned = normalizeAccount({
+    ...account,
+    id: uid(),
+    name: `${account.name} 副本`,
+    source: "clone",
+    createdAt: nowISO(),
+  });
+  state.accounts.unshift(cloned);
+  writeStore();
+  renderView();
+  showToast("账号已克隆");
+}
+
+function batchSetStatus(status) {
+  const ids = new Set([...state.selectedIds]);
+  state.accounts = state.accounts.map((account) =>
+    ids.has(account.id) ? normalizeAccount({ ...account, status }) : account
+  );
+  state.selectedIds.clear();
+  writeStore();
+  renderView();
+  showToast("批量状态已更新");
+}
+
+function batchDeleteAccounts() {
+  const ids = new Set([...state.selectedIds]);
+  state.accounts = state.accounts.filter((account) => !ids.has(account.id));
+  state.selectedIds.clear();
+  writeStore();
+  renderView();
+  showToast("已删除所选账号");
+}
+
+async function copyAccountConfig(id) {
+  const account = state.accounts.find((item) => item.id === id);
+  if (!account) return;
+  const command = [
+    "curl",
+    `${account.baseUrl.replace(/\/$/, "")}/chat/completions`,
+    "-H",
+    `"Authorization: Bearer ${account.apiKey || "<api-key>"}"`,
+    "-H",
+    '"Content-Type: application/json"',
+    "-d",
+    `'{"model":"${account.models[0] || "gpt-4o-mini"}","messages":[{"role":"user","content":"ping"}]}'`,
+  ].join(" ");
+
+  try {
+    await navigator.clipboard.writeText(command);
+    showToast("调用示例已复制");
+  } catch {
+    openCopyModal(command);
+  }
+}
+
+function openCopyModal(text) {
+  const modal = document.querySelector("#modalRoot");
+  modal.className = "modal-backdrop open";
+  modal.innerHTML = `
+    <div class="modal">
+      <div class="modal-head">
+        <div class="section-title">复制调用示例</div>
+        <button id="closeModalBtn">关闭</button>
+      </div>
+      <div class="modal-body">
+        <div class="copy-box">${escapeHtml(text)}</div>
+      </div>
+    </div>
+  `;
+  document.querySelector("#closeModalBtn").addEventListener("click", closeModal);
 }
 
 function showToast(message) {
@@ -573,12 +728,12 @@ function downloadJson(filename, data) {
   URL.revokeObjectURL(url);
 }
 
-function buildUnifiedExport() {
+function buildUnifiedExport(accounts = state.accounts) {
   return {
     type: "openai-account-panel",
     version: 1,
     exported_at: nowISO(),
-    accounts: state.accounts,
+    accounts,
   };
 }
 

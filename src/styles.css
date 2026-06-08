@@ -54,6 +54,15 @@ button.primary {
   color: #fff;
 }
 
+button.ghost {
+  background: transparent;
+}
+
+button.small {
+  padding: 6px 8px;
+  font-size: 12px;
+}
+
 button.danger {
   border-color: #e0b4b4;
   color: var(--danger);
@@ -207,6 +216,22 @@ textarea {
   padding: 16px;
 }
 
+.batchbar {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  background: #eef6f5;
+  border: 1px solid #c6dbd8;
+  border-radius: 8px;
+}
+
+.batchbar.show {
+  display: flex;
+}
+
 .section-head {
   display: flex;
   justify-content: space-between;
@@ -237,7 +262,7 @@ table {
 th,
 td {
   border-bottom: 1px solid var(--line);
-  padding: 11px 10px;
+  padding: 10px 9px;
   text-align: left;
   vertical-align: top;
   font-size: 14px;
@@ -275,6 +300,32 @@ th {
 .pill.danger {
   background: #fde9e9;
   color: var(--danger);
+}
+
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 190px;
+}
+
+.check-cell {
+  width: 38px;
+}
+
+.check-cell input {
+  width: auto;
+}
+
+.copy-box {
+  white-space: pre-wrap;
+  word-break: break-all;
+  background: #f7f9f8;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  color: #20303a;
+  line-height: 1.5;
 }
 
 .form-grid {
@@ -402,7 +453,8 @@ th {
 
   .topbar,
   .section-head,
-  .modal-head {
+  .modal-head,
+  .batchbar {
     display: grid;
   }
 
