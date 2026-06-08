@@ -5779,6 +5779,9 @@ public class GameView extends View {
                 canvas.drawRoundRect(rect, dp(10), dp(10), paint);
                 paint.setStyle(Paint.Style.FILL);
             }
+            if (levelRanks[level] >= 4) {
+                drawHighRankMapGlow(canvas, level, rect);
+            }
 
             textPaint.setTextSize(sp(14));
             textPaint.setColor(unlocked ? Color.rgb(33, 37, 56) : Color.argb(145, 255, 255, 255));
@@ -5807,6 +5810,17 @@ public class GameView extends View {
         }
 
         drawLevelMapPager(canvas);
+    }
+
+    private void drawHighRankMapGlow(Canvas canvas, int level, RectF rect) {
+        int alpha = levelRanks[level] >= 6 ? 230 : (levelRanks[level] == 5 ? 190 : 150);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(levelRanks[level] >= 6 ? 2.4f : 1.8f));
+        paint.setColor(Color.argb(alpha, 255, 236, 133));
+        // 高评级关卡在地图上加亮，强化冲S/SS/SSS后的收藏感。
+        canvas.drawRoundRect(new RectF(rect.left + dp(2), rect.top + dp(2), rect.right - dp(2), rect.bottom - dp(2)),
+                dp(9), dp(9), paint);
+        paint.setStyle(Paint.Style.FILL);
     }
 
     private void drawFailAssistMark(Canvas canvas, int level, RectF rect, boolean unlocked) {
