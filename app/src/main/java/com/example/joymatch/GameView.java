@@ -3028,7 +3028,10 @@ public class GameView extends View {
     private void grantSeasonPropReward(int step) {
         lastSeasonRewardProp = NONE;
         lastSeasonRewardAmount = 0;
-        if (step % 8 == 0) {
+        if (step % 10 == 0) {
+            lastSeasonRewardProp = PROP_STAR_HARP;
+            lastSeasonRewardAmount = 1;
+        } else if (step % 8 == 0) {
             lastSeasonRewardProp = PROP_SNOW_GLOBE;
             lastSeasonRewardAmount = 1;
         } else if (step % 6 == 0) {
