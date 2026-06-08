@@ -88,8 +88,9 @@ public class GameView extends View {
     private static final int PROP_TIDE = 21;
     private static final int PROP_AURORA_ORB = 22;
     private static final int PROP_STARFISH_PICK = 23;
-    private static final int PROP_COUNT = 24;
-    private static final int[] PROP_COSTS = {8, 12, 10, 16, 18, 14, 22, 20, 24, 20, 18, 16, 18, 26, 18, 20, 22, 24, 20, 22, 24, 26, 28, 24};
+    private static final int PROP_MOON_TICKET = 24;
+    private static final int PROP_COUNT = 25;
+    private static final int[] PROP_COSTS = {8, 12, 10, 16, 18, 14, 22, 20, 24, 20, 18, 16, 18, 26, 18, 20, 22, 24, 20, 22, 24, 26, 28, 24, 26};
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -481,6 +482,7 @@ public class GameView extends View {
             int tide = i >= 126 && i % 20 == 6 ? 1 : 0;
             int auroraOrb = i >= 142 && i % 21 == 16 ? 1 : 0;
             int starfishPick = i >= 124 && i % 18 == 8 ? 1 : 0;
+            int moonTicket = i >= 164 && i % 16 == 4 ? 1 : 0;
             int targetKind = i % TILE_KINDS;
             int targetAmount = 8 + (i % 7) + i / 10;
             int iceCount = i < 4 ? i * 2 : Math.min(24, 6 + i / 2);
@@ -527,7 +529,7 @@ public class GameView extends View {
                 honeyCount = Math.min(20, honeyCount + 2);
             }
             levels.add(new Level(targetScore, moves, hammer, bomb, shuffle, rowBlast, colorBlast, extraMoves,
-                    magicWand, brush, portalProp, cleanse, freeze, magnet, clock, starHammer, rocket, targetBrush, shield, energyCore, chainBreaker, lightning, meteor, tide, auroraOrb, starfishPick, targetKind, targetAmount, iceCount, honeyCount, stoneCount, vineCount, giftCount,
+                    magicWand, brush, portalProp, cleanse, freeze, magnet, clock, starHammer, rocket, targetBrush, shield, energyCore, chainBreaker, lightning, meteor, tide, auroraOrb, starfishPick, moonTicket, targetKind, targetAmount, iceCount, honeyCount, stoneCount, vineCount, giftCount,
                     chainCount, shellCount, flowerCount, coralReefCount, keyCount, moveChestCount, cloudCount, gemCount, goldenEggCount, coinPouchCount, paintBucketCount, windmillCount, jewelBowCount, stardustJarCount, wishLampCount, resonanceDrumCount, auroraPrismCount, rainbowBottleCount, energyPotionCount, butterflyCount, portalCount, hourglassCount, luckyStarCount, luckyCloverCount, mysteryBoxCount, pearlCount, countdownBombCount,
                     moveLimitGoal, comboGoal, scoreGoal, elite));
         }
@@ -645,6 +647,7 @@ public class GameView extends View {
         propInventory[PROP_TIDE] = level.tides;
         propInventory[PROP_AURORA_ORB] = level.auroraOrbs;
         propInventory[PROP_STARFISH_PICK] = level.starfishPicks;
+        propInventory[PROP_MOON_TICKET] = level.moonTickets;
         applyChapterMasteryStarterPerks();
 
         // 初始化时避开天然三连，让玩家第一步更清晰。
@@ -856,6 +859,42 @@ public class GameView extends View {
                     lastTaskRewardType = 14;
                     lastFlowerReward = 0;
                     showFeedback(1, Math.max(1, chipped));
+                    checkLevelState();
+                    activeProp = NONE;
+                    selectedRow = NONE;
+                    selectedCol = NONE;
+                } else if (prop == PROP_MOON_TICKET) {
+                    // 月光票券补步并送一枚方向特效，作为终章关卡的轻量翻盘道具。
+                    propInventory[prop]--;
+                    movesLeft += 2;
+                    moveLimitBonus += 2;
+                    clearCells(buildRandomCells(4), 160);
+                    upgradeRandomDirectionalPiece();
+                    lastTaskRewardType = 15;
+                    lastGiftReward = 0;
+                    lastMoveChestReward = 0;
+                    lastCloudReward = 0;
+                    lastFlowerReward = 0;
+                    lastGemReward = 0;
+                    lastGoldenEggReward = 0;
+                    lastCoinPouchReward = 0;
+                    lastPaintBucketReward = 0;
+                    lastWindmillReward = 0;
+                    lastJewelBowReward = 0;
+                    lastStardustJarReward = 0;
+                    lastWishLampReward = 0;
+                    lastResonanceDrumReward = 0;
+                    lastAuroraPrismReward = 0;
+                    lastRainbowBottleReward = 0;
+                    lastEnergyPotionReward = 0;
+                    lastButterflyReward = 0;
+                    lastPortalReward = 0;
+                    lastHourglassReward = 0;
+                    lastLuckyStarRewardProp = NONE;
+                    lastLuckyCloverRewardType = 0;
+                    lastMysteryRewardType = 0;
+                    lastPearlReward = 0;
+                    showFeedback(1, 2);
                     checkLevelState();
                     activeProp = NONE;
                     selectedRow = NONE;
@@ -4841,6 +4880,12 @@ public class GameView extends View {
             canvas.drawLine(centerX + dp(3), centerY + dp(2), centerX + dp(15), centerY + dp(15), paint);
             paint.setColor(Color.WHITE);
             canvas.drawLine(centerX + dp(8), centerY + dp(7), centerX + dp(2), centerY + dp(13), paint);
+        } else if (prop == PROP_MOON_TICKET) {
+            RectF ticket = new RectF(centerX - dp(15), centerY - dp(10), centerX + dp(15), centerY + dp(10));
+            canvas.drawRoundRect(ticket, dp(4), dp(4), paint);
+            paint.setColor(Color.WHITE);
+            drawPropStar(canvas, centerX - dp(5), centerY, dp(5));
+            canvas.drawCircle(centerX + dp(8), centerY, dp(4), paint);
         } else {
             canvas.drawRoundRect(new RectF(centerX - dp(13), centerY - dp(10), centerX + dp(13), centerY - dp(2)),
                     dp(4), dp(4), paint);
@@ -4912,6 +4957,8 @@ public class GameView extends View {
             return "极光";
         } else if (prop == PROP_STARFISH_PICK) {
             return "海星镐";
+        } else if (prop == PROP_MOON_TICKET) {
+            return "月票";
         }
         return "加步";
     }
@@ -5700,6 +5747,8 @@ public class GameView extends View {
             text = "极光球 彩虹生成";
         } else if (lastTaskRewardType == 14 && age < 900) {
             text = "海星镐 +" + feedbackCleared;
+        } else if (lastTaskRewardType == 15 && age < 900) {
+            text = "月光票券 +2步";
         }
 
         textPaint.setTextAlign(Paint.Align.CENTER);
@@ -6054,6 +6103,7 @@ public class GameView extends View {
         final int tides;
         final int auroraOrbs;
         final int starfishPicks;
+        final int moonTickets;
         final int targetKind;
         final int targetAmount;
         final int iceCount;
@@ -6095,7 +6145,7 @@ public class GameView extends View {
 
         Level(int targetScore, int moves, int hammers, int bombs, int shuffles, int rowBlasts, int colorBlasts,
                 int extraMoves, int magicWands, int brushes, int portalProps, int cleanses, int freezes,
-                int magnets, int clocks, int starHammers, int rockets, int targetBrushes, int shields, int energyCores, int chainBreakers, int lightnings, int meteors, int tides, int auroraOrbs, int starfishPicks, int targetKind, int targetAmount, int iceCount, int honeyCount, int stoneCount, int vineCount,
+                int magnets, int clocks, int starHammers, int rockets, int targetBrushes, int shields, int energyCores, int chainBreakers, int lightnings, int meteors, int tides, int auroraOrbs, int starfishPicks, int moonTickets, int targetKind, int targetAmount, int iceCount, int honeyCount, int stoneCount, int vineCount,
                 int giftCount, int chainCount, int shellCount, int flowerCount, int coralReefCount, int keyCount, int moveChestCount,
                 int cloudCount, int gemCount, int goldenEggCount, int coinPouchCount, int paintBucketCount, int windmillCount, int jewelBowCount, int stardustJarCount, int wishLampCount, int resonanceDrumCount, int auroraPrismCount, int rainbowBottleCount, int energyPotionCount, int butterflyCount,
                 int portalCount, int hourglassCount, int luckyStarCount, int luckyCloverCount,
@@ -6126,6 +6176,7 @@ public class GameView extends View {
             this.tides = tides;
             this.auroraOrbs = auroraOrbs;
             this.starfishPicks = starfishPicks;
+            this.moonTickets = moonTickets;
             this.targetKind = targetKind;
             this.targetAmount = targetAmount;
             this.iceCount = iceCount;
