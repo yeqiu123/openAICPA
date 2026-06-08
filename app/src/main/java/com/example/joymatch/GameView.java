@@ -2961,11 +2961,16 @@ public class GameView extends View {
         canvas.drawCircle(centerX - tileSize * 0.16f, centerY - tileSize * 0.18f, tileSize * 0.13f, paint);
 
         if (selectedRow == row && selectedCol == col) {
+            float pulse = 0.72f + 0.28f * (float) Math.sin(System.currentTimeMillis() / 120.0);
+            paint.setColor(Color.argb((int) (70 + pulse * 55), 255, 255, 255));
+            canvas.drawRoundRect(new RectF(rect.left - dp(4), rect.top - dp(4),
+                    rect.right + dp(4), rect.bottom + dp(4)), dp(16), dp(16), paint);
             paint.setStyle(Paint.Style.STROKE);
             paint.setStrokeWidth(dp(4));
             paint.setColor(Color.WHITE);
             canvas.drawRoundRect(rect, dp(14), dp(14), paint);
             paint.setStyle(Paint.Style.FILL);
+            postInvalidateOnAnimation();
         }
 
         if (isHintCell(row, col)) {
@@ -2977,6 +2982,7 @@ public class GameView extends View {
             postInvalidateOnAnimation();
         }
 
+        drawSpecialGlow(canvas, specialOf(piece), rect, centerX, centerY);
         drawTileIcon(canvas, colorOf(piece), centerX, centerY);
         drawSpecialMark(canvas, specialOf(piece), centerX, centerY);
         drawHoney(canvas, row, col, rect);
@@ -2995,6 +3001,26 @@ public class GameView extends View {
         drawMysteryBox(canvas, row, col, rect);
         drawKey(canvas, row, col, rect);
         drawMoveChest(canvas, row, col, rect);
+    }
+
+    private void drawSpecialGlow(Canvas canvas, int special, RectF rect, float centerX, float centerY) {
+        if (special == SPECIAL_NORMAL) {
+            return;
+        }
+
+        // 特效棋持续发光，方便玩家在复杂棋盘里快速识别可连锁目标。
+        float pulse = 0.65f + 0.35f * (float) Math.sin(System.currentTimeMillis() / 180.0);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(2 + pulse * 2));
+        paint.setColor(Color.argb((int) (105 + pulse * 80), 255, 255, 255));
+        canvas.drawRoundRect(new RectF(rect.left + dp(2), rect.top + dp(2),
+                rect.right - dp(2), rect.bottom - dp(2)), dp(12), dp(12), paint);
+        if (special == SPECIAL_RAINBOW || special == SPECIAL_BOMB) {
+            paint.setColor(Color.argb((int) (95 + pulse * 75), 255, 236, 118));
+            canvas.drawCircle(centerX, centerY, tileSize * (0.31f + pulse * 0.04f), paint);
+        }
+        paint.setStyle(Paint.Style.FILL);
+        postInvalidateOnAnimation();
     }
 
     private void drawTargetSwatch(Canvas canvas, float centerX, float centerY) {
