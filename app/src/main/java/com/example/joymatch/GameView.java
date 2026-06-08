@@ -40,6 +40,9 @@ public class GameView extends View {
     private static final String KEY_DAILY_STREAK = "daily_streak";
     private static final String KEY_DAILY_CHALLENGE_DAY = "daily_challenge_day";
     private static final String KEY_DAILY_CHALLENGE_STREAK = "daily_challenge_streak";
+    private static final String KEY_DAILY_GOAL_DAY = "daily_goal_day";
+    private static final String KEY_DAILY_GOAL_PROGRESS = "daily_goal_progress";
+    private static final String KEY_DAILY_GOAL_CLAIMED = "daily_goal_claimed";
     private static final String KEY_SOUND_ENABLED = "sound_enabled";
     private static final String KEY_HAPTIC_ENABLED = "haptic_enabled";
     private static final int BOARD_SIZE = 8;
@@ -105,6 +108,7 @@ public class GameView extends View {
     private final RectF starChestRect = new RectF();
     private final RectF rankChestRect = new RectF();
     private final RectF dailyChallengeRect = new RectF();
+    private final RectF dailyGoalRect = new RectF();
     private final RectF chapterChestRect = new RectF();
     private final RectF replayHintRect = new RectF();
     private final int[] levelStars = new int[LEVEL_COUNT];
@@ -216,6 +220,8 @@ public class GameView extends View {
     private int dailyRewardAmount;
     private int dailyStreak;
     private int dailyChallengeStreak;
+    private int dailyGoalProgress;
+    private int lastDailyGoalReward;
     private int rewardTargetMilestone;
     private int rewardObstacleMilestone;
     private int rewardComboMilestone;
@@ -235,6 +241,7 @@ public class GameView extends View {
     private boolean soundEnabled = true;
     private boolean hapticEnabled = true;
     private boolean dailyChallengeMode;
+    private boolean dailyGoalClaimed;
     private boolean usedContinueThisLevel;
     private SharedPreferences prefs;
 
@@ -461,6 +468,7 @@ public class GameView extends View {
         lastEliteReward = 0;
         lastFirstClearReward = 0;
         lastFullStarReward = 0;
+        lastDailyGoalReward = 0;
         lastChestReward = 0;
         lastRankChestReward = 0;
         lastChapterChestReward = 0;
@@ -1268,6 +1276,47 @@ public class GameView extends View {
                 .apply();
     }
 
+    private void updateDailyGoalProgress() {
+        if (dailyChallengeMode || dailyGoalClaimed) {
+            return;
+        }
+
+        // 每日目标按通关星数累积，给主线和补星都提供轻量回访奖励。
+        dailyGoalProgress = Math.min(6, dailyGoalProgress + lastStars);
+        prefs.edit()
+                .putLong(KEY_DAILY_GOAL_DAY, getToday())
+                .putInt(KEY_DAILY_GOAL_PROGRESS, dailyGoalProgress)
+                .apply();
+    }
+
+    private void claimDailyGoalReward() {
+        if (dailyGoalClaimed || dailyGoalProgress < 6) {
+            lastChestReward = 0;
+            lastRankChestReward = 0;
+            lastChapterChestReward = 0;
+            lastDailyGoalReward = 0;
+            lastChestNoticeType = 4;
+            chestNoticeUntilTime = System.currentTimeMillis() + 1400;
+            return;
+        }
+
+        lastDailyGoalReward = 35 + Math.min(15, dailyStreak * 2);
+        lastChestReward = 0;
+        lastRankChestReward = 0;
+        lastChapterChestReward = 0;
+        coins += lastDailyGoalReward;
+        dailyGoalClaimed = true;
+        prefs.edit()
+                .putLong(KEY_DAILY_GOAL_DAY, getToday())
+                .putInt(KEY_DAILY_GOAL_PROGRESS, dailyGoalProgress)
+                .putBoolean(KEY_DAILY_GOAL_CLAIMED, true)
+                .putInt(KEY_COINS, coins)
+                .apply();
+        chestNoticeUntilTime = System.currentTimeMillis() + 1800;
+        playHaptic(HapticFeedbackConstants.CONFIRM);
+        playSuccessTone();
+    }
+
     private void grantWinStreakReward() {
         winStreak++;
         lastWinStreakReward = winStreak >= 3 ? Math.min(60, winStreak * 5) : 0;
@@ -1328,6 +1377,7 @@ public class GameView extends View {
         soundEnabled = prefs.getBoolean(KEY_SOUND_ENABLED, true);
         hapticEnabled = prefs.getBoolean(KEY_HAPTIC_ENABLED, true);
         grantDailyReward();
+        loadDailyGoal();
         for (int i = 0; i < levels.size(); i++) {
             levelStars[i] = prefs.getInt(KEY_STARS_PREFIX + i, 0);
             levelBestScores[i] = prefs.getInt(KEY_BEST_SCORE_PREFIX + i, 0);
@@ -1373,6 +1423,7 @@ public class GameView extends View {
         grantPerfectClearReward(level);
         grantAchievementRewards();
         grantChapterMasteryReward();
+        updateDailyGoalProgress();
         prefs.edit()
                 .putInt(KEY_UNLOCKED_LEVEL, highestUnlockedLevel)
                 .putInt(KEY_STARS_PREFIX + levelIndex, levelStars[levelIndex])
@@ -1502,6 +1553,23 @@ public class GameView extends View {
                 .apply();
     }
 
+    private void loadDailyGoal() {
+        long today = getToday();
+        if (prefs.getLong(KEY_DAILY_GOAL_DAY, -1L) != today) {
+            dailyGoalProgress = 0;
+            dailyGoalClaimed = false;
+            prefs.edit()
+                    .putLong(KEY_DAILY_GOAL_DAY, today)
+                    .putInt(KEY_DAILY_GOAL_PROGRESS, dailyGoalProgress)
+                    .putBoolean(KEY_DAILY_GOAL_CLAIMED, false)
+                    .apply();
+            return;
+        }
+
+        dailyGoalProgress = prefs.getInt(KEY_DAILY_GOAL_PROGRESS, 0);
+        dailyGoalClaimed = prefs.getBoolean(KEY_DAILY_GOAL_CLAIMED, false);
+    }
+
     private long getToday() {
         return System.currentTimeMillis() / 86400000L;
     }
@@ -1510,6 +1578,11 @@ public class GameView extends View {
         if (dailyChallengeRect.contains(x, y)) {
             showingLevelMap = false;
             startDailyChallenge();
+            return;
+        }
+
+        if (dailyGoalRect.contains(x, y)) {
+            claimDailyGoalReward();
             return;
         }
 
@@ -1561,6 +1634,7 @@ public class GameView extends View {
             lastChestReward = 0;
             lastRankChestReward = 0;
             lastChapterChestReward = 0;
+            lastDailyGoalReward = 0;
             lastChestNoticeType = 1;
             chestNoticeUntilTime = System.currentTimeMillis() + 1400;
             return;
@@ -1571,6 +1645,7 @@ public class GameView extends View {
         lastChestReward = 25 + starChestClaimed * 5;
         lastRankChestReward = 0;
         lastChapterChestReward = 0;
+        lastDailyGoalReward = 0;
         lastChestNoticeType = 1;
         coins += lastChestReward;
         prefs.edit()
@@ -1588,6 +1663,7 @@ public class GameView extends View {
             lastChestReward = 0;
             lastRankChestReward = 0;
             lastChapterChestReward = 0;
+            lastDailyGoalReward = 0;
             lastChestNoticeType = 2;
             chestNoticeUntilTime = System.currentTimeMillis() + 1400;
             return;
@@ -1598,6 +1674,7 @@ public class GameView extends View {
         lastRankChestReward = 40 + rankChestClaimed * 8;
         lastChestReward = 0;
         lastChapterChestReward = 0;
+        lastDailyGoalReward = 0;
         lastChestNoticeType = 2;
         coins += lastRankChestReward;
         prefs.edit()
@@ -1615,6 +1692,7 @@ public class GameView extends View {
             lastChapterChestReward = 0;
             lastChestReward = 0;
             lastRankChestReward = 0;
+            lastDailyGoalReward = 0;
             lastChestNoticeType = 3;
             chestNoticeUntilTime = System.currentTimeMillis() + 1400;
             return;
@@ -1625,6 +1703,7 @@ public class GameView extends View {
         lastChapterChestReward = 80 + chapter * 20;
         lastChestReward = 0;
         lastRankChestReward = 0;
+        lastDailyGoalReward = 0;
         lastChestNoticeType = 3;
         coins += lastChapterChestReward;
         prefs.edit()
@@ -2596,7 +2675,7 @@ public class GameView extends View {
     }
 
     private void drawDailyChallengeEntry(Canvas canvas) {
-        dailyChallengeRect.set(dp(28), dp(70), getWidth() - dp(28), dp(104));
+        dailyChallengeRect.set(dp(28), dp(70), getWidth() / 2f - dp(4), dp(104));
         boolean claimed = prefs.getLong(KEY_DAILY_CHALLENGE_DAY, -1L) == getToday();
         paint.setColor(claimed ? Color.argb(105, 255, 255, 255) : Color.argb(205, 255, 236, 133));
         canvas.drawRoundRect(dailyChallengeRect, dp(14), dp(14), paint);
@@ -2609,13 +2688,34 @@ public class GameView extends View {
         }
 
         textPaint.setTextAlign(Paint.Align.CENTER);
-        textPaint.setTextSize(sp(14));
+        textPaint.setTextSize(sp(12));
         textPaint.setColor(claimed ? Color.WHITE : Color.rgb(33, 37, 56));
-        String text = claimed ? "每日挑战 已领奖  再玩" : "每日挑战 今日奖励";
+        String text = claimed ? "每日挑战 再玩" : "每日挑战 奖励";
         if (dailyChallengeStreak > 1) {
             text += " 连" + dailyChallengeStreak;
         }
         canvas.drawText(text, dailyChallengeRect.centerX(), dailyChallengeRect.centerY() + dp(5), textPaint);
+        drawDailyGoalEntry(canvas);
+    }
+
+    private void drawDailyGoalEntry(Canvas canvas) {
+        dailyGoalRect.set(getWidth() / 2f + dp(4), dp(70), getWidth() - dp(28), dp(104));
+        boolean claimable = !dailyGoalClaimed && dailyGoalProgress >= 6;
+        paint.setColor(claimable ? Color.argb(205, 116, 219, 214) : Color.argb(105, 255, 255, 255));
+        canvas.drawRoundRect(dailyGoalRect, dp(14), dp(14), paint);
+        if (claimable) {
+            paint.setColor(Color.argb(210, 255, 255, 255));
+            canvas.drawCircle(dailyGoalRect.right - dp(18), dailyGoalRect.centerY(),
+                    dp(4 + (System.currentTimeMillis() / 240) % 3), paint);
+            postInvalidateOnAnimation();
+        }
+
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setTextSize(sp(12));
+        textPaint.setColor(claimable ? Color.rgb(33, 37, 56) : Color.WHITE);
+        String text = dailyGoalClaimed ? "每日目标 已领"
+                : "每日目标 " + Math.min(6, dailyGoalProgress) + "/6星";
+        canvas.drawText(text, dailyGoalRect.centerX(), dailyGoalRect.centerY() + dp(5), textPaint);
     }
 
     private void drawChapterChestEntry(Canvas canvas) {
@@ -2785,6 +2885,8 @@ public class GameView extends View {
             text = "章节宝箱 金币+" + lastChapterChestReward;
         } else if (lastRankChestReward > 0) {
             text = "评级宝箱 金币+" + lastRankChestReward;
+        } else if (lastDailyGoalReward > 0) {
+            text = "每日目标 金币+" + lastDailyGoalReward;
         }
         canvas.drawText(text, getWidth() / 2f, pagerTop - dp(10), textPaint);
         postInvalidateOnAnimation();
@@ -2796,6 +2898,8 @@ public class GameView extends View {
         } else if (lastChestNoticeType == 3) {
             int chapter = getCurrentMapChapter();
             return "还差 " + Math.max(0, CHAPTER_CHEST_STARS - getChapterStars(chapter)) + " 章星";
+        } else if (lastChestNoticeType == 4) {
+            return dailyGoalClaimed ? "每日目标已领取" : "还差 " + Math.max(0, 6 - dailyGoalProgress) + " 今日星";
         }
         return "还差 " + Math.max(0, getNextStarChestTarget() - getTotalStars()) + " 星";
     }
