@@ -50,6 +50,7 @@ public class GameView extends View {
     private static final int SPECIAL_ROW = 1;
     private static final int SPECIAL_COLUMN = 2;
     private static final int SPECIAL_RAINBOW = 3;
+    private static final int SPECIAL_BOMB = 4;
     private static final int PROP_HAMMER = 0;
     private static final int PROP_BOMB = 1;
     private static final int PROP_SHUFFLE = 2;
@@ -558,6 +559,11 @@ public class GameView extends View {
         if (specialA == SPECIAL_RAINBOW || specialB == SPECIAL_RAINBOW) {
             cells.addAll(buildColorCells(colorOf(board[rowA][colA])));
             cells.addAll(buildColorCells(colorOf(board[rowB][colB])));
+        } else if (specialA == SPECIAL_BOMB || specialB == SPECIAL_BOMB) {
+            cells.addAll(buildBombCells(rowA, colA));
+            cells.addAll(buildBombCells(rowB, colB));
+            cells.addAll(buildCrossCells(rowA, colA));
+            cells.addAll(buildCrossCells(rowB, colB));
         } else {
             cells.addAll(buildCrossCells(rowA, colA));
             cells.addAll(buildCrossCells(rowB, colB));
@@ -1096,7 +1102,8 @@ public class GameView extends View {
         }
 
         Cell specialCell = matches.contains(new Cell(row, col)) ? new Cell(row, col) : matches.iterator().next();
-        int special = matches.size() >= 5 ? SPECIAL_RAINBOW : (selectedRow == row ? SPECIAL_ROW : SPECIAL_COLUMN);
+        int special = matches.size() >= 6 ? SPECIAL_BOMB
+                : (matches.size() >= 5 ? SPECIAL_RAINBOW : (selectedRow == row ? SPECIAL_ROW : SPECIAL_COLUMN));
         board[specialCell.row][specialCell.col] = makePiece(colorOf(board[specialCell.row][specialCell.col]), special);
         matches.remove(specialCell);
     }
@@ -1124,6 +1131,14 @@ public class GameView extends View {
                         for (int col = 0; col < BOARD_SIZE; col++) {
                             if (colorOf(board[row][col]) == color) {
                                 changed |= expanded.add(new Cell(row, col));
+                            }
+                        }
+                    }
+                } else if (special == SPECIAL_BOMB) {
+                    for (int nearRow = cell.row - 1; nearRow <= cell.row + 1; nearRow++) {
+                        for (int nearCol = cell.col - 1; nearCol <= cell.col + 1; nearCol++) {
+                            if (isInside(nearRow, nearCol)) {
+                                changed |= expanded.add(new Cell(nearRow, nearCol));
                             }
                         }
                     }
@@ -1722,10 +1737,15 @@ public class GameView extends View {
             canvas.drawLine(centerX - tileSize * 0.28f, centerY, centerX + tileSize * 0.28f, centerY, paint);
         } else if (special == SPECIAL_COLUMN) {
             canvas.drawLine(centerX, centerY - tileSize * 0.28f, centerX, centerY + tileSize * 0.28f, paint);
-        } else {
+        } else if (special == SPECIAL_RAINBOW) {
             paint.setStyle(Paint.Style.STROKE);
             canvas.drawCircle(centerX, centerY, tileSize * 0.27f, paint);
             paint.setStyle(Paint.Style.FILL);
+        } else {
+            paint.setStyle(Paint.Style.STROKE);
+            canvas.drawCircle(centerX, centerY, tileSize * 0.23f, paint);
+            paint.setStyle(Paint.Style.FILL);
+            canvas.drawCircle(centerX, centerY, tileSize * 0.08f, paint);
         }
     }
 
