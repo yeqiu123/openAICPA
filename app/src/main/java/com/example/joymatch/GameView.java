@@ -158,6 +158,7 @@ public class GameView extends View {
     private int lastBonusScore;
     private boolean challengeCleared;
     private boolean comboChallengeCleared;
+    private boolean scoreChallengeCleared;
     private int coins;
     private int lastCoinReward;
     private int lastAchievementReward;
@@ -364,9 +365,11 @@ public class GameView extends View {
             int cloudCount = i < 18 ? 0 : Math.min(10, 2 + i / 18);
             int moveLimitGoal = i >= 18 && i % 4 == 0 ? Math.max(8, moves - 5) : 0;
             int comboGoal = i >= 22 && i % 5 == 0 ? 3 + (i / 25) : 0;
+            int scoreGoal = i >= 30 && i % 6 == 0 ? targetScore + 800 + i * 40 : 0;
             levels.add(new Level(targetScore, moves, hammer, bomb, shuffle, rowBlast, colorBlast, extraMoves,
                     magicWand, brush, targetKind, targetAmount, iceCount, honeyCount, stoneCount, vineCount, giftCount,
-                    chainCount, shellCount, keyCount, moveChestCount, cloudCount, moveLimitGoal, comboGoal));
+                    chainCount, shellCount, keyCount, moveChestCount, cloudCount, moveLimitGoal, comboGoal,
+                    scoreGoal));
         }
     }
 
@@ -395,6 +398,7 @@ public class GameView extends View {
         honeySpreadCount = 0;
         challengeCleared = false;
         comboChallengeCleared = false;
+        scoreChallengeCleared = false;
         rewardTargetMilestone = 0;
         rewardObstacleMilestone = 0;
         rewardComboMilestone = 0;
@@ -897,7 +901,7 @@ public class GameView extends View {
         if (score >= level.targetScore && targetRemaining <= 0
                 && iceRemaining <= 0 && honeyRemaining <= 0 && stoneRemaining <= 0 && vineRemaining <= 0
                 && chainRemaining <= 0 && shellRemaining <= 0 && keyRemaining <= 0
-                && isMoveLimitGoalCleared(level) && isComboGoalCleared(level)) {
+                && isMoveLimitGoalCleared(level) && isComboGoalCleared(level) && isScoreGoalCleared(level)) {
             levelComplete = true;
             lastBonusScore = movesLeft * 80;
             score += lastBonusScore;
@@ -905,6 +909,7 @@ public class GameView extends View {
             lastStars = movesLeft > level.moves / 2 ? 3 : (movesLeft > level.moves / 5 ? 2 : 1);
             challengeCleared = level.moveLimitGoal > 0;
             comboChallengeCleared = level.comboGoal > 0;
+            scoreChallengeCleared = level.scoreGoal > 0;
             if (dailyChallengeMode) {
                 saveDailyChallengeReward();
             } else {
@@ -929,6 +934,10 @@ public class GameView extends View {
 
     private boolean isComboGoalCleared(Level level) {
         return level.comboGoal <= 0 || bestCombo >= level.comboGoal;
+    }
+
+    private boolean isScoreGoalCleared(Level level) {
+        return level.scoreGoal <= 0 || score >= level.scoreGoal;
     }
 
     private void saveDailyChallengeReward() {
@@ -1644,6 +1653,9 @@ public class GameView extends View {
         }
         if (level.comboGoal > 0) {
             starText += " 连" + bestCombo + "/" + level.comboGoal;
+        }
+        if (level.scoreGoal > 0) {
+            starText += " 分" + score / 1000 + "k/" + level.scoreGoal / 1000 + "k";
         }
         canvas.drawText(starText, getWidth() - dp(22), dp(154), textPaint);
         drawComboEnergy(canvas);
@@ -2532,6 +2544,9 @@ public class GameView extends View {
         if (level.cloudCount > 0) {
             goalText += "  彩云 " + level.cloudCount;
         }
+        if (level.scoreGoal > 0) {
+            goalText += "  高分 " + level.scoreGoal;
+        }
         canvas.drawText(goalText,
                 getWidth() / 2f, centerY + dp(32), textPaint);
         postInvalidateOnAnimation();
@@ -2611,6 +2626,9 @@ public class GameView extends View {
             if (comboChallengeCleared) {
                 bonusText += "  连击达成";
             }
+            if (scoreChallengeCleared) {
+                bonusText += "  高分达成";
+            }
             canvas.drawText(bonusText, getWidth() / 2f, getHeight() * 0.49f, textPaint);
             String scoreText = dailyChallengeMode ? "挑战分 " + score : "最佳分 " + levelBestScores[levelIndex];
             canvas.drawText(scoreText, getWidth() / 2f, getHeight() * 0.55f, textPaint);
@@ -2678,12 +2696,13 @@ public class GameView extends View {
         final int cloudCount;
         final int moveLimitGoal;
         final int comboGoal;
+        final int scoreGoal;
 
         Level(int targetScore, int moves, int hammers, int bombs, int shuffles, int rowBlasts, int colorBlasts,
                 int extraMoves, int magicWands, int brushes,
                 int targetKind, int targetAmount, int iceCount, int honeyCount, int stoneCount, int vineCount,
                 int giftCount, int chainCount, int shellCount, int keyCount, int moveChestCount, int cloudCount,
-                int moveLimitGoal, int comboGoal) {
+                int moveLimitGoal, int comboGoal, int scoreGoal) {
             this.targetScore = targetScore;
             this.moves = moves;
             this.hammers = hammers;
@@ -2708,6 +2727,7 @@ public class GameView extends View {
             this.cloudCount = cloudCount;
             this.moveLimitGoal = moveLimitGoal;
             this.comboGoal = comboGoal;
+            this.scoreGoal = scoreGoal;
         }
     }
 
