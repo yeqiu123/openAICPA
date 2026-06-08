@@ -2140,24 +2140,74 @@ public class GameView extends View {
     }
 
     private Move findAvailableMove() {
+        Move bestMove = null;
+        int bestScore = 0;
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
-                if (col + 1 < BOARD_SIZE && wouldCreateMatch(row, col, row, col + 1)) {
-                    return new Move(row, col, row, col + 1);
+                if (col + 1 < BOARD_SIZE) {
+                    Move move = scoreCandidateMove(row, col, row, col + 1);
+                    if (move.score > bestScore) {
+                        bestMove = move;
+                        bestScore = move.score;
+                    }
                 }
-                if (row + 1 < BOARD_SIZE && wouldCreateMatch(row, col, row + 1, col)) {
-                    return new Move(row, col, row + 1, col);
+                if (row + 1 < BOARD_SIZE) {
+                    Move move = scoreCandidateMove(row, col, row + 1, col);
+                    if (move.score > bestScore) {
+                        bestMove = move;
+                        bestScore = move.score;
+                    }
                 }
             }
         }
-        return null;
+        return bestMove;
     }
 
     private boolean wouldCreateMatch(int rowA, int colA, int rowB, int colB) {
+        return scoreCandidateMove(rowA, colA, rowB, colB).score > 0;
+    }
+
+    private Move scoreCandidateMove(int rowA, int colA, int rowB, int colB) {
         swap(rowA, colA, rowB, colB);
-        boolean hasMatch = !findMatches().isEmpty();
+        Set<Cell> matches = findMatches();
+        int score = 0;
+        if (!matches.isEmpty()) {
+            score = matches.size() * 12;
+            for (Cell cell : matches) {
+                if (colorOf(board[cell.row][cell.col]) == targetKind) {
+                    score += 9;
+                }
+                if (hasAdjacentObstacle(cell.row, cell.col)) {
+                    score += 7;
+                }
+                if (specialOf(board[cell.row][cell.col]) != SPECIAL_NORMAL) {
+                    score += 10;
+                }
+            }
+            if (matches.size() >= 5) {
+                score += 26;
+            } else if (matches.size() >= 4) {
+                score += 14;
+            }
+            if (movesLeft <= 5) {
+                score += matches.size() * 3;
+            }
+        }
         swap(rowA, colA, rowB, colB);
-        return hasMatch;
+        return new Move(rowA, colA, rowB, colB, score);
+    }
+
+    private boolean hasAdjacentObstacle(int row, int col) {
+        for (int nearRow = row - 1; nearRow <= row + 1; nearRow++) {
+            for (int nearCol = col - 1; nearCol <= col + 1; nearCol++) {
+                if (isInside(nearRow, nearCol) && (ice[nearRow][nearCol] > 0 || honey[nearRow][nearCol] > 0
+                        || stone[nearRow][nearCol] > 0 || vine[nearRow][nearCol] > 0 || chain[nearRow][nearCol] > 0
+                        || shell[nearRow][nearCol] > 0 || coralReef[nearRow][nearCol] > 0 || flower[nearRow][nearCol] > 0)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private void shufflePiecesOnly() {
@@ -7985,12 +8035,18 @@ public class GameView extends View {
         final int colA;
         final int rowB;
         final int colB;
+        final int score;
 
         Move(int rowA, int colA, int rowB, int colB) {
+            this(rowA, colA, rowB, colB, 0);
+        }
+
+        Move(int rowA, int colA, int rowB, int colB, int score) {
             this.rowA = rowA;
             this.colA = colA;
             this.rowB = rowB;
             this.colB = colB;
+            this.score = score;
         }
     }
 }
