@@ -1855,8 +1855,9 @@ public class GameView extends View {
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setTextSize(sp(12));
         textPaint.setColor(Color.WHITE);
+        String status = getChapterStars(chapter) >= CHAPTER_SIZE * 3 ? "  满星" : "";
         canvas.drawText("章节进度 " + getChapterUnlockedCount(chapter) + "/" + CHAPTER_SIZE
-                + "  星 " + getChapterStars(chapter), getWidth() / 2f, top + dp(26), textPaint);
+                + "  星 " + getChapterStars(chapter) + status, getWidth() / 2f, top + dp(26), textPaint);
     }
 
     private void drawSettings(Canvas canvas) {
