@@ -32,6 +32,7 @@ public class GameView extends View {
     private static final String KEY_STAR_CHEST_CLAIMED = "star_chest_claimed";
     private static final String KEY_CHAPTER_CHEST_PREFIX = "chapter_chest_";
     private static final String KEY_ACHIEVEMENT_PREFIX = "achievement_";
+    private static final String KEY_WIN_STREAK = "win_streak";
     private static final String KEY_DAILY_REWARD_DAY = "daily_reward_day";
     private static final String KEY_DAILY_STREAK = "daily_streak";
     private static final String KEY_DAILY_CHALLENGE_DAY = "daily_challenge_day";
@@ -151,6 +152,8 @@ public class GameView extends View {
     private int coins;
     private int lastCoinReward;
     private int lastAchievementReward;
+    private int winStreak;
+    private int lastWinStreakReward;
     private int starChestClaimed;
     private int lastChestReward;
     private int lastChapterChestReward;
@@ -363,6 +366,7 @@ public class GameView extends View {
         bestCombo = 0;
         lastCoinReward = 0;
         lastAchievementReward = 0;
+        lastWinStreakReward = 0;
         lastChestReward = 0;
         lastChapterChestReward = 0;
         lastGiftReward = 0;
@@ -795,10 +799,12 @@ public class GameView extends View {
             } else {
                 lastCoinReward = 10 + lastStars * 5;
                 coins += lastCoinReward;
+                grantWinStreakReward();
                 saveLevelProgress();
             }
         } else if (movesLeft <= 0) {
             levelFailed = true;
+            resetWinStreak();
         }
     }
 
@@ -830,6 +836,25 @@ public class GameView extends View {
                 .apply();
     }
 
+    private void grantWinStreakReward() {
+        winStreak++;
+        lastWinStreakReward = winStreak >= 3 ? Math.min(60, winStreak * 5) : 0;
+        coins += lastWinStreakReward;
+        prefs.edit()
+                .putInt(KEY_WIN_STREAK, winStreak)
+                .putInt(KEY_COINS, coins)
+                .apply();
+    }
+
+    private void resetWinStreak() {
+        if (dailyChallengeMode || winStreak <= 0) {
+            return;
+        }
+
+        winStreak = 0;
+        prefs.edit().putInt(KEY_WIN_STREAK, winStreak).apply();
+    }
+
     private void grantAchievementRewards() {
         lastAchievementReward = 0;
         checkAchievement(0, getTotalStars() >= 30, 60);
@@ -856,6 +881,7 @@ public class GameView extends View {
         highestUnlockedLevel = Math.min(prefs.getInt(KEY_UNLOCKED_LEVEL, 0), levels.size() - 1);
         coins = prefs.getInt(KEY_COINS, 30);
         starChestClaimed = prefs.getInt(KEY_STAR_CHEST_CLAIMED, 0);
+        winStreak = prefs.getInt(KEY_WIN_STREAK, 0);
         soundEnabled = prefs.getBoolean(KEY_SOUND_ENABLED, true);
         hapticEnabled = prefs.getBoolean(KEY_HAPTIC_ENABLED, true);
         grantDailyReward();
@@ -2208,6 +2234,8 @@ public class GameView extends View {
                 rewardText = lastCoinReward > 0 ? "每日金币 +" + lastCoinReward + "  返回主线" : "今日已领奖  返回主线";
             } else if (lastAchievementReward > 0) {
                 rewardText = "金币 +" + lastCoinReward + " 成就+" + lastAchievementReward + "  点击继续";
+            } else if (lastWinStreakReward > 0) {
+                rewardText = "金币 +" + lastCoinReward + " 连胜+" + lastWinStreakReward + "  点击继续";
             }
             canvas.drawText(rewardText, getWidth() / 2f, getHeight() * 0.61f, textPaint);
         } else if (coins >= CONTINUE_COST) {
