@@ -283,6 +283,8 @@ public class GameView extends View {
     private int lastWinStreakRewardAmount;
     private int lastStarUpgradeReward;
     private int lastRankUpgradeReward;
+    private int lastRankUpgradeRewardProp = NONE;
+    private int lastRankUpgradeRewardAmount;
     private int lastPerfectReward;
     private int lastHiddenReward;
     private int lastEliteReward;
@@ -755,6 +757,8 @@ public class GameView extends View {
         lastWinStreakRewardAmount = 0;
         lastStarUpgradeReward = 0;
         lastRankUpgradeReward = 0;
+        lastRankUpgradeRewardProp = NONE;
+        lastRankUpgradeRewardAmount = 0;
         lastPerfectReward = 0;
         lastHiddenReward = 0;
         lastEliteReward = 0;
@@ -2889,6 +2893,7 @@ public class GameView extends View {
             // 评级奖励鼓励玩家追求高分、连击和挑战目标。
             lastRankUpgradeReward = (levelRanks[levelIndex] - oldRank) * 8;
             coins += lastRankUpgradeReward;
+            grantRankUpgradePropReward(oldRank);
         }
         grantReplayImprovementReward(oldStars, oldRank);
         if (hiddenChallengeCleared) {
@@ -2954,6 +2959,24 @@ public class GameView extends View {
         }
         if (lastReplayRewardProp != NONE) {
             addReserveProp(lastReplayRewardProp, lastReplayRewardAmount);
+        }
+    }
+
+    private void grantRankUpgradePropReward(int oldRank) {
+        int rank = levelRanks[levelIndex];
+        if (oldRank < 6 && rank >= 6) {
+            lastRankUpgradeRewardProp = PROP_STAR_HARP;
+            lastRankUpgradeRewardAmount = 1;
+        } else if (oldRank < 5 && rank >= 5) {
+            lastRankUpgradeRewardProp = PROP_FIREWORK_CANNON;
+            lastRankUpgradeRewardAmount = 1;
+        } else if (oldRank < 4 && rank >= 4) {
+            lastRankUpgradeRewardProp = PROP_STAR_COMPASS;
+            lastRankUpgradeRewardAmount = 1;
+        }
+        if (lastRankUpgradeRewardProp != NONE) {
+            // 首次冲到高评级时给稀有道具，把S/SS/SSS变成更明确的回访目标。
+            addReserveProp(lastRankUpgradeRewardProp, lastRankUpgradeRewardAmount);
         }
     }
 
@@ -8144,6 +8167,10 @@ public class GameView extends View {
         return lastReplayRewardProp == NONE ? "" : " " + getPropName(lastReplayRewardProp) + "+" + lastReplayRewardAmount;
     }
 
+    private String buildRankUpgradeRewardText() {
+        return lastRankUpgradeRewardProp == NONE ? "" : " " + getPropName(lastRankUpgradeRewardProp) + "+" + lastRankUpgradeRewardAmount;
+    }
+
     private List<String> buildRewardLines() {
         List<String> lines = new ArrayList<>();
         lines.add("金币 +" + lastCoinReward);
@@ -8151,7 +8178,7 @@ public class GameView extends View {
         addRewardLine(lines, "回访", lastReplayReward, buildReplayRewardText());
         addRewardLine(lines, "满星", lastFullStarReward, lastFullStarReward > 0 ? " 净化+1" : "");
         addRewardLine(lines, "补星", lastStarUpgradeReward, "");
-        addRewardLine(lines, "评级", lastRankUpgradeReward, "");
+        addRewardLine(lines, "评级", lastRankUpgradeReward, buildRankUpgradeRewardText());
         addRewardLine(lines, "完美", lastPerfectReward, "");
         addRewardLine(lines, "隐藏", lastHiddenReward, "");
         addRewardLine(lines, "精英", lastEliteReward, "");
