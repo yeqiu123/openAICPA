@@ -1571,6 +1571,12 @@ public class GameView extends View {
         RectF boardRect = new RectF(boardLeft - dp(8), boardTop - dp(8),
                 boardLeft + tileSize * BOARD_SIZE + dp(8), boardTop + tileSize * BOARD_SIZE + dp(8));
         canvas.drawRoundRect(boardRect, dp(18), dp(18), paint);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(3));
+        int chapterColor = chapterBottomColors[getChapterIndex(levelIndex)];
+        paint.setColor(Color.argb(190, Color.red(chapterColor), Color.green(chapterColor), Color.blue(chapterColor)));
+        canvas.drawRoundRect(boardRect, dp(18), dp(18), paint);
+        paint.setStyle(Paint.Style.FILL);
         paint.setColor(Color.argb(80, 33, 37, 56));
         for (int row = 0; row <= BOARD_SIZE; row++) {
             float y = boardTop + row * tileSize;
