@@ -31,6 +31,7 @@ public class GameView extends View {
     private static final String KEY_COINS = "coins";
     private static final String KEY_STAR_CHEST_CLAIMED = "star_chest_claimed";
     private static final String KEY_CHAPTER_CHEST_PREFIX = "chapter_chest_";
+    private static final String KEY_CHAPTER_MASTERY_PREFIX = "chapter_mastery_";
     private static final String KEY_ACHIEVEMENT_PREFIX = "achievement_";
     private static final String KEY_WIN_STREAK = "win_streak";
     private static final String KEY_DAILY_REWARD_DAY = "daily_reward_day";
@@ -96,6 +97,7 @@ public class GameView extends View {
     private final int[] levelStars = new int[LEVEL_COUNT];
     private final int[] levelBestScores = new int[LEVEL_COUNT];
     private final boolean[] chapterChestClaimed = new boolean[6];
+    private final boolean[] chapterMasteryClaimed = new boolean[6];
     private final boolean[] achievementsClaimed = new boolean[ACHIEVEMENT_COUNT];
     private final List<Particle> particles = new ArrayList<>();
     private final List<Level> levels = new ArrayList<>();
@@ -171,6 +173,7 @@ public class GameView extends View {
     private int starChestClaimed;
     private int lastChestReward;
     private int lastChapterChestReward;
+    private int lastChapterMasteryReward;
     private int lastGiftReward;
     private int lastMoveChestReward;
     private int lastCloudReward;
@@ -399,6 +402,7 @@ public class GameView extends View {
         lastStarUpgradeReward = 0;
         lastChestReward = 0;
         lastChapterChestReward = 0;
+        lastChapterMasteryReward = 0;
         lastGiftReward = 0;
         lastMoveChestReward = 0;
         lastCloudReward = 0;
@@ -1038,6 +1042,7 @@ public class GameView extends View {
         }
         for (int i = 0; i < chapterChestClaimed.length; i++) {
             chapterChestClaimed[i] = prefs.getBoolean(KEY_CHAPTER_CHEST_PREFIX + i, false);
+            chapterMasteryClaimed[i] = prefs.getBoolean(KEY_CHAPTER_MASTERY_PREFIX + i, false);
         }
         for (int i = 0; i < achievementsClaimed.length; i++) {
             achievementsClaimed[i] = prefs.getBoolean(KEY_ACHIEVEMENT_PREFIX + i, false);
@@ -1056,12 +1061,31 @@ public class GameView extends View {
             coins += lastStarUpgradeReward;
         }
         grantAchievementRewards();
+        grantChapterMasteryReward();
         prefs.edit()
                 .putInt(KEY_UNLOCKED_LEVEL, highestUnlockedLevel)
                 .putInt(KEY_STARS_PREFIX + levelIndex, levelStars[levelIndex])
                 .putInt(KEY_BEST_SCORE_PREFIX + levelIndex, levelBestScores[levelIndex])
                 .putInt(KEY_COINS, coins)
                 .putInt(KEY_STAR_CHEST_CLAIMED, starChestClaimed)
+                .apply();
+    }
+
+    private void grantChapterMasteryReward() {
+        int chapter = getChapterIndex(levelIndex);
+        if (chapterMasteryClaimed[chapter] || getChapterStars(chapter) < CHAPTER_SIZE * 3) {
+            return;
+        }
+
+        // 章节满星奖励把补星追求转成一次明确的高价值回报。
+        chapterMasteryClaimed[chapter] = true;
+        lastChapterMasteryReward = 120 + chapter * 30;
+        coins += lastChapterMasteryReward;
+        propInventory[PROP_MAGIC_WAND]++;
+        propInventory[PROP_BRUSH]++;
+        prefs.edit()
+                .putBoolean(KEY_CHAPTER_MASTERY_PREFIX + chapter, true)
+                .putInt(KEY_COINS, coins)
                 .apply();
     }
 
@@ -1909,7 +1933,8 @@ public class GameView extends View {
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setTextSize(sp(12));
         textPaint.setColor(Color.WHITE);
-        String status = getChapterStars(chapter) >= CHAPTER_SIZE * 3 ? "  满星" : "";
+        String status = getChapterStars(chapter) >= CHAPTER_SIZE * 3
+                ? (chapterMasteryClaimed[chapter] ? "  大师已领" : "  大师奖励") : "";
         canvas.drawText("章节进度 " + getChapterUnlockedCount(chapter) + "/" + CHAPTER_SIZE
                 + "  星 " + getChapterStars(chapter) + status, getWidth() / 2f, top + dp(26), textPaint);
     }
@@ -2730,7 +2755,8 @@ public class GameView extends View {
         canvas.drawRect(0, 0, getWidth(), getHeight(), paint);
         paint.setColor(levelComplete ? Color.argb(110, 255, 213, 92) : Color.argb(95, 255, 107, 154));
         canvas.drawCircle(getWidth() / 2f, getHeight() * 0.42f - dp(12), dp(92), paint);
-        if (levelComplete && (lastAchievementReward > 0 || lastStarUpgradeReward > 0 || lastWinStreakReward > 0)) {
+        if (levelComplete && (lastAchievementReward > 0 || lastStarUpgradeReward > 0 || lastWinStreakReward > 0
+                || lastChapterMasteryReward > 0)) {
             drawRewardSparkles(canvas, getWidth() / 2f, getHeight() * 0.42f - dp(12));
         }
 
@@ -2757,6 +2783,8 @@ public class GameView extends View {
             if (dailyChallengeMode) {
                 rewardText = lastCoinReward > 0 ? "每日金币 +" + lastCoinReward + " 连" + dailyChallengeStreak + "  返回主线"
                         : "今日已领奖  返回主线";
+            } else if (lastChapterMasteryReward > 0) {
+                rewardText = "金币 +" + lastCoinReward + " 满星大师+" + lastChapterMasteryReward + "  点击继续";
             } else if (lastAchievementReward > 0) {
                 rewardText = "金币 +" + lastCoinReward + "  成就奖励+" + lastAchievementReward + "  点击继续";
             } else if (lastStarUpgradeReward > 0) {
