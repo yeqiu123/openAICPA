@@ -43,6 +43,7 @@ public class GameView extends View {
     private final Random random = new Random(7);
     private final int[][] board = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[][] ice = new int[BOARD_SIZE][BOARD_SIZE];
+    private final int[][] honey = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[] propInventory = new int[PROP_COUNT];
     private final RectF[] propRects = new RectF[PROP_COUNT];
     private final RectF[] levelRects = new RectF[60];
@@ -64,6 +65,7 @@ public class GameView extends View {
     private int targetKind;
     private int targetRemaining;
     private int iceRemaining;
+    private int honeyRemaining;
     private int selectedRow = NONE;
     private int selectedCol = NONE;
     private int activeProp = NONE;
@@ -176,8 +178,9 @@ public class GameView extends View {
             int targetKind = i % TILE_KINDS;
             int targetAmount = 8 + (i % 7) + i / 10;
             int iceCount = i < 4 ? i * 2 : Math.min(24, 6 + i / 2);
+            int honeyCount = i < 8 ? 0 : Math.min(18, 4 + i / 4);
             levels.add(new Level(targetScore, moves, hammer, bomb, shuffle, rowBlast, colorBlast,
-                    targetKind, targetAmount, iceCount));
+                    targetKind, targetAmount, iceCount, honeyCount));
         }
     }
 
@@ -192,6 +195,7 @@ public class GameView extends View {
         targetKind = level.targetKind;
         targetRemaining = level.targetAmount;
         iceRemaining = level.iceCount;
+        honeyRemaining = level.honeyCount;
         propInventory[PROP_HAMMER] = level.hammers;
         propInventory[PROP_BOMB] = level.bombs;
         propInventory[PROP_SHUFFLE] = level.shuffles;
@@ -202,12 +206,14 @@ public class GameView extends View {
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
                 ice[row][col] = 0;
+                honey[row][col] = 0;
                 do {
                     board[row][col] = makePiece(random.nextInt(TILE_KINDS), SPECIAL_NORMAL);
                 } while (createsInitialMatch(row, col));
             }
         }
         placeIce(level.iceCount);
+        placeHoney(level.honeyCount);
         ensurePlayableBoard();
     }
 
@@ -450,7 +456,7 @@ public class GameView extends View {
 
     private void checkLevelState() {
         Level level = levels.get(levelIndex);
-        if (score >= level.targetScore && targetRemaining <= 0 && iceRemaining <= 0) {
+        if (score >= level.targetScore && targetRemaining <= 0 && iceRemaining <= 0 && honeyRemaining <= 0) {
             levelComplete = true;
             saveLevelProgress();
         } else if (movesLeft <= 0) {
@@ -504,6 +510,18 @@ public class GameView extends View {
         }
     }
 
+    private void placeHoney(int count) {
+        int placed = 0;
+        while (placed < count) {
+            int row = random.nextInt(BOARD_SIZE);
+            int col = random.nextInt(BOARD_SIZE);
+            if (honey[row][col] == 0 && ice[row][col] == 0) {
+                honey[row][col] = 1;
+                placed++;
+            }
+        }
+    }
+
     private void removeCells(Set<Cell> cells) {
         for (Cell cell : cells) {
             int piece = board[cell.row][cell.col];
@@ -513,6 +531,10 @@ public class GameView extends View {
             if (ice[cell.row][cell.col] > 0) {
                 ice[cell.row][cell.col]--;
                 iceRemaining--;
+            }
+            if (honey[cell.row][cell.col] > 0) {
+                honey[cell.row][cell.col]--;
+                honeyRemaining--;
             }
             board[cell.row][cell.col] = NONE;
         }
@@ -629,7 +651,7 @@ public class GameView extends View {
         textPaint.setTextAlign(Paint.Align.RIGHT);
         canvas.drawText("步数 " + movesLeft, getWidth() - dp(22), dp(78), textPaint);
         canvas.drawText("关卡 " + levels.size(), getWidth() - dp(22), dp(104), textPaint);
-        canvas.drawText("冰块 " + iceRemaining, getWidth() - dp(22), dp(130), textPaint);
+        canvas.drawText("冰 " + iceRemaining + "  蜜 " + honeyRemaining, getWidth() - dp(22), dp(130), textPaint);
     }
 
     private void drawBoard(Canvas canvas) {
@@ -727,6 +749,7 @@ public class GameView extends View {
 
         drawTileIcon(canvas, colorOf(piece), centerX, centerY);
         drawSpecialMark(canvas, specialOf(piece), centerX, centerY);
+        drawHoney(canvas, row, col, rect);
         drawIce(canvas, row, col, rect);
     }
 
@@ -877,6 +900,18 @@ public class GameView extends View {
         paint.setStyle(Paint.Style.FILL);
     }
 
+    private void drawHoney(Canvas canvas, int row, int col, RectF rect) {
+        if (honey[row][col] <= 0) {
+            return;
+        }
+
+        paint.setColor(Color.argb(105, 255, 194, 64));
+        canvas.drawRoundRect(rect, dp(14), dp(14), paint);
+        paint.setColor(Color.argb(185, 255, 236, 133));
+        canvas.drawCircle(rect.left + rect.width() * 0.3f, rect.top + rect.height() * 0.3f, dp(5), paint);
+        canvas.drawCircle(rect.left + rect.width() * 0.68f, rect.top + rect.height() * 0.6f, dp(6), paint);
+    }
+
     private void drawFeedback(Canvas canvas) {
         long age = System.currentTimeMillis() - feedbackStartTime;
         if (feedbackCleared <= 0 || age > 1100) {
@@ -936,9 +971,10 @@ public class GameView extends View {
         final int targetKind;
         final int targetAmount;
         final int iceCount;
+        final int honeyCount;
 
         Level(int targetScore, int moves, int hammers, int bombs, int shuffles, int rowBlasts, int colorBlasts,
-                int targetKind, int targetAmount, int iceCount) {
+                int targetKind, int targetAmount, int iceCount, int honeyCount) {
             this.targetScore = targetScore;
             this.moves = moves;
             this.hammers = hammers;
@@ -949,6 +985,7 @@ public class GameView extends View {
             this.targetKind = targetKind;
             this.targetAmount = targetAmount;
             this.iceCount = iceCount;
+            this.honeyCount = honeyCount;
         }
     }
 
