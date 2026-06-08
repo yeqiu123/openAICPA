@@ -95,6 +95,7 @@ public class GameView extends View {
     private final int[][] hourglass = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[][] luckyStar = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[][] mysteryBox = new int[BOARD_SIZE][BOARD_SIZE];
+    private final int[][] countdownBomb = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[] propInventory = new int[PROP_COUNT];
     private final RectF[] propRects = new RectF[PROP_COUNT];
     private final RectF[] levelRects = new RectF[LEVELS_PER_PAGE];
@@ -243,6 +244,7 @@ public class GameView extends View {
     private boolean dailyChallengeMode;
     private boolean dailyGoalClaimed;
     private boolean usedContinueThisLevel;
+    private boolean countdownBombExploded;
     private SharedPreferences prefs;
 
     public GameView(Context context) {
@@ -424,6 +426,7 @@ public class GameView extends View {
             int hourglassCount = i < 38 || i % 7 != 3 ? 0 : 1 + (i % 21 == 3 ? 1 : 0);
             int luckyStarCount = i < 44 || i % 8 != 4 ? 0 : 1;
             int mysteryBoxCount = i < 50 || i % 9 != 5 ? 0 : 1 + (i % 27 == 5 ? 1 : 0);
+            int countdownBombCount = i < 58 || i % 10 != 7 ? 0 : 1 + (i % 30 == 7 ? 1 : 0);
             int moveLimitGoal = i >= 18 && i % 4 == 0 ? Math.max(8, moves - 5) : 0;
             int comboGoal = i >= 22 && i % 5 == 0 ? 3 + (i / 25) : 0;
             int scoreGoal = i >= 30 && i % 6 == 0 ? targetScore + 800 + i * 40 : 0;
@@ -437,7 +440,7 @@ public class GameView extends View {
             }
             levels.add(new Level(targetScore, moves, hammer, bomb, shuffle, rowBlast, colorBlast, extraMoves,
                     magicWand, brush, portalProp, cleanse, freeze, targetKind, targetAmount, iceCount, honeyCount, stoneCount, vineCount, giftCount,
-                    chainCount, shellCount, flowerCount, keyCount, moveChestCount, cloudCount, gemCount, portalCount, hourglassCount, luckyStarCount, mysteryBoxCount,
+                    chainCount, shellCount, flowerCount, keyCount, moveChestCount, cloudCount, gemCount, portalCount, hourglassCount, luckyStarCount, mysteryBoxCount, countdownBombCount,
                     moveLimitGoal, comboGoal, scoreGoal, elite));
         }
     }
@@ -492,6 +495,7 @@ public class GameView extends View {
         scoreChallengeCleared = false;
         hiddenChallengeCleared = false;
         usedContinueThisLevel = false;
+        countdownBombExploded = false;
         rewardTargetMilestone = 0;
         rewardObstacleMilestone = 0;
         rewardComboMilestone = 0;
@@ -540,6 +544,7 @@ public class GameView extends View {
                 hourglass[row][col] = 0;
                 luckyStar[row][col] = 0;
                 mysteryBox[row][col] = 0;
+                countdownBomb[row][col] = 0;
                 do {
                     board[row][col] = makePiece(random.nextInt(TILE_KINDS), SPECIAL_NORMAL);
                 } while (createsInitialMatch(row, col));
@@ -561,6 +566,7 @@ public class GameView extends View {
         placeHourglass(level.hourglassCount);
         placeLuckyStar(level.luckyStarCount);
         placeMysteryBox(level.mysteryBoxCount);
+        placeCountdownBomb(level.countdownBombCount, Math.max(5, level.moves / 2));
         ensurePlayableBoard();
         levelIntroUntilTime = System.currentTimeMillis() + 1400;
     }
@@ -727,6 +733,7 @@ public class GameView extends View {
             clearCells(buildSpecialComboCells(selectedRow, selectedCol, row, col), 360);
             spreadHoneyAfterMove();
             checkLevelState();
+            tickCountdownBombs();
             playHaptic(HapticFeedbackConstants.CONFIRM);
             playSuccessTone();
             selectedRow = NONE;
@@ -748,6 +755,7 @@ public class GameView extends View {
             clearCells(triggerCells, 240);
             spreadHoneyAfterMove();
             checkLevelState();
+            tickCountdownBombs();
             playHaptic(HapticFeedbackConstants.CONFIRM);
             playSuccessTone();
             selectedRow = NONE;
@@ -770,6 +778,7 @@ public class GameView extends View {
             resolveMatches(matches);
             spreadHoneyAfterMove();
             checkLevelState();
+            tickCountdownBombs();
             playHaptic(HapticFeedbackConstants.CONFIRM);
             playSuccessTone();
         }
@@ -1929,6 +1938,22 @@ public class GameView extends View {
         }
     }
 
+    private void placeCountdownBomb(int count, int timer) {
+        int placed = 0;
+        while (placed < count) {
+            int row = random.nextInt(BOARD_SIZE);
+            int col = random.nextInt(BOARD_SIZE);
+            if (countdownBomb[row][col] == 0 && gift[row][col] == 0 && moveChest[row][col] == 0
+                    && cloud[row][col] == 0 && gem[row][col] == 0 && portal[row][col] == 0
+                    && hourglass[row][col] == 0 && luckyStar[row][col] == 0 && mysteryBox[row][col] == 0
+                    && flower[row][col] == 0) {
+                // 倒计时炸弹必须在归零前清掉，给后期关卡制造明确压力。
+                countdownBomb[row][col] = timer + random.nextInt(3);
+                placed++;
+            }
+        }
+    }
+
     private void removeCells(Set<Cell> cells) {
         for (Cell cell : cells) {
             int piece = board[cell.row][cell.col];
@@ -2022,7 +2047,33 @@ public class GameView extends View {
                 mysteryBox[cell.row][cell.col] = 0;
                 openMysteryBox();
             }
+            if (countdownBomb[cell.row][cell.col] > 0) {
+                countdownBomb[cell.row][cell.col] = 0;
+                score += 180;
+            }
             board[cell.row][cell.col] = NONE;
+        }
+    }
+
+    private void tickCountdownBombs() {
+        Level level = levels.get(levelIndex);
+        if (level.countdownBombCount <= 0 || levelComplete || levelFailed) {
+            return;
+        }
+
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (countdownBomb[row][col] <= 0) {
+                    continue;
+                }
+                countdownBomb[row][col]--;
+                if (countdownBomb[row][col] <= 0) {
+                    countdownBombExploded = true;
+                    levelFailed = true;
+                    resetWinStreak();
+                    return;
+                }
+            }
         }
     }
 
@@ -2647,6 +2698,8 @@ public class GameView extends View {
             return "连";
         } else if (level.moveLimitGoal > 0) {
             return "步";
+        } else if (level.countdownBombCount > 0) {
+            return "炸";
         } else if (level.luckyStarCount > 0) {
             return "星";
         } else if (level.mysteryBoxCount > 0) {
@@ -3103,6 +3156,7 @@ public class GameView extends View {
         drawHourglass(canvas, row, col, rect);
         drawLuckyStar(canvas, row, col, rect);
         drawMysteryBox(canvas, row, col, rect);
+        drawCountdownBomb(canvas, row, col, rect);
         drawKey(canvas, row, col, rect);
         drawMoveChest(canvas, row, col, rect);
     }
@@ -3628,6 +3682,28 @@ public class GameView extends View {
         canvas.drawText("?", centerX, centerY + dp(6), textPaint);
     }
 
+    private void drawCountdownBomb(Canvas canvas, int row, int col, RectF rect) {
+        if (countdownBomb[row][col] <= 0) {
+            return;
+        }
+
+        float centerX = rect.left + rect.width() * 0.24f;
+        float centerY = rect.bottom - dp(18);
+        int timer = countdownBomb[row][col];
+        paint.setColor(timer <= 2 ? Color.argb(230, 255, 88, 112) : Color.argb(220, 33, 37, 56));
+        canvas.drawCircle(centerX, centerY, dp(13), paint);
+        paint.setStrokeWidth(dp(2));
+        paint.setColor(Color.argb(220, 255, 236, 118));
+        canvas.drawLine(centerX + dp(5), centerY - dp(10), centerX + dp(10), centerY - dp(16), paint);
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setTextSize(sp(12));
+        textPaint.setColor(Color.WHITE);
+        canvas.drawText(String.valueOf(timer), centerX, centerY + dp(4), textPaint);
+        if (timer <= 2) {
+            postInvalidateOnAnimation();
+        }
+    }
+
     private void drawKey(Canvas canvas, int row, int col, RectF rect) {
         if (keys[row][col] <= 0) {
             return;
@@ -3825,6 +3901,9 @@ public class GameView extends View {
         if (level.mysteryBoxCount > 0) {
             goalText += "  神秘盒 " + level.mysteryBoxCount;
         }
+        if (level.countdownBombCount > 0) {
+            goalText += "  炸弹 " + level.countdownBombCount;
+        }
         if (level.elite) {
             goalText += "  精英奖励";
         }
@@ -3976,6 +4055,8 @@ public class GameView extends View {
                 rewardText = "金币 +" + lastCoinReward + " 连胜+" + lastWinStreakReward + "  点击继续";
             }
             canvas.drawText(rewardText, getWidth() / 2f, getHeight() * 0.61f, textPaint);
+        } else if (countdownBombExploded) {
+            canvas.drawText("炸弹爆炸，点击重试", getWidth() / 2f, getHeight() * 0.49f, textPaint);
         } else if (coins >= CONTINUE_COST) {
             canvas.drawText("点击续步 -10金币", getWidth() / 2f, getHeight() * 0.49f, textPaint);
         } else if (dailyChallengeMode) {
@@ -4050,6 +4131,7 @@ public class GameView extends View {
         final int hourglassCount;
         final int luckyStarCount;
         final int mysteryBoxCount;
+        final int countdownBombCount;
         final int moveLimitGoal;
         final int comboGoal;
         final int scoreGoal;
@@ -4060,7 +4142,7 @@ public class GameView extends View {
                 int targetKind, int targetAmount, int iceCount, int honeyCount, int stoneCount, int vineCount,
                 int giftCount, int chainCount, int shellCount, int flowerCount, int keyCount, int moveChestCount,
                 int cloudCount, int gemCount, int portalCount, int hourglassCount, int luckyStarCount,
-                int mysteryBoxCount, int moveLimitGoal, int comboGoal, int scoreGoal, boolean elite) {
+                int mysteryBoxCount, int countdownBombCount, int moveLimitGoal, int comboGoal, int scoreGoal, boolean elite) {
             this.targetScore = targetScore;
             this.moves = moves;
             this.hammers = hammers;
@@ -4092,6 +4174,7 @@ public class GameView extends View {
             this.hourglassCount = hourglassCount;
             this.luckyStarCount = luckyStarCount;
             this.mysteryBoxCount = mysteryBoxCount;
+            this.countdownBombCount = countdownBombCount;
             this.moveLimitGoal = moveLimitGoal;
             this.comboGoal = comboGoal;
             this.scoreGoal = scoreGoal;
