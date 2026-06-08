@@ -31,6 +31,7 @@ public class GameView extends View {
     private static final String KEY_COINS = "coins";
     private static final String KEY_STAR_CHEST_CLAIMED = "star_chest_claimed";
     private static final String KEY_DAILY_REWARD_DAY = "daily_reward_day";
+    private static final String KEY_DAILY_CHALLENGE_DAY = "daily_challenge_day";
     private static final String KEY_SOUND_ENABLED = "sound_enabled";
     private static final String KEY_HAPTIC_ENABLED = "haptic_enabled";
     private static final int BOARD_SIZE = 8;
@@ -71,6 +72,7 @@ public class GameView extends View {
     private final RectF prevPageRect = new RectF();
     private final RectF nextPageRect = new RectF();
     private final RectF starChestRect = new RectF();
+    private final RectF dailyChallengeRect = new RectF();
     private final int[] levelStars = new int[LEVEL_COUNT];
     private final int[] levelBestScores = new int[LEVEL_COUNT];
     private final List<Particle> particles = new ArrayList<>();
@@ -145,6 +147,7 @@ public class GameView extends View {
     private boolean showingSettings;
     private boolean soundEnabled = true;
     private boolean hapticEnabled = true;
+    private boolean dailyChallengeMode;
     private SharedPreferences prefs;
 
     public GameView(Context context) {
@@ -201,7 +204,12 @@ public class GameView extends View {
         if (levelComplete) {
             playHaptic(HapticFeedbackConstants.CONFIRM);
             playSuccessTone();
-            startLevel((levelIndex + 1) % levels.size());
+            if (dailyChallengeMode) {
+                dailyChallengeMode = false;
+                startLevel(highestUnlockedLevel);
+            } else {
+                startLevel((levelIndex + 1) % levels.size());
+            }
             invalidate();
             return true;
         }
@@ -216,7 +224,7 @@ public class GameView extends View {
                 playHaptic(HapticFeedbackConstants.CONFIRM);
                 playSuccessTone();
             } else {
-                startLevel(levelIndex);
+                startLevel(dailyChallengeMode ? highestUnlockedLevel : levelIndex);
                 playHaptic(HapticFeedbackConstants.REJECT);
                 playRejectTone();
             }
@@ -306,6 +314,7 @@ public class GameView extends View {
     }
 
     private void startLevel(int index) {
+        dailyChallengeMode = false;
         levelIndex = index;
         Level level = levels.get(levelIndex);
         movesLeft = level.moves;
@@ -345,6 +354,16 @@ public class GameView extends View {
         placeHoney(level.honeyCount);
         placeStone(level.stoneCount);
         ensurePlayableBoard();
+    }
+
+    private void startDailyChallenge() {
+        long today = getToday();
+        int challengeIndex = (int) ((today * 37 + 11) % levels.size());
+        startLevel(challengeIndex);
+        // 每日挑战复用关卡池，但奖励和通关不推进主线。
+        dailyChallengeMode = true;
+        movesLeft = Math.max(12, movesLeft - 3);
+        score = 0;
     }
 
     private boolean handlePropTap(float x, float y) {
@@ -681,6 +700,10 @@ public class GameView extends View {
     }
 
     private void checkLevelState() {
+        if (levelComplete || levelFailed) {
+            return;
+        }
+
         Level level = levels.get(levelIndex);
         if (score >= level.targetScore && targetRemaining <= 0
                 && iceRemaining <= 0 && honeyRemaining <= 0 && stoneRemaining <= 0) {
@@ -688,12 +711,32 @@ public class GameView extends View {
             lastBonusScore = movesLeft * 80;
             score += lastBonusScore;
             lastStars = movesLeft > level.moves / 2 ? 3 : (movesLeft > level.moves / 5 ? 2 : 1);
-            lastCoinReward = 10 + lastStars * 5;
-            coins += lastCoinReward;
-            saveLevelProgress();
+            if (dailyChallengeMode) {
+                saveDailyChallengeReward();
+            } else {
+                lastCoinReward = 10 + lastStars * 5;
+                coins += lastCoinReward;
+                saveLevelProgress();
+            }
         } else if (movesLeft <= 0) {
             levelFailed = true;
         }
+    }
+
+    private void saveDailyChallengeReward() {
+        long today = getToday();
+        if (prefs.getLong(KEY_DAILY_CHALLENGE_DAY, -1L) == today) {
+            lastCoinReward = 0;
+            return;
+        }
+
+        // 每日挑战独立奖励，不推进主线关卡进度。
+        lastCoinReward = 30 + lastStars * 10;
+        coins += lastCoinReward;
+        prefs.edit()
+                .putLong(KEY_DAILY_CHALLENGE_DAY, today)
+                .putInt(KEY_COINS, coins)
+                .apply();
     }
 
     private void loadProgress() {
@@ -753,7 +796,7 @@ public class GameView extends View {
     }
 
     private void grantDailyReward() {
-        long today = System.currentTimeMillis() / 86400000L;
+        long today = getToday();
         if (prefs.getLong(KEY_DAILY_REWARD_DAY, -1L) == today) {
             dailyRewardAmount = 0;
             return;
@@ -768,7 +811,17 @@ public class GameView extends View {
                 .apply();
     }
 
+    private long getToday() {
+        return System.currentTimeMillis() / 86400000L;
+    }
+
     private void handleLevelMapTap(float x, float y) {
+        if (dailyChallengeRect.contains(x, y)) {
+            showingLevelMap = false;
+            startDailyChallenge();
+            return;
+        }
+
         if (starChestRect.contains(x, y)) {
             claimStarChest();
             return;
@@ -1012,10 +1065,11 @@ public class GameView extends View {
 
         textPaint.setTextAlign(Paint.Align.LEFT);
         textPaint.setTextSize(sp(22));
-        canvas.drawText("第 " + (levelIndex + 1) + " 关", dp(22), dp(48), textPaint);
+        canvas.drawText(dailyChallengeMode ? "每日挑战" : "第 " + (levelIndex + 1) + " 关", dp(22), dp(48), textPaint);
 
         textPaint.setTextSize(sp(15));
-        canvas.drawText(chapterNames[getChapterIndex(levelIndex)] + "  目标 " + level.targetScore, dp(22), dp(78), textPaint);
+        String modeLabel = dailyChallengeMode ? "今日特训" : chapterNames[getChapterIndex(levelIndex)];
+        canvas.drawText(modeLabel + "  目标 " + level.targetScore, dp(22), dp(78), textPaint);
         canvas.drawText("分数 " + score, dp(22), dp(104), textPaint);
         canvas.drawText("收集 " + targetRemaining, dp(22), dp(130), textPaint);
         drawTargetSwatch(canvas, dp(96), dp(124));
@@ -1075,17 +1129,19 @@ public class GameView extends View {
         textPaint.setColor(Color.WHITE);
         textPaint.setTextSize(sp(24));
         canvas.drawText("关卡地图 " + (levelMapPage + 1) + "/" + getLevelMapPageCount(), getWidth() / 2f, dp(54), textPaint);
+        drawDailyChallengeEntry(canvas);
 
         int columns = 6;
         int pageStart = levelMapPage * LEVELS_PER_PAGE;
         int pageCount = Math.min(LEVELS_PER_PAGE, levels.size() - pageStart);
         int rows = (int) Math.ceil(pageCount / (float) columns);
         float gap = dp(6);
+        float startY = dp(118);
+        float pagerTop = getHeight() - dp(64);
         float sizeByWidth = (getWidth() - dp(32) - gap * (columns - 1)) / columns;
-        float sizeByHeight = (getHeight() - dp(172) - gap * (rows - 1)) / rows;
+        float sizeByHeight = (pagerTop - startY - dp(10) - gap * (rows - 1)) / rows;
         float size = Math.min(sizeByWidth, sizeByHeight);
         float startX = (getWidth() - columns * size - (columns - 1) * gap) / 2f;
-        float startY = dp(82);
 
         for (int i = 0; i < LEVELS_PER_PAGE; i++) {
             levelRects[i] = null;
@@ -1124,6 +1180,19 @@ public class GameView extends View {
         }
 
         drawLevelMapPager(canvas);
+    }
+
+    private void drawDailyChallengeEntry(Canvas canvas) {
+        dailyChallengeRect.set(dp(28), dp(70), getWidth() - dp(28), dp(104));
+        boolean claimed = prefs.getLong(KEY_DAILY_CHALLENGE_DAY, -1L) == getToday();
+        paint.setColor(claimed ? Color.argb(105, 255, 255, 255) : Color.argb(205, 255, 236, 133));
+        canvas.drawRoundRect(dailyChallengeRect, dp(14), dp(14), paint);
+
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setTextSize(sp(14));
+        textPaint.setColor(claimed ? Color.WHITE : Color.rgb(33, 37, 56));
+        String text = claimed ? "每日挑战 已领奖  再玩" : "每日挑战 今日奖励";
+        canvas.drawText(text, dailyChallengeRect.centerX(), dailyChallengeRect.centerY() + dp(5), textPaint);
     }
 
     private void drawSettings(Canvas canvas) {
@@ -1624,10 +1693,17 @@ public class GameView extends View {
         textPaint.setTextSize(sp(16));
         if (levelComplete) {
             canvas.drawText(buildStars(lastStars) + "  步数奖励 +" + lastBonusScore, getWidth() / 2f, getHeight() * 0.49f, textPaint);
-            canvas.drawText("最佳分 " + levelBestScores[levelIndex], getWidth() / 2f, getHeight() * 0.55f, textPaint);
-            canvas.drawText("金币 +" + lastCoinReward + "  点击继续", getWidth() / 2f, getHeight() * 0.61f, textPaint);
+            String scoreText = dailyChallengeMode ? "挑战分 " + score : "最佳分 " + levelBestScores[levelIndex];
+            canvas.drawText(scoreText, getWidth() / 2f, getHeight() * 0.55f, textPaint);
+            String rewardText = "金币 +" + lastCoinReward + "  点击继续";
+            if (dailyChallengeMode) {
+                rewardText = lastCoinReward > 0 ? "每日金币 +" + lastCoinReward + "  返回主线" : "今日已领奖  返回主线";
+            }
+            canvas.drawText(rewardText, getWidth() / 2f, getHeight() * 0.61f, textPaint);
         } else if (coins >= CONTINUE_COST) {
             canvas.drawText("点击续步 -10金币", getWidth() / 2f, getHeight() * 0.49f, textPaint);
+        } else if (dailyChallengeMode) {
+            canvas.drawText("金币不足，返回主线", getWidth() / 2f, getHeight() * 0.49f, textPaint);
         } else {
             canvas.drawText("金币不足，点击重试", getWidth() / 2f, getHeight() * 0.49f, textPaint);
         }
