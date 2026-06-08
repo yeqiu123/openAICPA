@@ -162,6 +162,7 @@ public class GameView extends View {
     private long feedbackStartTime;
     private long hintUntilTime;
     private long chestNoticeUntilTime;
+    private long levelIntroUntilTime;
     private float boardLeft;
     private float boardTop;
     private float tileSize;
@@ -202,6 +203,7 @@ public class GameView extends View {
         drawBoard(canvas);
         drawParticles(canvas);
         drawFeedback(canvas);
+        drawLevelIntro(canvas);
         drawStatus(canvas);
     }
 
@@ -401,6 +403,7 @@ public class GameView extends View {
         placeVine(level.vineCount);
         placeGift(level.giftCount);
         ensurePlayableBoard();
+        levelIntroUntilTime = System.currentTimeMillis() + 1400;
     }
 
     private void startDailyChallenge() {
@@ -2005,6 +2008,38 @@ public class GameView extends View {
         canvas.drawText(text, getWidth() / 2f, y, textPaint);
         textPaint.setColor(Color.WHITE);
         postInvalidateOnAnimation();
+    }
+
+    private void drawLevelIntro(Canvas canvas) {
+        long now = System.currentTimeMillis();
+        if (now > levelIntroUntilTime || levelComplete || levelFailed) {
+            return;
+        }
+
+        Level level = levels.get(levelIndex);
+        float progress = (levelIntroUntilTime - now) / 1400f;
+        int alpha = (int) (210 * Math.min(1f, progress + 0.25f));
+        float centerY = getHeight() * 0.32f;
+        paint.setColor(Color.argb(alpha, 33, 37, 56));
+        canvas.drawRoundRect(new RectF(dp(34), centerY - dp(58), getWidth() - dp(34), centerY + dp(58)),
+                dp(18), dp(18), paint);
+
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setColor(Color.WHITE);
+        textPaint.setTextSize(sp(22));
+        String title = dailyChallengeMode ? "每日挑战" : "第 " + (levelIndex + 1) + " 关";
+        canvas.drawText(title, getWidth() / 2f, centerY - dp(22), textPaint);
+        textPaint.setTextSize(sp(15));
+        String chapter = dailyChallengeMode ? "今日特训" : chapterNames[getChapterIndex(levelIndex)];
+        canvas.drawText(chapter + "  目标分 " + level.targetScore, getWidth() / 2f, centerY + dp(6), textPaint);
+        // 开场提示把本关重点目标先交代清楚。
+        canvas.drawText("收集 " + level.targetAmount + "  清障 " + getLevelObstacleCount(level),
+                getWidth() / 2f, centerY + dp(32), textPaint);
+        postInvalidateOnAnimation();
+    }
+
+    private int getLevelObstacleCount(Level level) {
+        return level.iceCount + level.honeyCount + level.stoneCount + level.vineCount;
     }
 
     private void showFeedback(int combo, int cleared) {
