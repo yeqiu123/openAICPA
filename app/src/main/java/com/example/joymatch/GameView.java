@@ -5781,9 +5781,26 @@ public class GameView extends View {
                 canvas.drawText(buildRankText(levelRanks[level]), rect.right - dp(10), rect.top + dp(12), textPaint);
             }
             drawLevelTypeMark(canvas, level, rect);
+            drawFailAssistMark(canvas, level, rect, unlocked);
         }
 
         drawLevelMapPager(canvas);
+    }
+
+    private void drawFailAssistMark(Canvas canvas, int level, RectF rect, boolean unlocked) {
+        int failStreak = levelFailStreaks[level];
+        if (!unlocked || failStreak <= 0) {
+            return;
+        }
+
+        // 地图角标提示下次开局助力，让卡关补偿在地图上也能被玩家看见。
+        RectF badge = new RectF(rect.left + dp(4), rect.top + dp(4), rect.left + dp(26), rect.top + dp(18));
+        paint.setColor(Color.argb(215, 255, 236, 133));
+        canvas.drawRoundRect(badge, dp(5), dp(5), paint);
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setTextSize(sp(8));
+        textPaint.setColor(Color.rgb(33, 37, 56));
+        canvas.drawText("助" + Math.min(3, failStreak), badge.centerX(), badge.centerY() + dp(3), textPaint);
     }
 
     private void drawLevelTypeMark(Canvas canvas, int levelIndex, RectF rect) {
