@@ -1807,6 +1807,13 @@ public class GameView extends View {
         boolean claimed = prefs.getLong(KEY_DAILY_CHALLENGE_DAY, -1L) == getToday();
         paint.setColor(claimed ? Color.argb(105, 255, 255, 255) : Color.argb(205, 255, 236, 133));
         canvas.drawRoundRect(dailyChallengeRect, dp(14), dp(14), paint);
+        if (!claimed) {
+            paint.setColor(Color.argb(210, 255, 255, 255));
+            float sparkleX = dailyChallengeRect.right - dp(24);
+            float sparkleY = dailyChallengeRect.centerY();
+            canvas.drawCircle(sparkleX, sparkleY, dp(4 + (System.currentTimeMillis() / 220) % 3), paint);
+            postInvalidateOnAnimation();
+        }
 
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setTextSize(sp(14));
