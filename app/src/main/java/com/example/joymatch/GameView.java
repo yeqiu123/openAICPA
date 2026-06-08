@@ -1851,6 +1851,13 @@ public class GameView extends View {
         canvas.drawRoundRect(new RectF(left, top, right, top + dp(10)), dp(5), dp(5), paint);
         paint.setColor(Color.argb(220, 255, 236, 133));
         canvas.drawRoundRect(new RectF(left, top, left + (right - left) * progress, top + dp(10)), dp(5), dp(5), paint);
+        if (getChapterStars(chapter) >= CHAPTER_SIZE * 3) {
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(dp(2));
+            paint.setColor(Color.argb(230, 255, 236, 133));
+            canvas.drawRoundRect(new RectF(left, top, right, top + dp(10)), dp(5), dp(5), paint);
+            paint.setStyle(Paint.Style.FILL);
+        }
 
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setTextSize(sp(12));
