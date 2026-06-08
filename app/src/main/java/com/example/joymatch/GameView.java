@@ -95,6 +95,7 @@ public class GameView extends View {
     private final int[][] goldenEgg = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[][] rainbowBottle = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[][] energyPotion = new int[BOARD_SIZE][BOARD_SIZE];
+    private final int[][] butterfly = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[][] portal = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[][] hourglass = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[][] luckyStar = new int[BOARD_SIZE][BOARD_SIZE];
@@ -217,6 +218,7 @@ public class GameView extends View {
     private int lastGoldenEggReward;
     private int lastRainbowBottleReward;
     private int lastEnergyPotionReward;
+    private int lastButterflyReward;
     private int lastPortalReward;
     private int lastHourglassReward;
     private int lastLuckyStarRewardProp = NONE;
@@ -433,6 +435,7 @@ public class GameView extends View {
             int goldenEggCount = i < 64 || i % 11 != 2 ? 0 : 1;
             int rainbowBottleCount = i < 70 || i % 12 != 6 ? 0 : 1;
             int energyPotionCount = i < 76 || i % 13 != 9 ? 0 : 1;
+            int butterflyCount = i < 82 || i % 14 != 10 ? 0 : 1;
             int portalCount = i < 32 || i % 5 != 1 ? 0 : 2;
             int hourglassCount = i < 38 || i % 7 != 3 ? 0 : 1 + (i % 21 == 3 ? 1 : 0);
             int luckyStarCount = i < 44 || i % 8 != 4 ? 0 : 1;
@@ -451,7 +454,7 @@ public class GameView extends View {
             }
             levels.add(new Level(targetScore, moves, hammer, bomb, shuffle, rowBlast, colorBlast, extraMoves,
                     magicWand, brush, portalProp, cleanse, freeze, magnet, targetKind, targetAmount, iceCount, honeyCount, stoneCount, vineCount, giftCount,
-                    chainCount, shellCount, flowerCount, keyCount, moveChestCount, cloudCount, gemCount, goldenEggCount, rainbowBottleCount, energyPotionCount, portalCount, hourglassCount, luckyStarCount, mysteryBoxCount, countdownBombCount,
+                    chainCount, shellCount, flowerCount, keyCount, moveChestCount, cloudCount, gemCount, goldenEggCount, rainbowBottleCount, energyPotionCount, butterflyCount, portalCount, hourglassCount, luckyStarCount, mysteryBoxCount, countdownBombCount,
                     moveLimitGoal, comboGoal, scoreGoal, elite));
         }
     }
@@ -496,6 +499,7 @@ public class GameView extends View {
         lastGoldenEggReward = 0;
         lastRainbowBottleReward = 0;
         lastEnergyPotionReward = 0;
+        lastButterflyReward = 0;
         lastPortalReward = 0;
         lastHourglassReward = 0;
         lastLuckyStarRewardProp = NONE;
@@ -558,6 +562,7 @@ public class GameView extends View {
                 goldenEgg[row][col] = 0;
                 rainbowBottle[row][col] = 0;
                 energyPotion[row][col] = 0;
+                butterfly[row][col] = 0;
                 portal[row][col] = 0;
                 hourglass[row][col] = 0;
                 luckyStar[row][col] = 0;
@@ -583,6 +588,7 @@ public class GameView extends View {
         placeGoldenEgg(level.goldenEggCount);
         placeRainbowBottle(level.rainbowBottleCount);
         placeEnergyPotion(level.energyPotionCount);
+        placeButterfly(level.butterflyCount);
         placePortal(level.portalCount);
         placeHourglass(level.hourglassCount);
         placeLuckyStar(level.luckyStarCount);
@@ -697,6 +703,7 @@ public class GameView extends View {
             lastGoldenEggReward = 0;
             lastRainbowBottleReward = 0;
             lastEnergyPotionReward = 0;
+            lastButterflyReward = 0;
             lastPortalReward = 0;
             lastHourglassReward = 0;
             lastMysteryRewardType = 0;
@@ -720,6 +727,7 @@ public class GameView extends View {
             lastGoldenEggReward = 0;
             lastRainbowBottleReward = 0;
             lastEnergyPotionReward = 0;
+            lastButterflyReward = 0;
             lastPortalReward = 0;
             lastHourglassReward = 0;
             lastMysteryRewardType = 0;
@@ -744,6 +752,7 @@ public class GameView extends View {
             lastGoldenEggReward = 0;
             lastRainbowBottleReward = 0;
             lastEnergyPotionReward = 0;
+            lastButterflyReward = 0;
             lastPortalReward = 0;
             lastHourglassReward = 0;
             lastMysteryRewardType = 0;
@@ -832,6 +841,7 @@ public class GameView extends View {
         lastGoldenEggReward = 0;
         lastRainbowBottleReward = 0;
         lastEnergyPotionReward = 0;
+        lastButterflyReward = 0;
         lastPortalReward = 0;
         lastHourglassReward = 0;
         lastLuckyStarRewardProp = NONE;
@@ -1018,6 +1028,7 @@ public class GameView extends View {
         lastGoldenEggReward = 0;
         lastRainbowBottleReward = 0;
         lastEnergyPotionReward = 0;
+        lastButterflyReward = 0;
         lastPortalReward = 0;
         lastHourglassReward = 0;
         lastLuckyStarRewardProp = NONE;
@@ -1967,6 +1978,21 @@ public class GameView extends View {
         }
     }
 
+    private void placeButterfly(int count) {
+        int placed = 0;
+        while (placed < count) {
+            int row = random.nextInt(BOARD_SIZE);
+            int col = random.nextInt(BOARD_SIZE);
+            if (butterfly[row][col] == 0 && gift[row][col] == 0 && moveChest[row][col] == 0
+                    && cloud[row][col] == 0 && gem[row][col] == 0 && goldenEgg[row][col] == 0
+                    && rainbowBottle[row][col] == 0 && energyPotion[row][col] == 0 && flower[row][col] == 0) {
+                // 蝴蝶清除后会飞去帮忙处理一个关键目标，增加连锁后的惊喜感。
+                butterfly[row][col] = 1;
+                placed++;
+            }
+        }
+    }
+
     private void placePortal(int count) {
         int placed = 0;
         while (placed < count) {
@@ -1974,7 +2000,7 @@ public class GameView extends View {
             int col = random.nextInt(BOARD_SIZE);
             if (portal[row][col] == 0 && gift[row][col] == 0 && moveChest[row][col] == 0
                     && cloud[row][col] == 0 && gem[row][col] == 0 && goldenEgg[row][col] == 0
-                    && rainbowBottle[row][col] == 0 && energyPotion[row][col] == 0 && flower[row][col] == 0) {
+                    && rainbowBottle[row][col] == 0 && energyPotion[row][col] == 0 && butterfly[row][col] == 0 && flower[row][col] == 0) {
                 // 传送门格被清掉后会扰动棋盘，制造新的连锁机会。
                 portal[row][col] = 1;
                 placed++;
@@ -1989,7 +2015,7 @@ public class GameView extends View {
             int col = random.nextInt(BOARD_SIZE);
             if (hourglass[row][col] == 0 && gift[row][col] == 0 && moveChest[row][col] == 0
                     && cloud[row][col] == 0 && gem[row][col] == 0 && goldenEgg[row][col] == 0 && portal[row][col] == 0
-                    && rainbowBottle[row][col] == 0 && energyPotion[row][col] == 0 && flower[row][col] == 0) {
+                    && rainbowBottle[row][col] == 0 && energyPotion[row][col] == 0 && butterfly[row][col] == 0 && flower[row][col] == 0) {
                 // 沙漏格提供额外步数，是后期关卡的翻盘奖励点。
                 hourglass[row][col] = 1;
                 placed++;
@@ -2004,7 +2030,8 @@ public class GameView extends View {
             int col = random.nextInt(BOARD_SIZE);
             if (luckyStar[row][col] == 0 && gift[row][col] == 0 && moveChest[row][col] == 0
                     && cloud[row][col] == 0 && gem[row][col] == 0 && goldenEgg[row][col] == 0 && portal[row][col] == 0
-                    && hourglass[row][col] == 0 && rainbowBottle[row][col] == 0 && energyPotion[row][col] == 0 && flower[row][col] == 0) {
+                    && hourglass[row][col] == 0 && rainbowBottle[row][col] == 0 && energyPotion[row][col] == 0
+                    && butterfly[row][col] == 0 && flower[row][col] == 0) {
                 // 幸运星清除后直接补随机道具，增加关卡里的惊喜节奏。
                 luckyStar[row][col] = 1;
                 placed++;
@@ -2020,7 +2047,7 @@ public class GameView extends View {
             if (mysteryBox[row][col] == 0 && gift[row][col] == 0 && moveChest[row][col] == 0
                     && cloud[row][col] == 0 && gem[row][col] == 0 && goldenEgg[row][col] == 0 && portal[row][col] == 0
                     && hourglass[row][col] == 0 && luckyStar[row][col] == 0 && rainbowBottle[row][col] == 0
-                    && energyPotion[row][col] == 0 && flower[row][col] == 0) {
+                    && energyPotion[row][col] == 0 && butterfly[row][col] == 0 && flower[row][col] == 0) {
                 // 神秘盒清除后随机变成局内奖励，给后期关卡多一点不可预测收益。
                 mysteryBox[row][col] = 1;
                 placed++;
@@ -2036,7 +2063,7 @@ public class GameView extends View {
             if (countdownBomb[row][col] == 0 && gift[row][col] == 0 && moveChest[row][col] == 0
                     && cloud[row][col] == 0 && gem[row][col] == 0 && goldenEgg[row][col] == 0 && portal[row][col] == 0
                     && hourglass[row][col] == 0 && luckyStar[row][col] == 0 && mysteryBox[row][col] == 0
-                    && rainbowBottle[row][col] == 0 && energyPotion[row][col] == 0 && flower[row][col] == 0) {
+                    && rainbowBottle[row][col] == 0 && energyPotion[row][col] == 0 && butterfly[row][col] == 0 && flower[row][col] == 0) {
                 // 倒计时炸弹必须在归零前清掉，给后期关卡制造明确压力。
                 countdownBomb[row][col] = timer + random.nextInt(3);
                 placed++;
@@ -2135,6 +2162,12 @@ public class GameView extends View {
                 lastEnergyPotionReward += 35;
                 score += 120;
             }
+            if (butterfly[cell.row][cell.col] > 0) {
+                butterfly[cell.row][cell.col] = 0;
+                triggerButterflyAssist();
+                lastButterflyReward++;
+                score += 120;
+            }
             if (portal[cell.row][cell.col] > 0) {
                 portal[cell.row][cell.col] = 0;
                 triggerPortalShift();
@@ -2162,6 +2195,39 @@ public class GameView extends View {
             }
             board[cell.row][cell.col] = NONE;
         }
+    }
+
+    private void triggerButterflyAssist() {
+        Cell target = findButterflyAssistCell();
+        if (target == null) {
+            return;
+        }
+
+        Set<Cell> cells = new HashSet<>();
+        cells.add(target);
+        removeCells(cells);
+    }
+
+    private Cell findButterflyAssistCell() {
+        List<Cell> candidates = new ArrayList<>();
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (ice[row][col] > 0 || honey[row][col] > 0 || stone[row][col] > 0 || vine[row][col] > 0
+                        || chain[row][col] > 0 || shell[row][col] > 0 || flower[row][col] > 0) {
+                    candidates.add(new Cell(row, col));
+                }
+            }
+        }
+        if (candidates.isEmpty()) {
+            for (int row = 0; row < BOARD_SIZE; row++) {
+                for (int col = 0; col < BOARD_SIZE; col++) {
+                    if (board[row][col] != NONE && colorOf(board[row][col]) == targetKind) {
+                        candidates.add(new Cell(row, col));
+                    }
+                }
+            }
+        }
+        return candidates.isEmpty() ? null : candidates.get(random.nextInt(candidates.size()));
     }
 
     private void upgradeRandomRainbowPiece() {
@@ -2228,6 +2294,7 @@ public class GameView extends View {
             lastGoldenEggReward = 0;
             lastRainbowBottleReward = 0;
             lastEnergyPotionReward = 0;
+            lastButterflyReward = 0;
             lastEnergyRewardProp = NONE;
             saveCoins();
         } else {
@@ -2240,6 +2307,7 @@ public class GameView extends View {
             lastGoldenEggReward = 0;
             lastRainbowBottleReward = 0;
             lastEnergyPotionReward = 0;
+            lastButterflyReward = 0;
             lastEnergyRewardProp = NONE;
         }
     }
@@ -2256,6 +2324,7 @@ public class GameView extends View {
         lastGoldenEggReward = 0;
         lastRainbowBottleReward = 0;
         lastEnergyPotionReward = 0;
+        lastButterflyReward = 0;
         lastGemReward = 0;
         lastPortalReward = 0;
         lastHourglassReward = 0;
@@ -2314,6 +2383,7 @@ public class GameView extends View {
         lastGoldenEggReward = 0;
         lastRainbowBottleReward = 0;
         lastEnergyPotionReward = 0;
+        lastButterflyReward = 0;
         lastMysteryRewardType = 0;
         lastMysteryRewardAmount = 0;
         lastMysteryRewardProp = NONE;
@@ -2352,6 +2422,7 @@ public class GameView extends View {
             lastGoldenEggReward = 0;
             lastRainbowBottleReward = 0;
             lastEnergyPotionReward = 0;
+            lastButterflyReward = 0;
             lastMysteryRewardType = 0;
             lastMysteryRewardAmount = 0;
             lastMysteryRewardProp = NONE;
@@ -2376,6 +2447,7 @@ public class GameView extends View {
             lastGoldenEggReward = 0;
             lastRainbowBottleReward = 0;
             lastEnergyPotionReward = 0;
+            lastButterflyReward = 0;
             lastMysteryRewardType = 0;
             lastMysteryRewardAmount = 0;
             lastMysteryRewardProp = NONE;
@@ -2397,6 +2469,7 @@ public class GameView extends View {
             lastGoldenEggReward = 0;
             lastRainbowBottleReward = 0;
             lastEnergyPotionReward = 0;
+            lastButterflyReward = 0;
             lastMysteryRewardType = 0;
             lastMysteryRewardAmount = 0;
             lastMysteryRewardProp = NONE;
@@ -2416,6 +2489,7 @@ public class GameView extends View {
             lastFlowerReward = 0;
             lastRainbowBottleReward = 0;
             lastEnergyPotionReward = 0;
+            lastButterflyReward = 0;
             lastMysteryRewardType = 0;
             lastMysteryRewardAmount = 0;
             lastMysteryRewardProp = NONE;
@@ -2877,6 +2951,8 @@ public class GameView extends View {
             return "虹";
         } else if (level.energyPotionCount > 0) {
             return "能";
+        } else if (level.butterflyCount > 0) {
+            return "蝶";
         } else if (level.goldenEggCount > 0) {
             return "金";
         } else if (level.luckyStarCount > 0) {
@@ -3342,6 +3418,7 @@ public class GameView extends View {
         drawGoldenEgg(canvas, row, col, rect);
         drawRainbowBottle(canvas, row, col, rect);
         drawEnergyPotion(canvas, row, col, rect);
+        drawButterfly(canvas, row, col, rect);
         drawPortal(canvas, row, col, rect);
         drawHourglass(canvas, row, col, rect);
         drawLuckyStar(canvas, row, col, rect);
@@ -3843,6 +3920,21 @@ public class GameView extends View {
         canvas.drawCircle(centerX, centerY, dp(5), paint);
     }
 
+    private void drawButterfly(Canvas canvas, int row, int col, RectF rect) {
+        if (butterfly[row][col] <= 0) {
+            return;
+        }
+
+        float centerX = rect.left + rect.width() * 0.25f;
+        float centerY = rect.bottom - dp(18);
+        paint.setColor(Color.argb(210, 255, 139, 176));
+        canvas.drawOval(new RectF(centerX - dp(14), centerY - dp(9), centerX - dp(2), centerY + dp(9)), paint);
+        paint.setColor(Color.argb(210, 116, 219, 214));
+        canvas.drawOval(new RectF(centerX + dp(2), centerY - dp(9), centerX + dp(14), centerY + dp(9)), paint);
+        paint.setColor(Color.WHITE);
+        canvas.drawCircle(centerX, centerY, dp(3), paint);
+    }
+
     private void drawPortal(Canvas canvas, int row, int col, RectF rect) {
         if (portal[row][col] <= 0) {
             return;
@@ -4059,6 +4151,8 @@ public class GameView extends View {
             text = "彩虹瓶 x" + lastRainbowBottleReward;
         } else if (lastEnergyPotionReward > 0 && age < 900) {
             text = "能量 +" + lastEnergyPotionReward;
+        } else if (lastButterflyReward > 0 && age < 900) {
+            text = "蝴蝶助力 x" + lastButterflyReward;
         } else if (lastGemReward > 0 && age < 900) {
             text = "钻石 +" + lastGemReward;
         } else if (lastPortalReward > 0 && age < 900) {
@@ -4144,6 +4238,9 @@ public class GameView extends View {
         }
         if (level.energyPotionCount > 0) {
             goalText += "  能量药水 " + level.energyPotionCount;
+        }
+        if (level.butterflyCount > 0) {
+            goalText += "  蝴蝶 " + level.butterflyCount;
         }
         if (level.portalCount > 0) {
             goalText += "  传送门 " + level.portalCount;
@@ -4387,6 +4484,7 @@ public class GameView extends View {
         final int goldenEggCount;
         final int rainbowBottleCount;
         final int energyPotionCount;
+        final int butterflyCount;
         final int portalCount;
         final int hourglassCount;
         final int luckyStarCount;
@@ -4401,7 +4499,8 @@ public class GameView extends View {
                 int extraMoves, int magicWands, int brushes, int portalProps, int cleanses, int freezes,
                 int magnets, int targetKind, int targetAmount, int iceCount, int honeyCount, int stoneCount, int vineCount,
                 int giftCount, int chainCount, int shellCount, int flowerCount, int keyCount, int moveChestCount,
-                int cloudCount, int gemCount, int goldenEggCount, int rainbowBottleCount, int energyPotionCount, int portalCount, int hourglassCount, int luckyStarCount,
+                int cloudCount, int gemCount, int goldenEggCount, int rainbowBottleCount, int energyPotionCount, int butterflyCount,
+                int portalCount, int hourglassCount, int luckyStarCount,
                 int mysteryBoxCount, int countdownBombCount, int moveLimitGoal, int comboGoal, int scoreGoal, boolean elite) {
             this.targetScore = targetScore;
             this.moves = moves;
@@ -4434,6 +4533,7 @@ public class GameView extends View {
             this.goldenEggCount = goldenEggCount;
             this.rainbowBottleCount = rainbowBottleCount;
             this.energyPotionCount = energyPotionCount;
+            this.butterflyCount = butterflyCount;
             this.portalCount = portalCount;
             this.hourglassCount = hourglassCount;
             this.luckyStarCount = luckyStarCount;
