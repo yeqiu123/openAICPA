@@ -30,6 +30,7 @@ public class GameView extends View {
     private static final String KEY_BEST_SCORE_PREFIX = "best_score_";
     private static final String KEY_RANK_PREFIX = "rank_";
     private static final String KEY_COINS = "coins";
+    private static final String KEY_PROP_RESERVE_PREFIX = "prop_reserve_";
     private static final String KEY_STAR_CHEST_CLAIMED = "star_chest_claimed";
     private static final String KEY_RANK_CHEST_CLAIMED = "rank_chest_claimed";
     private static final String KEY_CHAPTER_CHEST_PREFIX = "chapter_chest_";
@@ -139,6 +140,7 @@ public class GameView extends View {
     private final int[][] rainbowArc = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[][] crystalCore = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[] propInventory = new int[PROP_COUNT];
+    private final int[] propReserve = new int[PROP_COUNT];
     private final RectF[] propRects = new RectF[PROP_COUNT];
     private final RectF[] levelRects = new RectF[LEVELS_PER_PAGE];
     private final RectF mapButtonRect = new RectF();
@@ -732,6 +734,10 @@ public class GameView extends View {
         propInventory[PROP_STAR_COMPASS] = level.starCompasses;
         propInventory[PROP_BUBBLE_WAND] = level.bubbleWands;
         applyChapterMasteryStarterPerks();
+        for (int prop = 0; prop < PROP_COUNT; prop++) {
+            // 长期奖励道具作为储备带入新关卡，提升收集和回访价值。
+            propInventory[prop] += propReserve[prop];
+        }
 
         // 初始化时避开天然三连，让玩家第一步更清晰。
         for (int row = 0; row < BOARD_SIZE; row++) {
@@ -834,6 +840,35 @@ public class GameView extends View {
         score = 0;
     }
 
+    private void addProp(int prop, int amount) {
+        if (prop == NONE || amount <= 0) {
+            return;
+        }
+        propInventory[prop] += amount;
+    }
+
+    private void addReserveProp(int prop, int amount) {
+        if (prop == NONE || amount <= 0) {
+            return;
+        }
+        propInventory[prop] += amount;
+        propReserve[prop] += amount;
+        savePropReserve(prop);
+    }
+
+    private void consumeProp(int prop) {
+        propInventory[prop]--;
+        int remaining = Math.max(0, propInventory[prop]);
+        if (propReserve[prop] > remaining) {
+            propReserve[prop] = remaining;
+            savePropReserve(prop);
+        }
+    }
+
+    private void savePropReserve(int prop) {
+        prefs.edit().putInt(KEY_PROP_RESERVE_PREFIX + prop, propReserve[prop]).apply();
+    }
+
     private boolean handlePropTap(float x, float y) {
         for (int prop = 0; prop < PROP_COUNT; prop++) {
             RectF rect = propRects[prop];
@@ -846,18 +881,19 @@ public class GameView extends View {
                     // 道具用完后可直接用金币补一个，减少关卡中断感。
                     coins -= PROP_COSTS[prop];
                     propInventory[prop]++;
+                    // 金币临时购买只用于当前关，不写入长期储备。
                     saveCoins();
                 }
 
                 if (prop == PROP_SHUFFLE) {
-                    propInventory[prop]--;
+                    consumeProp(prop);
                     shuffleBoard();
                     activeProp = NONE;
                     selectedRow = NONE;
                     selectedCol = NONE;
                 } else if (prop == PROP_PORTAL) {
                     // 传送道具即时扰动棋盘，适合主动寻找新连锁。
-                    propInventory[prop]--;
+                    consumeProp(prop);
                     triggerPortalShift();
                     resolveMatches(findMatches());
                     checkLevelState();
@@ -866,7 +902,7 @@ public class GameView extends View {
                     selectedCol = NONE;
                 } else if (prop == PROP_EXTRA_MOVES) {
                     // 加步道具即时生效，适合低步数时救场。
-                    propInventory[prop]--;
+                    consumeProp(prop);
                     movesLeft += 5;
                     moveLimitBonus += 5;
                     activeProp = NONE;
@@ -874,14 +910,14 @@ public class GameView extends View {
                     selectedCol = NONE;
                 } else if (prop == PROP_FREEZE) {
                     // 冻结道具暂停蜂蜜蔓延，给高压局面留出规划窗口。
-                    propInventory[prop]--;
+                    consumeProp(prop);
                     honeyFreezeMoves = 4;
                     activeProp = NONE;
                     selectedRow = NONE;
                     selectedCol = NONE;
                 } else if (prop == PROP_MAGNET) {
                     // 磁铁直接吸走当前目标色，帮助玩家补齐收集目标。
-                    propInventory[prop]--;
+                    consumeProp(prop);
                     clearCells(buildColorCells(targetKind), 160);
                     checkLevelState();
                     activeProp = NONE;
@@ -889,7 +925,7 @@ public class GameView extends View {
                     selectedCol = NONE;
                 } else if (prop == PROP_CLOCK) {
                     // 时钟补步并延缓炸弹倒计时，专门应对后期高压关卡。
-                    propInventory[prop]--;
+                    consumeProp(prop);
                     movesLeft += 3;
                     moveLimitBonus += 3;
                     extendCountdownBombs(2);
@@ -898,7 +934,7 @@ public class GameView extends View {
                     selectedCol = NONE;
                 } else if (prop == PROP_SHIELD) {
                     // 护盾即时生效，能抵消一次倒计时炸弹归零。
-                    propInventory[prop]--;
+                    consumeProp(prop);
                     bombShieldCount++;
                     extendCountdownBombs(1);
                     lastShieldReward = bombShieldCount;
@@ -915,10 +951,10 @@ public class GameView extends View {
                     selectedCol = NONE;
                 } else if (prop == PROP_ENERGY_CORE) {
                     // 能量核心直接填满能量并补给随机道具，制造一次主动爆发机会。
-                    propInventory[prop]--;
+                    consumeProp(prop);
                     comboEnergy = 100;
                     lastEnergyRewardProp = random.nextInt(PROP_COUNT);
-                    propInventory[lastEnergyRewardProp]++;
+                    addProp(lastEnergyRewardProp, 1);
                     lastTaskRewardType = 11;
                     lastFerrisTicketReward = 0;
                     lastFireworksBarrelReward = 0;
@@ -932,7 +968,7 @@ public class GameView extends View {
                     selectedCol = NONE;
                 } else if (prop == PROP_METEOR) {
                     // 流星随机砸开多处棋盘格，适合临近失败时制造翻盘机会。
-                    propInventory[prop]--;
+                    consumeProp(prop);
                     clearCells(buildRandomCells(8), 240);
                     checkLevelState();
                     activeProp = NONE;
@@ -940,7 +976,7 @@ public class GameView extends View {
                     selectedCol = NONE;
                 } else if (prop == PROP_TIDE) {
                     // 潮汐横扫多行棋盘，适合后期大面积打开局面。
-                    propInventory[prop]--;
+                    consumeProp(prop);
                     clearCells(buildTideCells(), 260);
                     checkLevelState();
                     activeProp = NONE;
@@ -948,7 +984,7 @@ public class GameView extends View {
                     selectedCol = NONE;
                 } else if (prop == PROP_AURORA_ORB) {
                     // 极光球补满能量并生成彩虹棋，适合极光章节制造爆发。
-                    propInventory[prop]--;
+                    consumeProp(prop);
                     comboEnergy = 100;
                     upgradeRandomRainbowPiece();
                     lastTaskRewardType = 13;
@@ -964,7 +1000,7 @@ public class GameView extends View {
                     selectedCol = NONE;
                 } else if (prop == PROP_STARFISH_PICK) {
                     // 海星镐随机敲开多层障碍，专门应对后期珊瑚礁和贝壳压力。
-                    propInventory[prop]--;
+                    consumeProp(prop);
                     int chipped = chipLayeredObstacles(5);
                     if (chipped <= 0) {
                         clearCells(buildRandomCells(3), 120);
@@ -986,7 +1022,7 @@ public class GameView extends View {
                     selectedCol = NONE;
                 } else if (prop == PROP_MOON_TICKET) {
                     // 月光票券补步并送一枚方向特效，作为终章关卡的轻量翻盘道具。
-                    propInventory[prop]--;
+                    consumeProp(prop);
                     movesLeft += 2;
                     moveLimitBonus += 2;
                     clearCells(buildRandomCells(4), 160);
@@ -1028,7 +1064,7 @@ public class GameView extends View {
                     selectedCol = NONE;
                 } else if (prop == PROP_FIREWORK_CANNON) {
                     // 烟花礼炮直接点燃多处爆点，适合烟花星港后段制造爽快连锁。
-                    propInventory[prop]--;
+                    consumeProp(prop);
                     clearCells(buildRandomCells(6), 220);
                     upgradeRandomBombPiece();
                     upgradeRandomBombPiece();
@@ -1070,7 +1106,7 @@ public class GameView extends View {
                     selectedCol = NONE;
                 } else if (prop == PROP_BUBBLE_WAND) {
                     // 泡泡棒即时净化多处障碍并送一个彩虹棋，适合新增星河岛后期混搭关翻盘。
-                    propInventory[prop]--;
+                    consumeProp(prop);
                     int cleaned = cleanseRandomObstacles(6);
                     if (cleaned <= 0) {
                         clearCells(buildRandomCells(4), 180);
@@ -1130,28 +1166,28 @@ public class GameView extends View {
 
     private void useActiveProp(int row, int col) {
         if (activeProp == PROP_HAMMER) {
-            propInventory[PROP_HAMMER]--;
+            consumeProp(PROP_HAMMER);
             clearCells(buildSingleCell(row, col), 90);
         } else if (activeProp == PROP_BOMB) {
-            propInventory[PROP_BOMB]--;
+            consumeProp(PROP_BOMB);
             clearCells(buildBombCells(row, col), 140);
         } else if (activeProp == PROP_ROW_BLAST) {
-            propInventory[PROP_ROW_BLAST]--;
+            consumeProp(PROP_ROW_BLAST);
             clearCells(buildCrossCells(row, col), 180);
         } else if (activeProp == PROP_COLOR_BLAST) {
-            propInventory[PROP_COLOR_BLAST]--;
+            consumeProp(PROP_COLOR_BLAST);
             clearCells(buildColorCells(colorOf(board[row][col])), 220);
         } else if (activeProp == PROP_ROCKET) {
             // 火箭按点击格的奇偶方向清一行或一列，适合精确打开局面。
-            propInventory[PROP_ROCKET]--;
+            consumeProp(PROP_ROCKET);
             clearCells(buildRocketCells(row, col), 190);
         } else if (activeProp == PROP_LIGHTNING) {
             // 闪电沿两条对角线劈开棋盘，适合打开被斜向隔断的局面。
-            propInventory[PROP_LIGHTNING]--;
+            consumeProp(PROP_LIGHTNING);
             clearCells(buildDiagonalCells(row, col), 210);
         } else if (activeProp == PROP_STAR_COMPASS) {
             // 星轨罗盘同时划开十字和双对角线，给终章复杂棋盘一个强力定点解法。
-            propInventory[PROP_STAR_COMPASS]--;
+            consumeProp(PROP_STAR_COMPASS);
             lastTaskRewardType = 17;
             clearCells(buildStarCompassCells(row, col), 320);
             lastTaskRewardType = 17;
@@ -1189,7 +1225,7 @@ public class GameView extends View {
             showFeedback(1, 1);
         } else if (activeProp == PROP_TARGET_BRUSH) {
             // 目标刷把小范围棋子染成目标色，帮助收集关续上消除机会。
-            propInventory[PROP_TARGET_BRUSH]--;
+            consumeProp(PROP_TARGET_BRUSH);
             int painted = paintTargetBrushCells(row, col);
             spawnParticles(buildBombCells(row, col));
             lastTaskRewardType = 9;
@@ -1227,7 +1263,7 @@ public class GameView extends View {
             showFeedback(1, Math.max(1, painted));
         } else if (activeProp == PROP_MAGIC_WAND) {
             // 魔法棒把指定棋子升级成彩虹棋，让玩家主动创造关键大招。
-            propInventory[PROP_MAGIC_WAND]--;
+            consumeProp(PROP_MAGIC_WAND);
             board[row][col] = makePiece(colorOf(board[row][col]), SPECIAL_RAINBOW);
             spawnParticles(buildSingleCell(row, col));
             lastTaskRewardType = 5;
@@ -1265,7 +1301,7 @@ public class GameView extends View {
             showFeedback(1, 1);
         } else if (activeProp == PROP_BRUSH) {
             // 克隆刷把普通棋升级成方向特效，方便玩家主动铺垫连锁。
-            propInventory[PROP_BRUSH]--;
+            consumeProp(PROP_BRUSH);
             int special = (row + col + movesUsed) % 2 == 0 ? SPECIAL_ROW : SPECIAL_COLUMN;
             board[row][col] = makePiece(colorOf(board[row][col]), special);
             spawnParticles(buildSingleCell(row, col));
@@ -1304,7 +1340,7 @@ public class GameView extends View {
             showFeedback(1, 1);
         } else if (activeProp == PROP_STAR_HAMMER) {
             // 星锤把指定棋子锤成爆炸特效，用来主动制造更大的连锁。
-            propInventory[PROP_STAR_HAMMER]--;
+            consumeProp(PROP_STAR_HAMMER);
             board[row][col] = makePiece(colorOf(board[row][col]), SPECIAL_BOMB);
             spawnParticles(buildSingleCell(row, col));
             lastTaskRewardType = 8;
@@ -1342,7 +1378,7 @@ public class GameView extends View {
             showFeedback(1, 1);
         } else if (activeProp == PROP_CLEANSE) {
             // 净化道具直接削弱周围障碍，适合处理蜂蜜和多层阻挡。
-            propInventory[PROP_CLEANSE]--;
+            consumeProp(PROP_CLEANSE);
             int cleaned = cleanseAround(row, col);
             score += cleaned * 70;
             spawnParticles(buildBombCells(row, col));
@@ -1382,7 +1418,7 @@ public class GameView extends View {
             showFeedback(1, Math.max(1, cleaned));
         } else if (activeProp == PROP_CHAIN_BREAKER) {
             // 破锁钳专门剪开锁链和藤蔓，帮助玩家快速打开被封住的区域。
-            propInventory[PROP_CHAIN_BREAKER]--;
+            consumeProp(PROP_CHAIN_BREAKER);
             int broken = breakChainsAround(row, col);
             score += broken * 80;
             spawnParticles(buildBombCells(row, col));
@@ -1917,7 +1953,7 @@ public class GameView extends View {
                 comboEnergy = 0;
                 comboFeverMoves = 3;
                 lastEnergyRewardProp = random.nextInt(PROP_COUNT);
-                propInventory[lastEnergyRewardProp]++;
+                addProp(lastEnergyRewardProp, 1);
                 lastTaskRewardType = 3;
                 lastGiftReward = 0;
                 honeySpreadCount = 0;
@@ -2207,7 +2243,7 @@ public class GameView extends View {
         // 完美通关奖励少步数、高评级的打法，给重玩提供更明确的冲刺目标。
         lastPerfectReward = 18 + lastRank * 4;
         coins += lastPerfectReward;
-        propInventory[PROP_ROW_BLAST]++;
+        addProp(PROP_ROW_BLAST, 1);
     }
 
     private void saveDailyChallengeReward() {
@@ -2253,7 +2289,7 @@ public class GameView extends View {
         }
         if (lastDailyChallengeMilestoneProp != NONE) {
             // 每日挑战连胜节点给稀有道具，强化持续回访动力。
-            propInventory[lastDailyChallengeMilestoneProp] += lastDailyChallengeMilestoneAmount;
+            addReserveProp(lastDailyChallengeMilestoneProp, lastDailyChallengeMilestoneAmount);
         }
     }
 
@@ -2290,7 +2326,7 @@ public class GameView extends View {
         lastChestRewardAmount = 0;
         lastChapterChestReward = 0;
         coins += lastDailyGoalReward;
-        propInventory[PROP_MOON_TICKET]++;
+        addProp(PROP_MOON_TICKET, 1);
         dailyGoalClaimed = true;
         prefs.edit()
                 .putLong(KEY_DAILY_GOAL_DAY, getToday())
@@ -2332,7 +2368,7 @@ public class GameView extends View {
         }
         if (lastWinStreakRewardProp != NONE) {
             // 连胜节点补给稀有道具，鼓励玩家连续冲关和反复挑战。
-            propInventory[lastWinStreakRewardProp] += lastWinStreakRewardAmount;
+            addReserveProp(lastWinStreakRewardProp, lastWinStreakRewardAmount);
         }
     }
 
@@ -2423,7 +2459,7 @@ public class GameView extends View {
         }
 
         // 高阶成就除金币外给稀有道具，延长满星和评级后的追求。
-        propInventory[prop] += amount;
+        addReserveProp(prop, amount);
         lastAchievementRewardProp = prop;
         lastAchievementRewardAmount += amount;
     }
@@ -2437,6 +2473,9 @@ public class GameView extends View {
         dailyChallengeStreak = prefs.getInt(KEY_DAILY_CHALLENGE_STREAK, 0);
         soundEnabled = prefs.getBoolean(KEY_SOUND_ENABLED, true);
         hapticEnabled = prefs.getBoolean(KEY_HAPTIC_ENABLED, true);
+        for (int prop = 0; prop < PROP_COUNT; prop++) {
+            propReserve[prop] = prefs.getInt(KEY_PROP_RESERVE_PREFIX + prop, 0);
+        }
         grantDailyReward();
         loadDailyGoal();
         for (int i = 0; i < levels.size(); i++) {
@@ -2479,7 +2518,7 @@ public class GameView extends View {
         if (hiddenChallengeCleared) {
             lastHiddenReward = 20;
             coins += lastHiddenReward;
-            propInventory[PROP_BOMB]++;
+            addProp(PROP_BOMB, 1);
         }
         grantFirstClearReward(level, oldStars);
         grantEliteLevelReward(level);
@@ -2504,7 +2543,7 @@ public class GameView extends View {
         // 首次满星额外给奖励，把补星目标转成更明确的正反馈。
         lastFullStarReward = 24 + getChapterIndex(levelIndex) * 4 + (level.elite ? 12 : 0);
         coins += lastFullStarReward;
-        propInventory[PROP_CLEANSE]++;
+        addReserveProp(PROP_CLEANSE, 1);
     }
 
     private void grantFirstClearReward(Level level, int oldStars) {
@@ -2537,20 +2576,20 @@ public class GameView extends View {
         chapterMasteryClaimed[chapter] = true;
         lastChapterMasteryReward = 120 + chapter * 30;
         coins += lastChapterMasteryReward;
-        propInventory[PROP_CLEANSE]++;
+        addReserveProp(PROP_CLEANSE, 1);
         if (isFireworksChapter(chapter)) {
-            propInventory[PROP_FIREWORK_CANNON]++;
+            addReserveProp(PROP_FIREWORK_CANNON, 1);
         } else if (isRainbowValleyChapter(chapter)) {
-            propInventory[PROP_AURORA_ORB]++;
+            addReserveProp(PROP_AURORA_ORB, 1);
         } else if (isCrystalTowerChapter(chapter)) {
-            propInventory[PROP_STAR_COMPASS]++;
+            addReserveProp(PROP_STAR_COMPASS, 1);
         } else if (isBubbleGalaxyChapter(chapter)) {
-            propInventory[PROP_AURORA_ORB]++;
-            propInventory[PROP_STAR_COMPASS]++;
-            propInventory[PROP_BUBBLE_WAND]++;
+            addReserveProp(PROP_AURORA_ORB, 1);
+            addReserveProp(PROP_STAR_COMPASS, 1);
+            addReserveProp(PROP_BUBBLE_WAND, 1);
         } else if (isMintFireworksChapter(chapter)) {
-            propInventory[PROP_FIREWORK_CANNON]++;
-            propInventory[PROP_CLEANSE]++;
+            addReserveProp(PROP_FIREWORK_CANNON, 1);
+            addReserveProp(PROP_CLEANSE, 1);
         }
         prefs.edit()
                 .putBoolean(KEY_CHAPTER_MASTERY_PREFIX + chapter, true)
@@ -2569,19 +2608,19 @@ public class GameView extends View {
         chapterEliteClaimed[chapter] = true;
         lastChapterEliteReward = 90 + chapter * 24;
         coins += lastChapterEliteReward;
-        propInventory[PROP_METEOR]++;
+        addReserveProp(PROP_METEOR, 1);
         if (isFireworksChapter(chapter)) {
-            propInventory[PROP_FIREWORK_CANNON]++;
+            addReserveProp(PROP_FIREWORK_CANNON, 1);
         } else if (isRainbowValleyChapter(chapter)) {
-            propInventory[PROP_STAR_COMPASS]++;
+            addReserveProp(PROP_STAR_COMPASS, 1);
         } else if (isCrystalTowerChapter(chapter)) {
-            propInventory[PROP_FIREWORK_CANNON]++;
+            addReserveProp(PROP_FIREWORK_CANNON, 1);
         } else if (isBubbleGalaxyChapter(chapter)) {
-            propInventory[PROP_AURORA_ORB]++;
-            propInventory[PROP_BUBBLE_WAND]++;
+            addReserveProp(PROP_AURORA_ORB, 1);
+            addReserveProp(PROP_BUBBLE_WAND, 1);
         } else if (isMintFireworksChapter(chapter)) {
-            propInventory[PROP_FIREWORK_CANNON]++;
-            propInventory[PROP_STAR_COMPASS]++;
+            addReserveProp(PROP_FIREWORK_CANNON, 1);
+            addReserveProp(PROP_STAR_COMPASS, 1);
         }
         prefs.edit()
                 .putBoolean(KEY_CHAPTER_ELITE_PREFIX + chapter, true)
@@ -2600,23 +2639,23 @@ public class GameView extends View {
         chapterRankClaimed[chapter] = true;
         lastChapterRankReward = 100 + chapter * 26;
         coins += lastChapterRankReward;
-        propInventory[PROP_TIDE]++;
+        addReserveProp(PROP_TIDE, 1);
         if (isFireworksChapter(chapter)) {
-            propInventory[PROP_FIREWORK_CANNON]++;
-            propInventory[PROP_STAR_COMPASS]++;
+            addReserveProp(PROP_FIREWORK_CANNON, 1);
+            addReserveProp(PROP_STAR_COMPASS, 1);
         } else if (isRainbowValleyChapter(chapter)) {
-            propInventory[PROP_AURORA_ORB]++;
-            propInventory[PROP_STAR_COMPASS]++;
+            addReserveProp(PROP_AURORA_ORB, 1);
+            addReserveProp(PROP_STAR_COMPASS, 1);
         } else if (isCrystalTowerChapter(chapter)) {
-            propInventory[PROP_FIREWORK_CANNON]++;
-            propInventory[PROP_STAR_COMPASS]++;
+            addReserveProp(PROP_FIREWORK_CANNON, 1);
+            addReserveProp(PROP_STAR_COMPASS, 1);
         } else if (isBubbleGalaxyChapter(chapter)) {
-            propInventory[PROP_AURORA_ORB]++;
-            propInventory[PROP_STAR_COMPASS]++;
-            propInventory[PROP_BUBBLE_WAND]++;
+            addReserveProp(PROP_AURORA_ORB, 1);
+            addReserveProp(PROP_STAR_COMPASS, 1);
+            addReserveProp(PROP_BUBBLE_WAND, 1);
         } else if (isMintFireworksChapter(chapter)) {
-            propInventory[PROP_FIREWORK_CANNON]++;
-            propInventory[PROP_STAR_COMPASS]++;
+            addReserveProp(PROP_FIREWORK_CANNON, 1);
+            addReserveProp(PROP_STAR_COMPASS, 1);
         }
         prefs.edit()
                 .putBoolean(KEY_CHAPTER_RANK_PREFIX + chapter, true)
@@ -2655,12 +2694,12 @@ public class GameView extends View {
         }
 
         // 章节大师奖励会转成后续关卡的固定开局助力。
-        propInventory[PROP_MAGIC_WAND]++;
+        addProp(PROP_MAGIC_WAND, 1);
         if (mastered >= 2) {
-            propInventory[PROP_BRUSH]++;
+            addProp(PROP_BRUSH, 1);
         }
         if (mastered >= 4) {
-            propInventory[PROP_COLOR_BLAST]++;
+            addProp(PROP_COLOR_BLAST, 1);
         }
     }
 
@@ -2747,7 +2786,7 @@ public class GameView extends View {
         }
         if (lastDailyRewardProp != NONE) {
             // 连签节点送稀有道具，给每日回访一个更明确的期待。
-            propInventory[lastDailyRewardProp] += lastDailyRewardPropAmount;
+            addReserveProp(lastDailyRewardProp, lastDailyRewardPropAmount);
         }
     }
 
@@ -2905,7 +2944,7 @@ public class GameView extends View {
         }
         if (lastChestRewardProp != NONE) {
             // 星级宝箱节点追加稀有道具，鼓励补星刷满。
-            propInventory[lastChestRewardProp] += lastChestRewardAmount;
+            addReserveProp(lastChestRewardProp, lastChestRewardAmount);
         }
     }
 
@@ -2921,7 +2960,7 @@ public class GameView extends View {
         }
         if (lastChestRewardProp != NONE) {
             // 评级宝箱节点奖励更偏向冲榜和高连击关卡。
-            propInventory[lastChestRewardProp] += lastChestRewardAmount;
+            addReserveProp(lastChestRewardProp, lastChestRewardAmount);
         }
     }
 
@@ -3767,7 +3806,7 @@ public class GameView extends View {
             if (luckyStar[cell.row][cell.col] > 0) {
                 luckyStar[cell.row][cell.col] = 0;
                 lastLuckyStarRewardProp = random.nextInt(PROP_COUNT);
-                propInventory[lastLuckyStarRewardProp]++;
+                addProp(lastLuckyStarRewardProp, 1);
                 score += 140;
             }
             if (luckyClover[cell.row][cell.col] > 0) {
@@ -3783,7 +3822,7 @@ public class GameView extends View {
                 pearl[cell.row][cell.col] = 0;
                 score += 240;
                 coins += 5;
-                propInventory[PROP_STARFISH_PICK]++;
+                addProp(PROP_STARFISH_PICK, 1);
                 lastPearlReward += 5;
                 saveCoins();
             }
@@ -3796,7 +3835,7 @@ public class GameView extends View {
             }
             if (ferrisTicket[cell.row][cell.col] > 0) {
                 ferrisTicket[cell.row][cell.col] = 0;
-                propInventory[PROP_MOON_TICKET]++;
+                addProp(PROP_MOON_TICKET, 1);
                 triggerFerrisTicketSweep(cell.row, cell.col);
                 score += 200;
                 lastFerrisTicketReward++;
@@ -4128,7 +4167,7 @@ public class GameView extends View {
             lastEnergyRewardProp = NONE;
             saveCoins();
         } else {
-            propInventory[random.nextInt(PROP_COUNT)]++;
+            addProp(random.nextInt(PROP_COUNT), 1);
             lastGiftReward++;
             honeySpreadCount = 0;
             lastMoveChestReward = 0;
@@ -4187,7 +4226,7 @@ public class GameView extends View {
         } else {
             lastLuckyCloverRewardProp = random.nextInt(PROP_COUNT);
             lastLuckyCloverRewardAmount = 1;
-            propInventory[lastLuckyCloverRewardProp]++;
+            addProp(lastLuckyCloverRewardProp, 1);
         }
     }
 
@@ -4241,7 +4280,7 @@ public class GameView extends View {
         } else {
             lastMysteryRewardProp = random.nextInt(PROP_COUNT);
             lastMysteryRewardAmount = 1;
-            propInventory[lastMysteryRewardProp]++;
+            addProp(lastMysteryRewardProp, 1);
         }
     }
 
@@ -4320,7 +4359,7 @@ public class GameView extends View {
         int targetMilestone = collected / 5;
         if (targetMilestone > rewardTargetMilestone) {
             // 局内阶段奖励，让收集目标也能持续反馈玩家。
-            propInventory[PROP_HAMMER] += targetMilestone - rewardTargetMilestone;
+            addProp(PROP_HAMMER, targetMilestone - rewardTargetMilestone);
             rewardTargetMilestone = targetMilestone;
             lastTaskRewardType = 1;
             lastGiftReward = 0;
@@ -4360,7 +4399,7 @@ public class GameView extends View {
         int obstacleMilestone = clearedObstacles / 6;
         if (obstacleMilestone > rewardObstacleMilestone) {
             // 清障越积极，道具补给越快。
-            propInventory[PROP_BOMB] += obstacleMilestone - rewardObstacleMilestone;
+            addProp(PROP_BOMB, obstacleMilestone - rewardObstacleMilestone);
             rewardObstacleMilestone = obstacleMilestone;
             lastTaskRewardType = 2;
             lastGiftReward = 0;
@@ -4397,7 +4436,7 @@ public class GameView extends View {
         int comboMilestone = bestCombo / 3;
         if (comboMilestone > rewardComboMilestone) {
             // 做出大连击时给随机补给，奖励更有技巧性的消除。
-            propInventory[random.nextInt(PROP_COUNT)] += comboMilestone - rewardComboMilestone;
+            addProp(random.nextInt(PROP_COUNT), comboMilestone - rewardComboMilestone);
             rewardComboMilestone = comboMilestone;
             lastTaskRewardType = 3;
             lastGiftReward = 0;
@@ -4433,7 +4472,7 @@ public class GameView extends View {
 
         if (level.keyCount > 0 && keyRemaining <= 0 && rewardKeyMilestone == 0) {
             // 收齐钥匙后补一个强力道具，让额外目标有即时爽感。
-            propInventory[PROP_COLOR_BLAST]++;
+            addProp(PROP_COLOR_BLAST, 1);
             rewardKeyMilestone = 1;
             lastTaskRewardType = 4;
             lastGiftReward = 0;
