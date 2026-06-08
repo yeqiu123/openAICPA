@@ -5522,7 +5522,8 @@ public class GameView extends View {
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setTextSize(sp(11));
         textPaint.setColor(Color.WHITE);
-        String text = replayLevel >= 0 ? "补星推荐 第" + (replayLevel + 1) + "关  点击定位" : "已通关卡暂无补星目标";
+        String text = replayLevel >= 0 ? "智能推荐 第" + (replayLevel + 1) + "关  " + buildReplayReason(replayLevel)
+                : "已通关卡暂无补星目标";
         canvas.drawText(text, replayHintRect.centerX(), replayHintRect.centerY() + dp(4), textPaint);
     }
 
@@ -5769,17 +5770,47 @@ public class GameView extends View {
     }
 
     private int findReplayTargetLevel() {
+        int bestLevel = NONE;
+        int bestScore = 0;
         for (int level = 0; level <= highestUnlockedLevel && level < levels.size(); level++) {
             if (isReplayTargetLevel(level)) {
-                return level;
+                int score = getReplayPriorityScore(level);
+                if (score > bestScore) {
+                    bestLevel = level;
+                    bestScore = score;
+                }
             }
         }
-        return NONE;
+        return bestLevel;
     }
 
     private boolean isReplayTargetLevel(int level) {
         return level <= highestUnlockedLevel && levelStars[level] > 0
                 && (levelStars[level] < 3 || levelRanks[level] < 4);
+    }
+
+    private int getReplayPriorityScore(int level) {
+        int missingStars = Math.max(0, 3 - levelStars[level]);
+        int missingRank = Math.max(0, 4 - levelRanks[level]);
+        int chapterMissingStars = CHAPTER_CHEST_STARS - getChapterStars(getChapterIndex(level));
+        int score = missingStars * 45 + missingRank * 12;
+        if (isEliteLevel(level)) {
+            score += 18;
+        }
+        if (isHiddenChallengeLevel(level)) {
+            score += 12;
+        }
+        if (chapterMissingStars > 0 && chapterMissingStars <= 6) {
+            score += 20;
+        }
+        return score;
+    }
+
+    private String buildReplayReason(int level) {
+        if (levelStars[level] < 3) {
+            return "差" + (3 - levelStars[level]) + "星";
+        }
+        return "冲" + buildRankText(4);
     }
 
     private void focusReplayLevel() {
@@ -5788,7 +5819,7 @@ public class GameView extends View {
             return;
         }
 
-        // 补星推荐直接定位到最早可提升关卡，减少地图翻找成本。
+        // 智能补星推荐优先选择高收益关卡，减少地图翻找成本。
         levelMapPage = level / LEVELS_PER_PAGE;
     }
 
