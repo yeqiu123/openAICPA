@@ -49,13 +49,13 @@ public class GameView extends View {
     private static final String KEY_HAPTIC_ENABLED = "haptic_enabled";
     private static final int BOARD_SIZE = 8;
     private static final int TILE_KINDS = 6;
-    private static final int LEVEL_COUNT = 160;
+    private static final int LEVEL_COUNT = 180;
     private static final int LEVELS_PER_PAGE = 60;
     private static final int CONTINUE_COST = 10;
     private static final int STAR_CHEST_STEP = 30;
     private static final int RANK_CHEST_STEP = 45;
     private static final int CHAPTER_SIZE = 20;
-    private static final int CHAPTER_COUNT = 8;
+    private static final int CHAPTER_COUNT = 9;
     private static final int CHAPTER_CHEST_STARS = 45;
     private static final int ACHIEVEMENT_COUNT = 14;
     private static final int NONE = -1;
@@ -170,7 +170,8 @@ public class GameView extends View {
             Color.rgb(171, 132, 255),
             Color.rgb(255, 186, 82),
             Color.rgb(76, 211, 194),
-            Color.rgb(238, 122, 159)
+            Color.rgb(238, 122, 159),
+            Color.rgb(110, 125, 255)
     };
     private final int[] chapterBottomColors = {
             Color.rgb(255, 151, 132),
@@ -180,10 +181,11 @@ public class GameView extends View {
             Color.rgb(255, 139, 176),
             Color.rgb(92, 202, 166),
             Color.rgb(255, 214, 92),
-            Color.rgb(117, 182, 255)
+            Color.rgb(117, 182, 255),
+            Color.rgb(255, 174, 208)
     };
     private final String[] chapterNames = {
-            "糖果森林", "云朵海湾", "果冻火山", "薄荷花园", "星光梦境", "蜂蜜工坊", "珊瑚集市", "极光城堡"
+            "糖果森林", "云朵海湾", "果冻火山", "薄荷花园", "星光梦境", "蜂蜜工坊", "珊瑚集市", "极光城堡", "月光游乐园"
     };
 
     private int levelIndex = 0;
@@ -3657,7 +3659,7 @@ public class GameView extends View {
                 canvas.drawCircle(x - dp(13), y + dp(5), dp(4), paint);
                 canvas.drawCircle(x + dp(13), y + dp(5), dp(4), paint);
             }
-        } else {
+        } else if (chapter == 7) {
             for (int i = 0; i < 8; i++) {
                 float x = getWidth() * (0.08f + i * 0.12f);
                 float y = getHeight() * (0.15f + (i % 4) * 0.12f);
@@ -3665,6 +3667,22 @@ public class GameView extends View {
                 paint.setColor(Color.argb(45, 255, 255, 255));
                 canvas.drawLine(x - dp(18), y + dp(12), x + dp(18), y - dp(12), paint);
                 paint.setColor(Color.argb(55, 255, 255, 255));
+            }
+        } else {
+            for (int i = 0; i < 5; i++) {
+                float x = getWidth() * (0.12f + i * 0.18f);
+                float y = getHeight() * (0.17f + (i % 2) * 0.2f);
+                // 月光游乐园用旋转轮廓和小星光营造更活泼的终章氛围。
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setStrokeWidth(dp(2));
+                canvas.drawCircle(x, y, dp(18), paint);
+                for (int spoke = 0; spoke < 6; spoke++) {
+                    double angle = time / 1000.0 + spoke * Math.PI / 3;
+                    canvas.drawLine(x, y, x + (float) Math.cos(angle) * dp(18),
+                            y + (float) Math.sin(angle) * dp(18), paint);
+                }
+                paint.setStyle(Paint.Style.FILL);
+                drawStar(canvas, x + dp(22), y - dp(18), dp(5 + i % 2));
             }
         }
     }
