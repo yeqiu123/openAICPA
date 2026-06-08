@@ -2244,6 +2244,9 @@ public class GameView extends View {
         } else if (dailyChallengeStreak == 14) {
             lastDailyChallengeMilestoneProp = PROP_MOON_TICKET;
             lastDailyChallengeMilestoneAmount = 2;
+        } else if (dailyChallengeStreak == 21) {
+            lastDailyChallengeMilestoneProp = PROP_BUBBLE_WAND;
+            lastDailyChallengeMilestoneAmount = 1;
         } else if (dailyChallengeStreak > 0 && dailyChallengeStreak % 30 == 0) {
             lastDailyChallengeMilestoneProp = PROP_METEOR;
             lastDailyChallengeMilestoneAmount = 2;
@@ -2320,6 +2323,9 @@ public class GameView extends View {
         } else if (winStreak == 10) {
             lastWinStreakRewardProp = PROP_FIREWORK_CANNON;
             lastWinStreakRewardAmount = 2;
+        } else if (winStreak == 12) {
+            lastWinStreakRewardProp = PROP_BUBBLE_WAND;
+            lastWinStreakRewardAmount = 1;
         } else if (winStreak > 0 && winStreak % 15 == 0) {
             lastWinStreakRewardProp = PROP_STAR_COMPASS;
             lastWinStreakRewardAmount = 2;
@@ -2402,11 +2408,14 @@ public class GameView extends View {
         } else if (index == 17 || index == 21 || index == 22) {
             prop = PROP_STAR_COMPASS;
             amount = 1;
-        } else if (index == 23 || index == 25) {
+        } else if (index == 23) {
             prop = PROP_FIREWORK_CANNON;
             amount = 2;
         } else if (index == 24) {
             prop = PROP_STAR_COMPASS;
+            amount = 2;
+        } else if (index == 25) {
+            prop = PROP_BUBBLE_WAND;
             amount = 2;
         }
         if (prop == NONE) {
@@ -2538,6 +2547,7 @@ public class GameView extends View {
         } else if (isBubbleGalaxyChapter(chapter)) {
             propInventory[PROP_AURORA_ORB]++;
             propInventory[PROP_STAR_COMPASS]++;
+            propInventory[PROP_BUBBLE_WAND]++;
         } else if (isMintFireworksChapter(chapter)) {
             propInventory[PROP_FIREWORK_CANNON]++;
             propInventory[PROP_CLEANSE]++;
@@ -2568,6 +2578,7 @@ public class GameView extends View {
             propInventory[PROP_FIREWORK_CANNON]++;
         } else if (isBubbleGalaxyChapter(chapter)) {
             propInventory[PROP_AURORA_ORB]++;
+            propInventory[PROP_BUBBLE_WAND]++;
         } else if (isMintFireworksChapter(chapter)) {
             propInventory[PROP_FIREWORK_CANNON]++;
             propInventory[PROP_STAR_COMPASS]++;
@@ -2602,6 +2613,7 @@ public class GameView extends View {
         } else if (isBubbleGalaxyChapter(chapter)) {
             propInventory[PROP_AURORA_ORB]++;
             propInventory[PROP_STAR_COMPASS]++;
+            propInventory[PROP_BUBBLE_WAND]++;
         } else if (isMintFireworksChapter(chapter)) {
             propInventory[PROP_FIREWORK_CANNON]++;
             propInventory[PROP_STAR_COMPASS]++;
@@ -2725,6 +2737,9 @@ public class GameView extends View {
             lastDailyRewardPropAmount = 1;
         } else if (dailyStreak == 14) {
             lastDailyRewardProp = PROP_STAR_COMPASS;
+            lastDailyRewardPropAmount = 1;
+        } else if (dailyStreak == 21) {
+            lastDailyRewardProp = PROP_BUBBLE_WAND;
             lastDailyRewardPropAmount = 1;
         } else if (dailyStreak > 0 && dailyStreak % 30 == 0) {
             lastDailyRewardProp = PROP_FIREWORK_CANNON;
@@ -2878,7 +2893,10 @@ public class GameView extends View {
     private void grantStarChestPropReward() {
         lastChestRewardProp = NONE;
         lastChestRewardAmount = 0;
-        if (starChestClaimed % 8 == 0) {
+        if (starChestClaimed % 12 == 0) {
+            lastChestRewardProp = PROP_BUBBLE_WAND;
+            lastChestRewardAmount = 1;
+        } else if (starChestClaimed % 8 == 0) {
             lastChestRewardProp = PROP_STAR_COMPASS;
             lastChestRewardAmount = 1;
         } else if (starChestClaimed % 4 == 0) {
@@ -7207,7 +7225,7 @@ public class GameView extends View {
         } else if (isCrystalTowerChapter(chapter)) {
             return " 罗盘+1";
         } else if (isBubbleGalaxyChapter(chapter)) {
-            return " 极光+1 罗盘+1";
+            return " 极光+1 罗盘+1 泡泡棒+1";
         } else if (isMintFireworksChapter(chapter)) {
             return " 礼炮+1 净化+1";
         }
@@ -7221,7 +7239,7 @@ public class GameView extends View {
         } else if (isCrystalTowerChapter(chapter)) {
             return " 礼炮+1";
         } else if (isBubbleGalaxyChapter(chapter)) {
-            return " 极光+1";
+            return " 极光+1 泡泡棒+1";
         } else if (isMintFireworksChapter(chapter)) {
             return " 礼炮+1 罗盘+1";
         }
@@ -7235,7 +7253,7 @@ public class GameView extends View {
         } else if (isCrystalTowerChapter(chapter)) {
             return " 礼炮+1 罗盘+1";
         } else if (isBubbleGalaxyChapter(chapter)) {
-            return " 极光+1 罗盘+1";
+            return " 极光+1 罗盘+1 泡泡棒+1";
         } else if (isMintFireworksChapter(chapter)) {
             return " 礼炮+1 罗盘+1";
         }
