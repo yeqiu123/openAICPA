@@ -5442,11 +5442,7 @@ public class GameView extends View {
         }
 
         if (isHintCell(row, col)) {
-            paint.setStyle(Paint.Style.STROKE);
-            paint.setStrokeWidth(dp(4));
-            paint.setColor(Color.rgb(255, 244, 170));
-            canvas.drawRoundRect(rect, dp(14), dp(14), paint);
-            paint.setStyle(Paint.Style.FILL);
+            drawHintBeacon(canvas, rect, centerX, centerY);
             postInvalidateOnAnimation();
         }
 
@@ -5575,6 +5571,19 @@ public class GameView extends View {
             return false;
         }
         return (row == hintRowA && col == hintColA) || (row == hintRowB && col == hintColB);
+    }
+
+    private void drawHintBeacon(Canvas canvas, RectF rect, float centerX, float centerY) {
+        float pulse = 0.5f + 0.5f * (float) Math.sin(System.currentTimeMillis() / 150.0);
+        paint.setColor(Color.argb((int) (45 + pulse * 55), 255, 244, 170));
+        canvas.drawCircle(centerX, centerY, tileSize * (0.36f + pulse * 0.08f), paint);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(3 + pulse * 2));
+        paint.setColor(Color.rgb(255, 244, 170));
+        canvas.drawRoundRect(rect, dp(14), dp(14), paint);
+        paint.setStyle(Paint.Style.FILL);
+        // 提示光标用一颗小星点强调“下一步”，只参与表现不影响棋盘。
+        drawPropStar(canvas, centerX, rect.top - dp(5), dp(6 + pulse * 2));
     }
 
     private void drawPropBar(Canvas canvas) {
