@@ -34,6 +34,7 @@ public class GameView extends View {
     private static final String KEY_RANK_CHEST_CLAIMED = "rank_chest_claimed";
     private static final String KEY_CHAPTER_CHEST_PREFIX = "chapter_chest_";
     private static final String KEY_CHAPTER_MASTERY_PREFIX = "chapter_mastery_";
+    private static final String KEY_CHAPTER_ELITE_PREFIX = "chapter_elite_";
     private static final String KEY_ACHIEVEMENT_PREFIX = "achievement_";
     private static final String KEY_WIN_STREAK = "win_streak";
     private static final String KEY_DAILY_REWARD_DAY = "daily_reward_day";
@@ -142,6 +143,7 @@ public class GameView extends View {
     private final int[] levelRanks = new int[LEVEL_COUNT];
     private final boolean[] chapterChestClaimed = new boolean[CHAPTER_COUNT];
     private final boolean[] chapterMasteryClaimed = new boolean[CHAPTER_COUNT];
+    private final boolean[] chapterEliteClaimed = new boolean[CHAPTER_COUNT];
     private final boolean[] achievementsClaimed = new boolean[ACHIEVEMENT_COUNT];
     private final List<Particle> particles = new ArrayList<>();
     private final List<Level> levels = new ArrayList<>();
@@ -235,6 +237,7 @@ public class GameView extends View {
     private int lastRankChestReward;
     private int lastChapterChestReward;
     private int lastChapterMasteryReward;
+    private int lastChapterEliteReward;
     private int lastGiftReward;
     private int lastMoveChestReward;
     private int lastCloudReward;
@@ -547,6 +550,7 @@ public class GameView extends View {
         lastRankChestReward = 0;
         lastChapterChestReward = 0;
         lastChapterMasteryReward = 0;
+        lastChapterEliteReward = 0;
         lastChestNoticeType = 0;
         lastGiftReward = 0;
         lastMoveChestReward = 0;
@@ -1826,6 +1830,7 @@ public class GameView extends View {
         for (int i = 0; i < chapterChestClaimed.length; i++) {
             chapterChestClaimed[i] = prefs.getBoolean(KEY_CHAPTER_CHEST_PREFIX + i, false);
             chapterMasteryClaimed[i] = prefs.getBoolean(KEY_CHAPTER_MASTERY_PREFIX + i, false);
+            chapterEliteClaimed[i] = prefs.getBoolean(KEY_CHAPTER_ELITE_PREFIX + i, false);
         }
         for (int i = 0; i < achievementsClaimed.length; i++) {
             achievementsClaimed[i] = prefs.getBoolean(KEY_ACHIEVEMENT_PREFIX + i, false);
@@ -1862,6 +1867,7 @@ public class GameView extends View {
         grantEliteLevelReward(level);
         grantPerfectClearReward(level);
         grantAchievementRewards();
+        grantChapterEliteReward();
         grantChapterMasteryReward();
         updateDailyGoalProgress();
         prefs.edit()
@@ -1914,6 +1920,24 @@ public class GameView extends View {
         coins += lastChapterMasteryReward;
         prefs.edit()
                 .putBoolean(KEY_CHAPTER_MASTERY_PREFIX + chapter, true)
+                .putInt(KEY_COINS, coins)
+                .apply();
+    }
+
+    private void grantChapterEliteReward() {
+        int chapter = getChapterIndex(levelIndex);
+        if (chapterEliteClaimed[chapter] || getChapterEliteCount(chapter) <= 0
+                || getChapterClearedEliteCount(chapter) < getChapterEliteCount(chapter)) {
+            return;
+        }
+
+        // 章节内精英关全清后给一次阶段奖励，让高难节点有额外追求。
+        chapterEliteClaimed[chapter] = true;
+        lastChapterEliteReward = 90 + chapter * 24;
+        coins += lastChapterEliteReward;
+        propInventory[PROP_METEOR]++;
+        prefs.edit()
+                .putBoolean(KEY_CHAPTER_ELITE_PREFIX + chapter, true)
                 .putInt(KEY_COINS, coins)
                 .apply();
     }
@@ -3877,10 +3901,13 @@ public class GameView extends View {
         textPaint.setColor(Color.WHITE);
         String status = getChapterStars(chapter) >= CHAPTER_SIZE * 3
                 ? (chapterMasteryClaimed[chapter] ? "  大师已领" : "  大师奖励") : "";
+        String eliteStatus = getChapterEliteCount(chapter) > 0
+                && getChapterClearedEliteCount(chapter) >= getChapterEliteCount(chapter)
+                ? (chapterEliteClaimed[chapter] ? " 已领" : " 奖励") : "";
         canvas.drawText("章节进度 " + getChapterUnlockedCount(chapter) + "/" + CHAPTER_SIZE
                 + "  星 " + getChapterStars(chapter) + status, getWidth() / 2f, top + dp(26), textPaint);
         canvas.drawText("章节评级 " + getChapterRankScore(chapter) + "/" + (CHAPTER_SIZE * 6)
-                        + "  精英 " + getChapterClearedEliteCount(chapter) + "/" + getChapterEliteCount(chapter),
+                        + "  精英 " + getChapterClearedEliteCount(chapter) + "/" + getChapterEliteCount(chapter) + eliteStatus,
                 getWidth() / 2f, top + dp(40), textPaint);
     }
 
@@ -5550,7 +5577,7 @@ public class GameView extends View {
         if (levelComplete && (lastAchievementReward > 0 || lastStarUpgradeReward > 0 || lastRankUpgradeReward > 0
                 || lastPerfectReward > 0 || lastHiddenReward > 0 || lastWinStreakReward > 0
                 || lastEliteReward > 0 || lastFirstClearReward > 0 || lastFullStarReward > 0
-                || lastChapterMasteryReward > 0)) {
+                || lastChapterMasteryReward > 0 || lastChapterEliteReward > 0)) {
             drawRewardSparkles(canvas, getWidth() / 2f, getHeight() * 0.42f - dp(12));
         }
 
@@ -5584,6 +5611,9 @@ public class GameView extends View {
             if (lastPerfectReward > 0) {
                 bonusText += "  完美通关";
             }
+            if (lastChapterEliteReward > 0) {
+                bonusText += "  章节精英";
+            }
             canvas.drawText(bonusText, getWidth() / 2f, getHeight() * 0.49f, textPaint);
             drawChallengeBadges(canvas, getWidth() / 2f, getHeight() * 0.515f);
             String scoreText = dailyChallengeMode ? "挑战分 " + score : "最佳分 " + levelBestScores[levelIndex];
@@ -5594,6 +5624,8 @@ public class GameView extends View {
                         : "今日已领奖  返回主线";
             } else if (lastChapterMasteryReward > 0) {
                 rewardText = "金币 +" + lastCoinReward + " 满星大师+" + lastChapterMasteryReward + "  点击继续";
+            } else if (lastChapterEliteReward > 0) {
+                rewardText = "金币 +" + lastCoinReward + " 章节精英+" + lastChapterEliteReward + " 流星+1  点击继续";
             } else if (lastAchievementReward > 0) {
                 rewardText = "金币 +" + lastCoinReward + "  成就奖励+" + lastAchievementReward + "  点击继续";
             } else if (lastFirstClearReward > 0) {
