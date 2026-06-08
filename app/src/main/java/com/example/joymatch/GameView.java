@@ -3750,6 +3750,8 @@ public class GameView extends View {
         paint.setColor(Color.argb(120, 255, 255, 255));
         RectF boardRect = new RectF(boardLeft - dp(8), boardTop - dp(8),
                 boardLeft + tileSize * BOARD_SIZE + dp(8), boardTop + tileSize * BOARD_SIZE + dp(8));
+        drawBoardAura(canvas, boardRect);
+        paint.setColor(Color.argb(120, 255, 255, 255));
         canvas.drawRoundRect(boardRect, dp(18), dp(18), paint);
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(dp(3));
@@ -3773,6 +3775,29 @@ public class GameView extends View {
             }
         }
         drawPropBar(canvas);
+    }
+
+    private void drawBoardAura(Canvas canvas, RectF boardRect) {
+        int chapter = getChapterIndex(levelIndex);
+        int color = comboFeverMoves > 0 ? Color.rgb(255, 236, 118)
+                : (movesLeft <= 5 && !levelComplete && !levelFailed ? Color.rgb(255, 88, 112) : chapterBottomColors[chapter]);
+        float pulse = 0.6f + 0.4f * (float) Math.sin(System.currentTimeMillis() / 260.0);
+        int alpha = levelComplete ? 115 : (int) (42 + pulse * 40);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(8 + pulse * 5));
+        paint.setColor(Color.argb(alpha, Color.red(color), Color.green(color), Color.blue(color)));
+        canvas.drawRoundRect(new RectF(boardRect.left - dp(5), boardRect.top - dp(5),
+                boardRect.right + dp(5), boardRect.bottom + dp(5)), dp(22), dp(22), paint);
+        paint.setStrokeWidth(dp(2));
+        paint.setColor(Color.argb(90, 255, 255, 255));
+        for (int i = 0; i < 3; i++) {
+            float offset = (System.currentTimeMillis() / (38f + i * 6)) % Math.max(boardRect.width(), 1f);
+            float x = boardRect.left + offset;
+            // 棋盘环境光给章节和低步数状态更多视觉反馈，不参与玩法计算。
+            canvas.drawLine(x, boardRect.top - dp(10), Math.min(boardRect.right, x + dp(42)), boardRect.top - dp(10), paint);
+        }
+        paint.setStyle(Paint.Style.FILL);
+        postInvalidateOnAnimation();
     }
 
     private void drawLevelMap(Canvas canvas) {
