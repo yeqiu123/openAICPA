@@ -249,6 +249,8 @@ public class GameView extends View {
     private int lastAchievementReward;
     private int winStreak;
     private int lastWinStreakReward;
+    private int lastWinStreakRewardProp = NONE;
+    private int lastWinStreakRewardAmount;
     private int lastStarUpgradeReward;
     private int lastRankUpgradeReward;
     private int lastPerfectReward;
@@ -588,6 +590,8 @@ public class GameView extends View {
         lastCoinReward = 0;
         lastAchievementReward = 0;
         lastWinStreakReward = 0;
+        lastWinStreakRewardProp = NONE;
+        lastWinStreakRewardAmount = 0;
         lastStarUpgradeReward = 0;
         lastRankUpgradeReward = 0;
         lastPerfectReward = 0;
@@ -2173,10 +2177,30 @@ public class GameView extends View {
         winStreak++;
         lastWinStreakReward = winStreak >= 3 ? Math.min(60, winStreak * 5) : 0;
         coins += lastWinStreakReward;
+        grantWinStreakPropReward();
         prefs.edit()
                 .putInt(KEY_WIN_STREAK, winStreak)
                 .putInt(KEY_COINS, coins)
                 .apply();
+    }
+
+    private void grantWinStreakPropReward() {
+        lastWinStreakRewardProp = NONE;
+        lastWinStreakRewardAmount = 0;
+        if (winStreak == 5) {
+            lastWinStreakRewardProp = PROP_STAR_COMPASS;
+            lastWinStreakRewardAmount = 1;
+        } else if (winStreak == 10) {
+            lastWinStreakRewardProp = PROP_FIREWORK_CANNON;
+            lastWinStreakRewardAmount = 2;
+        } else if (winStreak > 0 && winStreak % 15 == 0) {
+            lastWinStreakRewardProp = PROP_STAR_COMPASS;
+            lastWinStreakRewardAmount = 2;
+        }
+        if (lastWinStreakRewardProp != NONE) {
+            // 连胜节点补给稀有道具，鼓励玩家连续冲关和反复挑战。
+            propInventory[lastWinStreakRewardProp] += lastWinStreakRewardAmount;
+        }
     }
 
     private void resetWinStreak() {
@@ -6795,6 +6819,10 @@ public class GameView extends View {
         return isFireworksChapter(getChapterIndex(levelIndex)) ? " 罗盘+1" : "";
     }
 
+    private String buildWinStreakPropRewardText() {
+        return lastWinStreakRewardProp == NONE ? "" : " " + getPropName(lastWinStreakRewardProp) + "+" + lastWinStreakRewardAmount;
+    }
+
     private void playClickTone() {
         if (!soundEnabled) {
             return;
@@ -6917,8 +6945,9 @@ public class GameView extends View {
                 rewardText = "金币 +" + lastCoinReward + "  隐藏+" + lastHiddenReward + "  点击继续";
             } else if (lastRankUpgradeReward > 0) {
                 rewardText = "金币 +" + lastCoinReward + "  评级+" + lastRankUpgradeReward + "  点击继续";
-            } else if (lastWinStreakReward > 0) {
-                rewardText = "金币 +" + lastCoinReward + " 连胜+" + lastWinStreakReward + "  点击继续";
+            } else if (lastWinStreakReward > 0 || lastWinStreakRewardProp != NONE) {
+                rewardText = "金币 +" + lastCoinReward + " 连胜+" + lastWinStreakReward
+                        + buildWinStreakPropRewardText() + "  点击继续";
             }
             canvas.drawText(rewardText, getWidth() / 2f, getHeight() * 0.61f, textPaint);
         } else if (countdownBombExploded) {
