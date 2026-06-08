@@ -2644,6 +2644,9 @@ public class GameView extends View {
         } else if (dailyChallengeStreak == 21) {
             lastDailyChallengeMilestoneProp = PROP_BUBBLE_WAND;
             lastDailyChallengeMilestoneAmount = 1;
+        } else if (dailyChallengeStreak == 45) {
+            lastDailyChallengeMilestoneProp = PROP_STAR_HARP;
+            lastDailyChallengeMilestoneAmount = 1;
         } else if (dailyChallengeStreak > 0 && dailyChallengeStreak % 30 == 0) {
             lastDailyChallengeMilestoneProp = PROP_SNOW_GLOBE;
             lastDailyChallengeMilestoneAmount = 2;
