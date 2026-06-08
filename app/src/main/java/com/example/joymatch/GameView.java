@@ -208,6 +208,7 @@ public class GameView extends View {
             }
         }
         placeIce(level.iceCount);
+        ensurePlayableBoard();
     }
 
     private boolean handlePropTap(float x, float y) {
@@ -330,6 +331,7 @@ public class GameView extends View {
             }
         }
         resolveMatches(findMatches());
+        ensurePlayableBoard();
         checkLevelState();
     }
 
@@ -345,6 +347,7 @@ public class GameView extends View {
             collapseBoard();
             matches = findMatches();
         }
+        ensurePlayableBoard();
         if (totalCleared > 0) {
             showFeedback(combo, totalCleared);
         }
@@ -396,6 +399,51 @@ public class GameView extends View {
             while (writeRow >= 0) {
                 board[writeRow][col] = makePiece(random.nextInt(TILE_KINDS), SPECIAL_NORMAL);
                 writeRow--;
+            }
+        }
+    }
+
+    private void ensurePlayableBoard() {
+        int attempts = 0;
+        while ((!findMatches().isEmpty() || !hasAvailableMove()) && attempts < 8) {
+            // 没有可走步时自动洗牌，避免玩家卡死在静态棋盘。
+            shufflePiecesOnly();
+            attempts++;
+        }
+    }
+
+    private boolean hasAvailableMove() {
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (col + 1 < BOARD_SIZE && wouldCreateMatch(row, col, row, col + 1)) {
+                    return true;
+                }
+                if (row + 1 < BOARD_SIZE && wouldCreateMatch(row, col, row + 1, col)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean wouldCreateMatch(int rowA, int colA, int rowB, int colB) {
+        swap(rowA, colA, rowB, colB);
+        boolean hasMatch = !findMatches().isEmpty();
+        swap(rowA, colA, rowB, colB);
+        return hasMatch;
+    }
+
+    private void shufflePiecesOnly() {
+        List<Integer> values = new ArrayList<>();
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                values.add(board[row][col]);
+            }
+        }
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                int index = random.nextInt(values.size());
+                board[row][col] = values.remove(index);
             }
         }
     }
