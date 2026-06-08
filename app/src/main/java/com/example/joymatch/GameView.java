@@ -55,6 +55,7 @@ public class GameView extends View {
     private final RectF prevPageRect = new RectF();
     private final RectF nextPageRect = new RectF();
     private final int[] levelStars = new int[LEVEL_COUNT];
+    private final List<Particle> particles = new ArrayList<>();
     private final List<Level> levels = new ArrayList<>();
     private final int[] palette = {
             Color.rgb(255, 99, 132),
@@ -139,6 +140,7 @@ public class GameView extends View {
         }
         drawHud(canvas);
         drawBoard(canvas);
+        drawParticles(canvas);
         drawFeedback(canvas);
         drawStatus(canvas);
     }
@@ -341,6 +343,7 @@ public class GameView extends View {
     private void clearCells(Set<Cell> cells, int bonusScore) {
         cells = expandSpecialCells(cells);
         score += bonusScore + cells.size() * 45;
+        spawnParticles(cells);
         removeCells(cells);
         grantTaskRewards();
         showFeedback(1, cells.size());
@@ -432,6 +435,7 @@ public class GameView extends View {
             matches = expandSpecialCells(matches);
             totalCleared += matches.size();
             score += matches.size() * 60 + (combo - 1) * 120;
+            spawnParticles(matches);
             removeCells(matches);
             grantTaskRewards();
             collapseBoard();
@@ -1203,6 +1207,47 @@ public class GameView extends View {
                 rect.right - dp(10), rect.top + rect.height() * 0.74f, paint);
     }
 
+    private void spawnParticles(Set<Cell> cells) {
+        if (tileSize <= 0) {
+            return;
+        }
+
+        for (Cell cell : cells) {
+            int piece = board[cell.row][cell.col];
+            int color = piece == NONE ? Color.WHITE : palette[colorOf(piece)];
+            float centerX = boardLeft + cell.col * tileSize + tileSize / 2f;
+            float centerY = boardTop + cell.row * tileSize + tileSize / 2f;
+            for (int i = 0; i < 4; i++) {
+                double angle = random.nextDouble() * Math.PI * 2;
+                float speed = dp(1.8f + random.nextFloat() * 2.4f);
+                particles.add(new Particle(centerX, centerY,
+                        (float) Math.cos(angle) * speed,
+                        (float) Math.sin(angle) * speed,
+                        color, dp(3 + random.nextInt(4))));
+            }
+        }
+    }
+
+    private void drawParticles(Canvas canvas) {
+        long now = System.currentTimeMillis();
+        for (int i = particles.size() - 1; i >= 0; i--) {
+            Particle particle = particles.get(i);
+            float age = (now - particle.birthTime) / 520f;
+            if (age >= 1f) {
+                particles.remove(i);
+                continue;
+            }
+            int alpha = (int) (220 * (1f - age));
+            paint.setColor(Color.argb(alpha, Color.red(particle.color), Color.green(particle.color), Color.blue(particle.color)));
+            canvas.drawCircle(particle.x + particle.vx * age * 18f,
+                    particle.y + particle.vy * age * 18f + dp(18) * age * age,
+                    particle.size * (1f - age * 0.35f), paint);
+        }
+        if (!particles.isEmpty()) {
+            postInvalidateOnAnimation();
+        }
+    }
+
     private void drawFeedback(Canvas canvas) {
         long age = System.currentTimeMillis() - feedbackStartTime;
         if (feedbackCleared <= 0 || age > 1100) {
@@ -1288,6 +1333,26 @@ public class GameView extends View {
             this.iceCount = iceCount;
             this.honeyCount = honeyCount;
             this.stoneCount = stoneCount;
+        }
+    }
+
+    private static class Particle {
+        final float x;
+        final float y;
+        final float vx;
+        final float vy;
+        final int color;
+        final float size;
+        final long birthTime;
+
+        Particle(float x, float y, float vx, float vy, int color, float size) {
+            this.x = x;
+            this.y = y;
+            this.vx = vx;
+            this.vy = vy;
+            this.color = color;
+            this.size = size;
+            this.birthTime = System.currentTimeMillis();
         }
     }
 
