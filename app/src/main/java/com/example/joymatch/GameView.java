@@ -824,6 +824,11 @@ public class GameView extends View {
         drawTargetSwatch(canvas, dp(96), dp(124));
 
         textPaint.setTextAlign(Paint.Align.RIGHT);
+        if (movesLeft <= 5 && !levelComplete && !levelFailed) {
+            paint.setColor(Color.argb(145, 255, 88, 112));
+            canvas.drawRoundRect(new RectF(getWidth() - dp(106), dp(58), getWidth() - dp(18), dp(86)),
+                    dp(13), dp(13), paint);
+        }
         canvas.drawText("步数 " + movesLeft, getWidth() - dp(22), dp(78), textPaint);
         canvas.drawText("关卡 " + levels.size(), getWidth() - dp(22), dp(104), textPaint);
         canvas.drawText("冰" + iceRemaining + " 蜜" + honeyRemaining + " 石" + stoneRemaining,
@@ -835,6 +840,11 @@ public class GameView extends View {
         tileSize = availableWidth / BOARD_SIZE;
         boardLeft = dp(16);
         boardTop = Math.max(dp(164), (getHeight() - availableWidth) * 0.52f);
+
+        if (movesLeft <= 5 && !levelComplete && !levelFailed) {
+            paint.setColor(Color.argb(40, 255, 88, 112));
+            canvas.drawRect(0, boardTop - dp(18), getWidth(), boardTop + tileSize * BOARD_SIZE + dp(18), paint);
+        }
 
         paint.setColor(Color.argb(120, 255, 255, 255));
         RectF boardRect = new RectF(boardLeft - dp(8), boardTop - dp(8),
