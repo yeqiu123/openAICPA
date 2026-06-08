@@ -72,8 +72,9 @@ public class GameView extends View {
     private static final int PROP_PORTAL = 8;
     private static final int PROP_CLEANSE = 9;
     private static final int PROP_FREEZE = 10;
-    private static final int PROP_COUNT = 11;
-    private static final int[] PROP_COSTS = {8, 12, 10, 16, 18, 14, 22, 20, 24, 20, 18};
+    private static final int PROP_MAGNET = 11;
+    private static final int PROP_COUNT = 12;
+    private static final int[] PROP_COSTS = {8, 12, 10, 16, 18, 14, 22, 20, 24, 20, 18, 16};
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -410,6 +411,7 @@ public class GameView extends View {
             int portalProp = i >= 34 && i % 18 == 0 ? 1 : 0;
             int cleanse = i >= 30 && i % 13 == 0 ? 1 : 0;
             int freeze = i >= 36 && i % 15 == 6 ? 1 : 0;
+            int magnet = i >= 42 && i % 17 == 8 ? 1 : 0;
             int targetKind = i % TILE_KINDS;
             int targetAmount = 8 + (i % 7) + i / 10;
             int iceCount = i < 4 ? i * 2 : Math.min(24, 6 + i / 2);
@@ -442,7 +444,7 @@ public class GameView extends View {
                 honeyCount = Math.min(20, honeyCount + 2);
             }
             levels.add(new Level(targetScore, moves, hammer, bomb, shuffle, rowBlast, colorBlast, extraMoves,
-                    magicWand, brush, portalProp, cleanse, freeze, targetKind, targetAmount, iceCount, honeyCount, stoneCount, vineCount, giftCount,
+                    magicWand, brush, portalProp, cleanse, freeze, magnet, targetKind, targetAmount, iceCount, honeyCount, stoneCount, vineCount, giftCount,
                     chainCount, shellCount, flowerCount, keyCount, moveChestCount, cloudCount, gemCount, goldenEggCount, portalCount, hourglassCount, luckyStarCount, mysteryBoxCount, countdownBombCount,
                     moveLimitGoal, comboGoal, scoreGoal, elite));
         }
@@ -527,6 +529,7 @@ public class GameView extends View {
         propInventory[PROP_PORTAL] = level.portalProps;
         propInventory[PROP_CLEANSE] = level.cleanses;
         propInventory[PROP_FREEZE] = level.freezes;
+        propInventory[PROP_MAGNET] = level.magnets;
         applyChapterMasteryStarterPerks();
 
         // 初始化时避开天然三连，让玩家第一步更清晰。
@@ -630,6 +633,14 @@ public class GameView extends View {
                     // 冻结道具暂停蜂蜜蔓延，给高压局面留出规划窗口。
                     propInventory[prop]--;
                     honeyFreezeMoves = 4;
+                    activeProp = NONE;
+                    selectedRow = NONE;
+                    selectedCol = NONE;
+                } else if (prop == PROP_MAGNET) {
+                    // 磁铁直接吸走当前目标色，帮助玩家补齐收集目标。
+                    propInventory[prop]--;
+                    clearCells(buildColorCells(targetKind), 160);
+                    checkLevelState();
                     activeProp = NONE;
                     selectedRow = NONE;
                     selectedCol = NONE;
@@ -3379,6 +3390,14 @@ public class GameView extends View {
             canvas.drawLine(centerX - dp(7), centerY - dp(7), centerX + dp(7), centerY + dp(7), paint);
             canvas.drawLine(centerX + dp(7), centerY - dp(7), centerX - dp(7), centerY + dp(7), paint);
             paint.setStyle(Paint.Style.FILL);
+        } else if (prop == PROP_MAGNET) {
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(dp(4));
+            canvas.drawArc(new RectF(centerX - dp(13), centerY - dp(13),
+                    centerX + dp(13), centerY + dp(13)), 35, 250, false, paint);
+            canvas.drawLine(centerX - dp(10), centerY + dp(8), centerX - dp(4), centerY + dp(15), paint);
+            canvas.drawLine(centerX + dp(10), centerY + dp(8), centerX + dp(4), centerY + dp(15), paint);
+            paint.setStyle(Paint.Style.FILL);
         } else {
             canvas.drawRoundRect(new RectF(centerX - dp(13), centerY - dp(10), centerX + dp(13), centerY - dp(2)),
                     dp(4), dp(4), paint);
@@ -3407,6 +3426,8 @@ public class GameView extends View {
             return "净化";
         } else if (prop == PROP_FREEZE) {
             return "冻结";
+        } else if (prop == PROP_MAGNET) {
+            return "磁铁";
         }
         return "加步";
     }
@@ -4173,6 +4194,7 @@ public class GameView extends View {
         final int portalProps;
         final int cleanses;
         final int freezes;
+        final int magnets;
         final int targetKind;
         final int targetAmount;
         final int iceCount;
@@ -4200,7 +4222,7 @@ public class GameView extends View {
 
         Level(int targetScore, int moves, int hammers, int bombs, int shuffles, int rowBlasts, int colorBlasts,
                 int extraMoves, int magicWands, int brushes, int portalProps, int cleanses, int freezes,
-                int targetKind, int targetAmount, int iceCount, int honeyCount, int stoneCount, int vineCount,
+                int magnets, int targetKind, int targetAmount, int iceCount, int honeyCount, int stoneCount, int vineCount,
                 int giftCount, int chainCount, int shellCount, int flowerCount, int keyCount, int moveChestCount,
                 int cloudCount, int gemCount, int goldenEggCount, int portalCount, int hourglassCount, int luckyStarCount,
                 int mysteryBoxCount, int countdownBombCount, int moveLimitGoal, int comboGoal, int scoreGoal, boolean elite) {
@@ -4217,6 +4239,7 @@ public class GameView extends View {
             this.portalProps = portalProps;
             this.cleanses = cleanses;
             this.freezes = freezes;
+            this.magnets = magnets;
             this.targetKind = targetKind;
             this.targetAmount = targetAmount;
             this.iceCount = iceCount;
