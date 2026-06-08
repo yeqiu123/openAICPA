@@ -437,7 +437,11 @@ public class GameView extends View {
                 moveLimitBonus += 5;
                 usedContinueThisLevel = true;
                 levelFailed = false;
+                countdownBombExploded = false;
                 saveCoins();
+                playHaptic(HapticFeedbackConstants.CONFIRM);
+                playSuccessTone();
+            } else if (useReserveContinue()) {
                 playHaptic(HapticFeedbackConstants.CONFIRM);
                 playSuccessTone();
             } else {
@@ -880,6 +884,40 @@ public class GameView extends View {
         movesLeft = Math.max(12, movesLeft - 3);
         movesUsed = 0;
         score = 0;
+    }
+
+    private boolean useReserveContinue() {
+        int prop = pickContinueProp();
+        if (prop == NONE) {
+            return false;
+        }
+
+        // 金币不足时允许消耗储备道具续步，让长期奖励在失败时也有救场价值。
+        consumeProp(prop);
+        movesLeft = prop == PROP_EXTRA_MOVES ? 5 : 3;
+        moveLimitBonus += movesLeft;
+        usedContinueThisLevel = true;
+        levelFailed = false;
+        countdownBombExploded = false;
+        if (prop == PROP_SNOW_GLOBE) {
+            honeyFreezeMoves = Math.max(honeyFreezeMoves, 3);
+            extendCountdownBombs(3);
+        } else if (prop == PROP_SHIELD) {
+            bombShieldCount++;
+            extendCountdownBombs(2);
+        }
+        showFeedback(1, movesLeft);
+        return true;
+    }
+
+    private int pickContinueProp() {
+        int[] props = {PROP_EXTRA_MOVES, PROP_MOON_TICKET, PROP_SNOW_GLOBE, PROP_SHIELD, PROP_CLOCK};
+        for (int prop : props) {
+            if (propInventory[prop] > 0) {
+                return prop;
+            }
+        }
+        return NONE;
     }
 
     private void addProp(int prop, int amount) {
@@ -7779,9 +7817,13 @@ public class GameView extends View {
             }
             canvas.drawText(rewardText, getWidth() / 2f, getHeight() * 0.61f, textPaint);
         } else if (countdownBombExploded) {
-            canvas.drawText("炸弹爆炸，点击重试", getWidth() / 2f, getHeight() * 0.49f, textPaint);
+            String text = pickContinueProp() == NONE ? "炸弹爆炸，点击重试" : "炸弹爆炸，点击消耗" + getPropName(pickContinueProp()) + "续步";
+            canvas.drawText(text, getWidth() / 2f, getHeight() * 0.49f, textPaint);
         } else if (coins >= CONTINUE_COST) {
             canvas.drawText("点击续步 -10金币", getWidth() / 2f, getHeight() * 0.49f, textPaint);
+        } else if (pickContinueProp() != NONE) {
+            canvas.drawText("金币不足，点击消耗" + getPropName(pickContinueProp()) + "续步",
+                    getWidth() / 2f, getHeight() * 0.49f, textPaint);
         } else if (dailyChallengeMode) {
             canvas.drawText("金币不足，返回主线", getWidth() / 2f, getHeight() * 0.49f, textPaint);
         } else {
