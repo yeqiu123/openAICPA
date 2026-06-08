@@ -2630,6 +2630,7 @@ public class GameView extends View {
                 bonusText += "  高分达成";
             }
             canvas.drawText(bonusText, getWidth() / 2f, getHeight() * 0.49f, textPaint);
+            drawChallengeBadges(canvas, getWidth() / 2f, getHeight() * 0.515f);
             String scoreText = dailyChallengeMode ? "挑战分 " + score : "最佳分 " + levelBestScores[levelIndex];
             canvas.drawText(scoreText, getWidth() / 2f, getHeight() * 0.55f, textPaint);
             String rewardText = "金币 +" + lastCoinReward + "  点击继续";
@@ -2665,6 +2666,19 @@ public class GameView extends View {
             canvas.drawCircle(x, y, dp(i % 2 == 0 ? 4 : 3), paint);
         }
         postInvalidateOnAnimation();
+    }
+
+    private void drawChallengeBadges(Canvas canvas, float centerX, float centerY) {
+        int count = (challengeCleared ? 1 : 0) + (comboChallengeCleared ? 1 : 0) + (scoreChallengeCleared ? 1 : 0);
+        if (count <= 0) {
+            return;
+        }
+
+        float startX = centerX - (count - 1) * dp(12);
+        for (int i = 0; i < count; i++) {
+            paint.setColor(Color.argb(210, 255, 236, 118));
+            canvas.drawCircle(startX + i * dp(24), centerY, dp(6), paint);
+        }
     }
 
     private float sp(float value) {
