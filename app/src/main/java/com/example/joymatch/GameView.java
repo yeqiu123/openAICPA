@@ -130,6 +130,7 @@ public class GameView extends View {
     private final int[][] pearl = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[][] carousel = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[][] ferrisTicket = new int[BOARD_SIZE][BOARD_SIZE];
+    private final int[][] fireworksBarrel = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[] propInventory = new int[PROP_COUNT];
     private final RectF[] propRects = new RectF[PROP_COUNT];
     private final RectF[] levelRects = new RectF[LEVELS_PER_PAGE];
@@ -280,6 +281,7 @@ public class GameView extends View {
     private int lastPearlReward;
     private int lastCarouselReward;
     private int lastFerrisTicketReward;
+    private int lastFireworksBarrelReward;
     private int lastEnergyRewardProp = NONE;
     private int lastChestNoticeType;
     private int dailyRewardAmount;
@@ -522,6 +524,7 @@ public class GameView extends View {
             int pearlCount = i < 128 || i % 10 != 8 ? 0 : 1;
             int carouselCount = i < 162 || i % 11 != 8 ? 0 : 1;
             int ferrisTicketCount = i < 166 || i % 9 != 4 ? 0 : 1;
+            int fireworksBarrelCount = i < 168 || i % 13 != 6 ? 0 : 1;
             int countdownBombCount = i < 58 || i % 10 != 7 ? 0 : 1 + (i % 30 == 7 ? 1 : 0);
             int moveLimitGoal = i >= 18 && i % 4 == 0 ? Math.max(8, moves - 5) : 0;
             int comboGoal = i >= 22 && i % 5 == 0 ? 3 + (i / 25) : 0;
@@ -536,7 +539,7 @@ public class GameView extends View {
             }
             levels.add(new Level(targetScore, moves, hammer, bomb, shuffle, rowBlast, colorBlast, extraMoves,
                     magicWand, brush, portalProp, cleanse, freeze, magnet, clock, starHammer, rocket, targetBrush, shield, energyCore, chainBreaker, lightning, meteor, tide, auroraOrb, starfishPick, moonTicket, targetKind, targetAmount, iceCount, honeyCount, stoneCount, vineCount, giftCount,
-                    chainCount, shellCount, flowerCount, coralReefCount, keyCount, moveChestCount, cloudCount, gemCount, goldenEggCount, coinPouchCount, paintBucketCount, windmillCount, jewelBowCount, stardustJarCount, wishLampCount, resonanceDrumCount, auroraPrismCount, rainbowBottleCount, energyPotionCount, butterflyCount, portalCount, hourglassCount, luckyStarCount, luckyCloverCount, mysteryBoxCount, pearlCount, carouselCount, ferrisTicketCount, countdownBombCount,
+                    chainCount, shellCount, flowerCount, coralReefCount, keyCount, moveChestCount, cloudCount, gemCount, goldenEggCount, coinPouchCount, paintBucketCount, windmillCount, jewelBowCount, stardustJarCount, wishLampCount, resonanceDrumCount, auroraPrismCount, rainbowBottleCount, energyPotionCount, butterflyCount, portalCount, hourglassCount, luckyStarCount, luckyCloverCount, mysteryBoxCount, pearlCount, carouselCount, ferrisTicketCount, fireworksBarrelCount, countdownBombCount,
                     moveLimitGoal, comboGoal, scoreGoal, elite));
         }
     }
@@ -605,6 +608,7 @@ public class GameView extends View {
         lastPearlReward = 0;
         lastCarouselReward = 0;
         lastFerrisTicketReward = 0;
+        lastFireworksBarrelReward = 0;
         lastEnergyRewardProp = NONE;
         honeySpreadCount = 0;
         challengeCleared = false;
@@ -694,6 +698,7 @@ public class GameView extends View {
                 pearl[row][col] = 0;
                 carousel[row][col] = 0;
                 ferrisTicket[row][col] = 0;
+                fireworksBarrel[row][col] = 0;
                 countdownBomb[row][col] = 0;
                 do {
                     board[row][col] = makePiece(random.nextInt(TILE_KINDS), SPECIAL_NORMAL);
@@ -733,6 +738,7 @@ public class GameView extends View {
         placePearl(level.pearlCount);
         placeCarousel(level.carouselCount);
         placeFerrisTicket(level.ferrisTicketCount);
+        placeFireworksBarrel(level.fireworksBarrelCount);
         placeCountdownBomb(level.countdownBombCount, Math.max(5, level.moves / 2));
         ensurePlayableBoard();
         levelIntroUntilTime = System.currentTimeMillis() + 1400;
@@ -819,6 +825,7 @@ public class GameView extends View {
                     lastShieldReward = bombShieldCount;
                     lastTaskRewardType = 10;
                     lastFerrisTicketReward = 0;
+                    lastFireworksBarrelReward = 0;
                     showFeedback(1, bombShieldCount);
                     activeProp = NONE;
                     selectedRow = NONE;
@@ -831,6 +838,7 @@ public class GameView extends View {
                     propInventory[lastEnergyRewardProp]++;
                     lastTaskRewardType = 11;
                     lastFerrisTicketReward = 0;
+                    lastFireworksBarrelReward = 0;
                     showFeedback(1, 100);
                     activeProp = NONE;
                     selectedRow = NONE;
@@ -858,6 +866,7 @@ public class GameView extends View {
                     upgradeRandomRainbowPiece();
                     lastTaskRewardType = 13;
                     lastFerrisTicketReward = 0;
+                    lastFireworksBarrelReward = 0;
                     showFeedback(1, 100);
                     activeProp = NONE;
                     selectedRow = NONE;
@@ -874,6 +883,7 @@ public class GameView extends View {
                     lastTaskRewardType = 14;
                     lastFlowerReward = 0;
                     lastFerrisTicketReward = 0;
+                    lastFireworksBarrelReward = 0;
                     showFeedback(1, Math.max(1, chipped));
                     checkLevelState();
                     activeProp = NONE;
@@ -911,6 +921,7 @@ public class GameView extends View {
                     lastMysteryRewardType = 0;
                     lastPearlReward = 0;
                     lastFerrisTicketReward = 0;
+                    lastFireworksBarrelReward = 0;
                     showFeedback(1, 2);
                     checkLevelState();
                     activeProp = NONE;
@@ -981,6 +992,7 @@ public class GameView extends View {
             lastMysteryRewardProp = NONE;
             lastPearlReward = 0;
             lastFerrisTicketReward = 0;
+            lastFireworksBarrelReward = 0;
             lastEnergyRewardProp = NONE;
             showFeedback(1, Math.max(1, painted));
         } else if (activeProp == PROP_MAGIC_WAND) {
@@ -1014,6 +1026,7 @@ public class GameView extends View {
             lastMysteryRewardProp = NONE;
             lastPearlReward = 0;
             lastFerrisTicketReward = 0;
+            lastFireworksBarrelReward = 0;
             lastEnergyRewardProp = NONE;
             showFeedback(1, 1);
         } else if (activeProp == PROP_BRUSH) {
@@ -1048,6 +1061,7 @@ public class GameView extends View {
             lastMysteryRewardProp = NONE;
             lastPearlReward = 0;
             lastFerrisTicketReward = 0;
+            lastFireworksBarrelReward = 0;
             lastEnergyRewardProp = NONE;
             showFeedback(1, 1);
         } else if (activeProp == PROP_STAR_HAMMER) {
@@ -1081,6 +1095,7 @@ public class GameView extends View {
             lastMysteryRewardProp = NONE;
             lastPearlReward = 0;
             lastFerrisTicketReward = 0;
+            lastFireworksBarrelReward = 0;
             lastEnergyRewardProp = NONE;
             showFeedback(1, 1);
         } else if (activeProp == PROP_CLEANSE) {
@@ -1116,6 +1131,7 @@ public class GameView extends View {
             lastMysteryRewardProp = NONE;
             lastPearlReward = 0;
             lastFerrisTicketReward = 0;
+            lastFireworksBarrelReward = 0;
             lastEnergyRewardProp = NONE;
             showFeedback(1, Math.max(1, cleaned));
         } else if (activeProp == PROP_CHAIN_BREAKER) {
@@ -1155,6 +1171,7 @@ public class GameView extends View {
             lastMysteryRewardProp = NONE;
             lastPearlReward = 0;
             lastFerrisTicketReward = 0;
+            lastFireworksBarrelReward = 0;
             lastEnergyRewardProp = NONE;
             showFeedback(1, Math.max(1, broken));
         }
@@ -1259,6 +1276,7 @@ public class GameView extends View {
         lastPearlReward = 0;
         lastCarouselReward = 0;
         lastFerrisTicketReward = 0;
+        lastFireworksBarrelReward = 0;
         cells = expandSpecialCells(cells);
         score += applyComboFeverScore(bonusScore + cells.size() * 45);
         spawnParticles(cells);
@@ -1592,6 +1610,7 @@ public class GameView extends View {
         lastPearlReward = 0;
         lastCarouselReward = 0;
         lastFerrisTicketReward = 0;
+        lastFireworksBarrelReward = 0;
         while (!matches.isEmpty()) {
             combo++;
             matches = expandSpecialCells(matches);
@@ -1622,6 +1641,7 @@ public class GameView extends View {
                 lastPearlReward = 0;
                 lastCarouselReward = 0;
                 lastFerrisTicketReward = 0;
+                lastFireworksBarrelReward = 0;
                 showFeedback(combo + 1, totalCleared);
             } else if (lastTaskRewardType == 0) {
                 showNormalFeedback(combo, totalCleared);
@@ -2905,6 +2925,27 @@ public class GameView extends View {
         }
     }
 
+    private void placeFireworksBarrel(int count) {
+        int placed = 0;
+        while (placed < count) {
+            int row = random.nextInt(BOARD_SIZE);
+            int col = random.nextInt(BOARD_SIZE);
+            if (fireworksBarrel[row][col] == 0 && gift[row][col] == 0 && moveChest[row][col] == 0
+                    && cloud[row][col] == 0 && gem[row][col] == 0 && goldenEgg[row][col] == 0 && portal[row][col] == 0
+                    && hourglass[row][col] == 0 && luckyStar[row][col] == 0 && luckyClover[row][col] == 0 && mysteryBox[row][col] == 0
+                    && pearl[row][col] == 0 && carousel[row][col] == 0 && ferrisTicket[row][col] == 0
+                    && coinPouch[row][col] == 0 && paintBucket[row][col] == 0 && windmill[row][col] == 0
+                    && jewelBow[row][col] == 0 && stardustJar[row][col] == 0 && wishLamp[row][col] == 0
+                    && resonanceDrum[row][col] == 0 && auroraPrism[row][col] == 0 && rainbowBottle[row][col] == 0
+                    && energyPotion[row][col] == 0 && butterfly[row][col] == 0 && flower[row][col] == 0
+                    && countdownBomb[row][col] == 0) {
+                // 烟花桶清除后点燃爆炸特效，让终章关卡有更爽快的连锁爆点。
+                fireworksBarrel[row][col] = 1;
+                placed++;
+            }
+        }
+    }
+
     private void placeCountdownBomb(int count, int timer) {
         int placed = 0;
         while (placed < count) {
@@ -2917,7 +2958,7 @@ public class GameView extends View {
                     && jewelBow[row][col] == 0 && stardustJar[row][col] == 0 && wishLamp[row][col] == 0
                     && resonanceDrum[row][col] == 0 && auroraPrism[row][col] == 0 && rainbowBottle[row][col] == 0 && energyPotion[row][col] == 0
                     && butterfly[row][col] == 0 && flower[row][col] == 0 && pearl[row][col] == 0 && carousel[row][col] == 0
-                    && ferrisTicket[row][col] == 0) {
+                    && ferrisTicket[row][col] == 0 && fireworksBarrel[row][col] == 0) {
                 // 倒计时炸弹必须在归零前清掉，给后期关卡制造明确压力。
                 countdownBomb[row][col] = timer + random.nextInt(3);
                 placed++;
@@ -3129,6 +3170,13 @@ public class GameView extends View {
                 score += 200;
                 lastFerrisTicketReward++;
             }
+            if (fireworksBarrel[cell.row][cell.col] > 0) {
+                fireworksBarrel[cell.row][cell.col] = 0;
+                triggerFireworksBarrel(cell.row, cell.col);
+                comboEnergy = Math.min(100, comboEnergy + 25);
+                score += 220;
+                lastFireworksBarrelReward += 25;
+            }
             if (countdownBomb[cell.row][cell.col] > 0) {
                 countdownBomb[cell.row][cell.col] = 0;
                 score += 180;
@@ -3167,6 +3215,13 @@ public class GameView extends View {
         Set<Cell> cells = random.nextBoolean() ? buildCrossCells(row, col) : buildRocketCells(row, col);
         cells.remove(new Cell(row, col));
         removeCells(cells);
+    }
+
+    private void triggerFireworksBarrel(int row, int col) {
+        Set<Cell> cells = buildBombCells(row, col);
+        cells.remove(new Cell(row, col));
+        removeCells(cells);
+        upgradeRandomBombPiece();
     }
 
     private void rotateBoardRing() {
@@ -3293,6 +3348,23 @@ public class GameView extends View {
         board[cell.row][cell.col] = makePiece(colorOf(board[cell.row][cell.col]), SPECIAL_RAINBOW);
     }
 
+    private void upgradeRandomBombPiece() {
+        List<Cell> candidates = new ArrayList<>();
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (board[row][col] != NONE && specialOf(board[row][col]) == SPECIAL_NORMAL) {
+                    candidates.add(new Cell(row, col));
+                }
+            }
+        }
+        if (candidates.isEmpty()) {
+            return;
+        }
+
+        Cell cell = candidates.get(random.nextInt(candidates.size()));
+        board[cell.row][cell.col] = makePiece(colorOf(board[cell.row][cell.col]), SPECIAL_BOMB);
+    }
+
     private int applyWishLampTarget() {
         int wished = Math.min(5, targetRemaining);
         targetRemaining -= wished;
@@ -3375,6 +3447,7 @@ public class GameView extends View {
             lastButterflyReward = 0;
             lastPearlReward = 0;
             lastFerrisTicketReward = 0;
+            lastFireworksBarrelReward = 0;
             lastEnergyRewardProp = NONE;
             saveCoins();
         } else {
@@ -3398,6 +3471,7 @@ public class GameView extends View {
             lastButterflyReward = 0;
             lastPearlReward = 0;
             lastFerrisTicketReward = 0;
+            lastFireworksBarrelReward = 0;
             lastEnergyRewardProp = NONE;
         }
     }
@@ -3412,6 +3486,7 @@ public class GameView extends View {
         lastMysteryRewardProp = NONE;
         lastPearlReward = 0;
         lastFerrisTicketReward = 0;
+        lastFireworksBarrelReward = 0;
         lastEnergyRewardProp = NONE;
         if (reward == 0) {
             lastLuckyCloverRewardAmount = 10;
@@ -3461,6 +3536,7 @@ public class GameView extends View {
         lastLuckyStarRewardProp = NONE;
         lastPearlReward = 0;
         lastFerrisTicketReward = 0;
+        lastFireworksBarrelReward = 0;
         lastEnergyRewardProp = NONE;
         if (reward == 0) {
             lastMysteryRewardAmount = 220;
@@ -3526,6 +3602,7 @@ public class GameView extends View {
         lastMysteryRewardProp = NONE;
         lastPearlReward = 0;
         lastFerrisTicketReward = 0;
+        lastFireworksBarrelReward = 0;
         lastEnergyRewardProp = NONE;
         showFeedback(1, honeySpreadCount);
     }
@@ -3575,6 +3652,7 @@ public class GameView extends View {
             lastMysteryRewardProp = NONE;
             lastPearlReward = 0;
             lastFerrisTicketReward = 0;
+            lastFireworksBarrelReward = 0;
             lastEnergyRewardProp = NONE;
             showFeedback(1, 5);
         }
@@ -3610,6 +3688,7 @@ public class GameView extends View {
             lastMysteryRewardProp = NONE;
             lastPearlReward = 0;
             lastFerrisTicketReward = 0;
+            lastFireworksBarrelReward = 0;
             lastEnergyRewardProp = NONE;
             showFeedback(1, 6);
         }
@@ -3642,6 +3721,7 @@ public class GameView extends View {
             lastMysteryRewardProp = NONE;
             lastPearlReward = 0;
             lastFerrisTicketReward = 0;
+            lastFireworksBarrelReward = 0;
             lastEnergyRewardProp = NONE;
             showFeedback(Math.max(2, bestCombo), 3);
         }
@@ -3664,6 +3744,7 @@ public class GameView extends View {
             lastMysteryRewardProp = NONE;
             lastPearlReward = 0;
             lastFerrisTicketReward = 0;
+            lastFireworksBarrelReward = 0;
             lastEnergyRewardProp = NONE;
             showFeedback(1, level.keyCount);
         }
@@ -4216,6 +4297,8 @@ public class GameView extends View {
             return "转";
         } else if (level.ferrisTicketCount > 0) {
             return "票";
+        } else if (level.fireworksBarrelCount > 0) {
+            return "烟";
         } else if (level.coinPouchCount > 0) {
             return "袋";
         } else if (level.goldenEggCount > 0) {
@@ -4742,6 +4825,7 @@ public class GameView extends View {
         drawPearl(canvas, row, col, rect);
         drawCarousel(canvas, row, col, rect);
         drawFerrisTicket(canvas, row, col, rect);
+        drawFireworksBarrel(canvas, row, col, rect);
         drawCountdownBomb(canvas, row, col, rect);
         drawKey(canvas, row, col, rect);
         drawMoveChest(canvas, row, col, rect);
@@ -5739,6 +5823,24 @@ public class GameView extends View {
         textPaint.setColor(Color.WHITE);
     }
 
+    private void drawFireworksBarrel(Canvas canvas, int row, int col, RectF rect) {
+        if (fireworksBarrel[row][col] <= 0) {
+            return;
+        }
+
+        float centerX = rect.left + rect.width() * 0.26f;
+        float centerY = rect.bottom - dp(18);
+        RectF body = new RectF(centerX - dp(10), centerY - dp(10), centerX + dp(10), centerY + dp(12));
+        paint.setColor(Color.argb(230, 255, 99, 132));
+        canvas.drawRoundRect(body, dp(5), dp(5), paint);
+        paint.setColor(Color.argb(230, 255, 236, 118));
+        canvas.drawRect(body.left + dp(4), body.top, body.right - dp(4), body.bottom, paint);
+        paint.setStrokeWidth(dp(2));
+        paint.setColor(Color.WHITE);
+        canvas.drawLine(centerX, body.top, centerX + dp(7), body.top - dp(8), paint);
+        drawPropStar(canvas, centerX + dp(10), body.top - dp(10), dp(5));
+    }
+
     private void drawCountdownBomb(Canvas canvas, int row, int col, RectF rect) {
         if (countdownBomb[row][col] <= 0) {
             return;
@@ -5911,6 +6013,8 @@ public class GameView extends View {
             text = "旋转木马 能量+" + lastCarouselReward;
         } else if (lastFerrisTicketReward > 0 && age < 900) {
             text = "摩天轮票根 月票+" + lastFerrisTicketReward;
+        } else if (lastFireworksBarrelReward > 0 && age < 900) {
+            text = "烟花桶 能量+" + lastFireworksBarrelReward;
         } else if (honeySpreadCount > 0 && age < 900) {
             text = "蜂蜜蔓延";
         } else if (lastTaskRewardType == 1 && age < 900) {
@@ -6056,6 +6160,9 @@ public class GameView extends View {
         }
         if (level.ferrisTicketCount > 0) {
             goalText += "  摩天轮票根 " + level.ferrisTicketCount;
+        }
+        if (level.fireworksBarrelCount > 0) {
+            goalText += "  烟花桶 " + level.fireworksBarrelCount;
         }
         if (level.countdownBombCount > 0) {
             goalText += "  炸弹 " + level.countdownBombCount;
@@ -6339,6 +6446,7 @@ public class GameView extends View {
         final int pearlCount;
         final int carouselCount;
         final int ferrisTicketCount;
+        final int fireworksBarrelCount;
         final int countdownBombCount;
         final int moveLimitGoal;
         final int comboGoal;
@@ -6351,7 +6459,7 @@ public class GameView extends View {
                 int giftCount, int chainCount, int shellCount, int flowerCount, int coralReefCount, int keyCount, int moveChestCount,
                 int cloudCount, int gemCount, int goldenEggCount, int coinPouchCount, int paintBucketCount, int windmillCount, int jewelBowCount, int stardustJarCount, int wishLampCount, int resonanceDrumCount, int auroraPrismCount, int rainbowBottleCount, int energyPotionCount, int butterflyCount,
                 int portalCount, int hourglassCount, int luckyStarCount, int luckyCloverCount,
-                int mysteryBoxCount, int pearlCount, int carouselCount, int ferrisTicketCount, int countdownBombCount, int moveLimitGoal, int comboGoal, int scoreGoal, boolean elite) {
+                int mysteryBoxCount, int pearlCount, int carouselCount, int ferrisTicketCount, int fireworksBarrelCount, int countdownBombCount, int moveLimitGoal, int comboGoal, int scoreGoal, boolean elite) {
             this.targetScore = targetScore;
             this.moves = moves;
             this.hammers = hammers;
@@ -6414,6 +6522,7 @@ public class GameView extends View {
             this.pearlCount = pearlCount;
             this.carouselCount = carouselCount;
             this.ferrisTicketCount = ferrisTicketCount;
+            this.fireworksBarrelCount = fireworksBarrelCount;
             this.countdownBombCount = countdownBombCount;
             this.moveLimitGoal = moveLimitGoal;
             this.comboGoal = comboGoal;
