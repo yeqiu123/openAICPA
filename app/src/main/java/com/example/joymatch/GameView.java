@@ -8757,7 +8757,44 @@ public class GameView extends View {
                 textPaint.setTextSize(sp(14));
                 canvas.drawText(assistText, getWidth() / 2f, getHeight() * 0.55f, textPaint);
             }
+            RectF failProgressRect = new RectF(dp(34), getHeight() * (assistText.length() > 0 ? 0.565f : 0.532f),
+                    getWidth() - dp(34), getHeight() * (assistText.length() > 0 ? 0.598f : 0.565f));
+            drawTextFit(canvas, buildFailureProgressText(), failProgressRect, 14, Color.WHITE);
         }
+    }
+
+    private String buildFailureProgressText() {
+        Level level = levels.get(levelIndex);
+        StringBuilder text = new StringBuilder();
+        appendFailureProgressPart(text, "收集差", targetRemaining);
+        appendFailureProgressPart(text, "清障差", getCurrentObstacleRemaining(level));
+        appendFailureProgressPart(text, "分数差", Math.max(0, level.targetScore - score));
+        if (level.moveLimitGoal > 0 && !isMoveLimitGoalCleared(level)) {
+            appendFailureProgressPart(text, "步限超", movesUsed - getMoveLimitGoal(level));
+        }
+        if (level.comboGoal > 0 && !isComboGoalCleared(level)) {
+            appendFailureProgressPart(text, "连击差", level.comboGoal - bestCombo);
+        }
+        if (level.scoreGoal > 0 && !isScoreGoalCleared(level)) {
+            appendFailureProgressPart(text, "高分差", level.scoreGoal - score);
+        }
+        // 失败页给出最短追踪目标，帮助玩家判断下局优先用哪类道具。
+        return text.length() == 0 ? "已接近通关，续步可冲过" : text.toString();
+    }
+
+    private void appendFailureProgressPart(StringBuilder text, String label, int amount) {
+        if (amount <= 0) {
+            return;
+        }
+        if (text.length() > 0) {
+            text.append("  ");
+        }
+        text.append(label).append(amount);
+    }
+
+    private int getCurrentObstacleRemaining(Level level) {
+        return iceRemaining + honeyRemaining + stoneRemaining + vineRemaining + chainRemaining
+                + shellRemaining + coralReefRemaining + flowerRemaining + keyRemaining;
     }
 
     private void drawRewardLines(Canvas canvas) {
