@@ -6289,7 +6289,7 @@ public class GameView extends View {
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setTextSize(sp(11));
         textPaint.setColor(Color.WHITE);
-        String text = replayLevel >= 0 ? "智能推荐 第" + (replayLevel + 1) + "关  " + buildReplayReason(replayLevel)
+        String text = replayLevel >= 0 ? "智能推荐 直达第" + (replayLevel + 1) + "关  " + buildReplayReason(replayLevel)
                 : "已通关卡暂无补星目标";
         drawTextFit(canvas, text, replayHintRect, 11, Color.WHITE);
     }
