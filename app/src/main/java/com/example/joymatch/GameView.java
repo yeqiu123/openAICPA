@@ -6186,10 +6186,11 @@ public class GameView extends View {
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setTextSize(sp(11));
         textPaint.setColor(Color.WHITE);
-        canvas.drawText("成就 " + getClaimedAchievementCount() + "/" + ACHIEVEMENT_COUNT
+        RectF seasonTextRect = new RectF(left, top + dp(12), right, top + dp(30));
+        drawTextFit(canvas, "成就 " + getClaimedAchievementCount() + "/" + ACHIEVEMENT_COUNT
                 + "  评级 " + getTotalRankScore() + "  赛季 " + seasonLevels + "/" + getNextSeasonLevelTarget()
                 + "关 " + seasonStars + "/" + getNextSeasonStarTarget() + "星" + buildNextSeasonRewardHint(),
-                getWidth() / 2f, top + dp(22), textPaint);
+                seasonTextRect, 11, Color.WHITE);
         drawSeasonProgressBar(canvas, left, top + dp(30), right);
     }
 
