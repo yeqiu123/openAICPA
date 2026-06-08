@@ -2290,6 +2290,11 @@ public class GameView extends View {
             canvas.drawLine(shellRect.centerX(), shellRect.bottom - dp(4),
                     shellRect.centerX() + i * dp(10), shellRect.top + dp(8), paint);
         }
+        if (shell[row][col] == 1) {
+            paint.setColor(Color.argb(210, 120, 92, 120));
+            canvas.drawLine(shellRect.left + dp(9), shellRect.centerY(), shellRect.centerX(), shellRect.centerY() - dp(6), paint);
+            canvas.drawLine(shellRect.centerX(), shellRect.centerY() - dp(6), shellRect.right - dp(10), shellRect.centerY() + dp(4), paint);
+        }
         paint.setStyle(Paint.Style.FILL);
     }
 
