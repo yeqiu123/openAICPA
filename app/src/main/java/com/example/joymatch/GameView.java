@@ -66,8 +66,9 @@ public class GameView extends View {
     private static final int PROP_EXTRA_MOVES = 5;
     private static final int PROP_MAGIC_WAND = 6;
     private static final int PROP_BRUSH = 7;
-    private static final int PROP_COUNT = 8;
-    private static final int[] PROP_COSTS = {8, 12, 10, 16, 18, 14, 22, 20};
+    private static final int PROP_PORTAL = 8;
+    private static final int PROP_COUNT = 9;
+    private static final int[] PROP_COSTS = {8, 12, 10, 16, 18, 14, 22, 20, 24};
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -379,6 +380,7 @@ public class GameView extends View {
             int extraMoves = i >= 12 ? 1 + (i % 15 == 0 ? 1 : 0) : 0;
             int magicWand = i >= 20 && i % 14 == 0 ? 1 : 0;
             int brush = i >= 26 && i % 16 == 0 ? 1 : 0;
+            int portalProp = i >= 34 && i % 18 == 0 ? 1 : 0;
             int targetKind = i % TILE_KINDS;
             int targetAmount = 8 + (i % 7) + i / 10;
             int iceCount = i < 4 ? i * 2 : Math.min(24, 6 + i / 2);
@@ -398,7 +400,7 @@ public class GameView extends View {
             int comboGoal = i >= 22 && i % 5 == 0 ? 3 + (i / 25) : 0;
             int scoreGoal = i >= 30 && i % 6 == 0 ? targetScore + 800 + i * 40 : 0;
             levels.add(new Level(targetScore, moves, hammer, bomb, shuffle, rowBlast, colorBlast, extraMoves,
-                    magicWand, brush, targetKind, targetAmount, iceCount, honeyCount, stoneCount, vineCount, giftCount,
+                    magicWand, brush, portalProp, targetKind, targetAmount, iceCount, honeyCount, stoneCount, vineCount, giftCount,
                     chainCount, shellCount, flowerCount, keyCount, moveChestCount, cloudCount, gemCount, portalCount, moveLimitGoal, comboGoal,
                     scoreGoal));
         }
@@ -467,6 +469,7 @@ public class GameView extends View {
         propInventory[PROP_EXTRA_MOVES] = level.extraMoves;
         propInventory[PROP_MAGIC_WAND] = level.magicWands;
         propInventory[PROP_BRUSH] = level.brushes;
+        propInventory[PROP_PORTAL] = level.portalProps;
         applyChapterMasteryStarterPerks();
 
         // 初始化时避开天然三连，让玩家第一步更清晰。
@@ -536,6 +539,15 @@ public class GameView extends View {
                 if (prop == PROP_SHUFFLE) {
                     propInventory[prop]--;
                     shuffleBoard();
+                    activeProp = NONE;
+                    selectedRow = NONE;
+                    selectedCol = NONE;
+                } else if (prop == PROP_PORTAL) {
+                    // 传送道具即时扰动棋盘，适合主动寻找新连锁。
+                    propInventory[prop]--;
+                    triggerPortalShift();
+                    resolveMatches(findMatches());
+                    checkLevelState();
                     activeProp = NONE;
                     selectedRow = NONE;
                     selectedCol = NONE;
@@ -2501,7 +2513,7 @@ public class GameView extends View {
         float buttonWidth = (getWidth() - dp(32) - gap * (PROP_COUNT - 1)) / PROP_COUNT;
         for (int prop = 0; prop < PROP_COUNT; prop++) {
             float left = dp(16) + prop * (buttonWidth + gap);
-            RectF rect = new RectF(left, top, left + buttonWidth, top + dp(58));
+            RectF rect = new RectF(left, top, left + buttonWidth, top + dp(60));
             propRects[prop] = rect;
 
             paint.setColor(activeProp == prop ? Color.argb(235, 255, 255, 255) : Color.argb(120, 255, 255, 255));
@@ -2511,7 +2523,7 @@ public class GameView extends View {
             drawPropIcon(canvas, prop, rect.centerX(), rect.centerY() - dp(7));
 
             textPaint.setTextAlign(Paint.Align.CENTER);
-            textPaint.setTextSize(sp(PROP_COUNT > 7 ? 10 : 11));
+            textPaint.setTextSize(sp(PROP_COUNT > 8 ? 9 : 10));
             textPaint.setColor(Color.WHITE);
             String label = propInventory[prop] > 0
                     ? getPropName(prop) + " x" + propInventory[prop]
@@ -2564,6 +2576,12 @@ public class GameView extends View {
             canvas.drawCircle(centerX + dp(12), centerY - dp(12), dp(5), paint);
             paint.setStyle(Paint.Style.FILL);
             canvas.drawCircle(centerX - dp(14), centerY + dp(14), dp(3), paint);
+        } else if (prop == PROP_PORTAL) {
+            paint.setStyle(Paint.Style.STROKE);
+            canvas.drawCircle(centerX, centerY, dp(14), paint);
+            canvas.drawArc(new RectF(centerX - dp(14), centerY - dp(14), centerX + dp(14), centerY + dp(14)),
+                    40, 250, false, paint);
+            paint.setStyle(Paint.Style.FILL);
         } else {
             canvas.drawRoundRect(new RectF(centerX - dp(13), centerY - dp(10), centerX + dp(13), centerY - dp(2)),
                     dp(4), dp(4), paint);
@@ -2586,6 +2604,8 @@ public class GameView extends View {
             return "魔棒";
         } else if (prop == PROP_BRUSH) {
             return "克隆";
+        } else if (prop == PROP_PORTAL) {
+            return "传送";
         }
         return "加步";
     }
@@ -3195,6 +3215,7 @@ public class GameView extends View {
         final int extraMoves;
         final int magicWands;
         final int brushes;
+        final int portalProps;
         final int targetKind;
         final int targetAmount;
         final int iceCount;
@@ -3215,7 +3236,7 @@ public class GameView extends View {
         final int scoreGoal;
 
         Level(int targetScore, int moves, int hammers, int bombs, int shuffles, int rowBlasts, int colorBlasts,
-                int extraMoves, int magicWands, int brushes,
+                int extraMoves, int magicWands, int brushes, int portalProps,
                 int targetKind, int targetAmount, int iceCount, int honeyCount, int stoneCount, int vineCount,
                 int giftCount, int chainCount, int shellCount, int flowerCount, int keyCount, int moveChestCount,
                 int cloudCount, int gemCount, int portalCount, int moveLimitGoal, int comboGoal, int scoreGoal) {
@@ -3229,6 +3250,7 @@ public class GameView extends View {
             this.extraMoves = extraMoves;
             this.magicWands = magicWands;
             this.brushes = brushes;
+            this.portalProps = portalProps;
             this.targetKind = targetKind;
             this.targetAmount = targetAmount;
             this.iceCount = iceCount;
