@@ -3034,28 +3034,30 @@ public class GameView extends View {
     private void grantSeasonPropReward(int step) {
         lastSeasonRewardProp = NONE;
         lastSeasonRewardAmount = 0;
-        if (step % 10 == 0) {
-            lastSeasonRewardProp = PROP_STAR_HARP;
-            lastSeasonRewardAmount = 1;
-        } else if (step % 8 == 0) {
-            lastSeasonRewardProp = PROP_SNOW_GLOBE;
-            lastSeasonRewardAmount = 1;
-        } else if (step % 6 == 0) {
-            lastSeasonRewardProp = PROP_BUBBLE_WAND;
-            lastSeasonRewardAmount = 1;
-        } else if (step % 4 == 0) {
-            lastSeasonRewardProp = PROP_STAR_COMPASS;
-            lastSeasonRewardAmount = 1;
-        } else if (step % 3 == 0) {
-            lastSeasonRewardProp = PROP_FIREWORK_CANNON;
-            lastSeasonRewardAmount = 1;
-        } else if (step % 2 == 0) {
-            lastSeasonRewardProp = PROP_AURORA_ORB;
+        lastSeasonRewardProp = getSeasonRewardProp(step);
+        if (lastSeasonRewardProp != NONE) {
             lastSeasonRewardAmount = 1;
         }
         if (lastSeasonRewardProp != NONE) {
             addReserveProp(lastSeasonRewardProp, lastSeasonRewardAmount);
         }
+    }
+
+    private int getSeasonRewardProp(int step) {
+        if (step % 10 == 0) {
+            return PROP_STAR_HARP;
+        } else if (step % 8 == 0) {
+            return PROP_SNOW_GLOBE;
+        } else if (step % 6 == 0) {
+            return PROP_BUBBLE_WAND;
+        } else if (step % 4 == 0) {
+            return PROP_STAR_COMPASS;
+        } else if (step % 3 == 0) {
+            return PROP_FIREWORK_CANNON;
+        } else if (step % 2 == 0) {
+            return PROP_AURORA_ORB;
+        }
+        return NONE;
     }
 
     private void saveSeasonProgress() {
@@ -6110,8 +6112,14 @@ public class GameView extends View {
         textPaint.setColor(Color.WHITE);
         canvas.drawText("成就 " + getClaimedAchievementCount() + "/" + ACHIEVEMENT_COUNT
                 + "  评级 " + getTotalRankScore() + "  赛季 " + seasonLevels + "/" + getNextSeasonLevelTarget()
-                + "关 " + seasonStars + "/" + getNextSeasonStarTarget() + "星", getWidth() / 2f, top + dp(22), textPaint);
+                + "关 " + seasonStars + "/" + getNextSeasonStarTarget() + "星" + buildNextSeasonRewardHint(),
+                getWidth() / 2f, top + dp(22), textPaint);
         drawSeasonProgressBar(canvas, left, top + dp(30), right);
+    }
+
+    private String buildNextSeasonRewardHint() {
+        int prop = getSeasonRewardProp(seasonRewardStep + 1);
+        return prop == NONE ? "" : " 奖" + getPropName(prop);
     }
 
     private void drawSeasonProgressBar(Canvas canvas, float left, float top, float right) {
