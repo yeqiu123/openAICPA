@@ -107,6 +107,7 @@ public class GameView extends View {
     private int feedbackCleared;
     private int highestUnlockedLevel;
     private int levelMapPage;
+    private int comboEnergy;
     private int lastStars;
     private int lastBonusScore;
     private int coins;
@@ -258,6 +259,7 @@ public class GameView extends View {
         levelComplete = false;
         levelFailed = false;
         activeProp = NONE;
+        comboEnergy = 0;
         lastCoinReward = 0;
         rewardTargetMilestone = 0;
         rewardObstacleMilestone = 0;
@@ -472,7 +474,14 @@ public class GameView extends View {
         }
         ensurePlayableBoard();
         if (totalCleared > 0) {
-            showFeedback(combo, totalCleared);
+            comboEnergy = Math.min(100, comboEnergy + combo * 12 + totalCleared / 2);
+            if (comboEnergy >= 100) {
+                comboEnergy = 0;
+                propInventory[random.nextInt(PROP_COUNT)]++;
+                showFeedback(combo + 1, totalCleared);
+            } else {
+                showFeedback(combo, totalCleared);
+            }
         }
     }
 
@@ -873,6 +882,7 @@ public class GameView extends View {
                 getWidth() - dp(22), dp(130), textPaint);
         textPaint.setTextSize(sp(13));
         canvas.drawText(buildStars(getPreviewStars(level)), getWidth() - dp(22), dp(154), textPaint);
+        drawComboEnergy(canvas);
     }
 
     private void drawBoard(Canvas canvas) {
@@ -1054,6 +1064,20 @@ public class GameView extends View {
         canvas.drawRoundRect(track, dp(4), dp(4), paint);
 
         paint.setColor(Color.argb(210, 255, 255, 255));
+        RectF fill = new RectF(left, top, left + width * progress, top + dp(8));
+        canvas.drawRoundRect(fill, dp(4), dp(4), paint);
+    }
+
+    private void drawComboEnergy(Canvas canvas) {
+        float left = getWidth() - dp(164);
+        float top = dp(144);
+        float width = dp(142);
+        float progress = comboEnergy / 100f;
+
+        paint.setColor(Color.argb(70, 33, 37, 56));
+        RectF track = new RectF(left, top, left + width, top + dp(8));
+        canvas.drawRoundRect(track, dp(4), dp(4), paint);
+        paint.setColor(Color.argb(210, 255, 236, 133));
         RectF fill = new RectF(left, top, left + width * progress, top + dp(8));
         canvas.drawRoundRect(fill, dp(4), dp(4), paint);
     }
