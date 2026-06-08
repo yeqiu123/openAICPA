@@ -2224,6 +2224,7 @@ public class GameView extends View {
         chapterMasteryClaimed[chapter] = true;
         lastChapterMasteryReward = 120 + chapter * 30;
         coins += lastChapterMasteryReward;
+        propInventory[PROP_CLEANSE]++;
         if (isFireworksChapter(chapter)) {
             propInventory[PROP_FIREWORK_CANNON]++;
         }
@@ -6519,7 +6520,7 @@ public class GameView extends View {
                 }
             } else if (lastChapterMasteryReward > 0) {
                 rewardText = "金币 +" + lastCoinReward + " 满星大师+" + lastChapterMasteryReward
-                        + buildFireworksChapterRewardText() + "  点击继续";
+                        + " 净化+1" + buildFireworksChapterRewardText() + "  点击继续";
             } else if (lastChapterEliteReward > 0) {
                 rewardText = "金币 +" + lastCoinReward + " 章节精英+" + lastChapterEliteReward + " 流星+1"
                         + buildFireworksChapterRewardText() + "  点击继续";
