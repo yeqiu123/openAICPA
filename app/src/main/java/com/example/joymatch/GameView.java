@@ -8832,6 +8832,12 @@ public class GameView extends View {
         if (dailyChallengeMode) {
             return "下一目标 回到主线继续推进";
         }
+        if (getAvailableStarChests() > 0) {
+            return "下一目标 星级宝箱可领取";
+        }
+        if (getAvailableRankChests() > 0) {
+            return "下一目标 评级宝箱可领取";
+        }
         int nextLevel = Math.min(levelIndex + 1, levels.size() - 1);
         int replayLevel = findReplayTargetLevel();
         if (levelIndex < levels.size() - 1 && nextLevel <= highestUnlockedLevel) {
