@@ -24,10 +24,12 @@ public class GameView extends View {
     private static final String PREFS_NAME = "joy_match_progress";
     private static final String KEY_UNLOCKED_LEVEL = "unlocked_level";
     private static final String KEY_STARS_PREFIX = "stars_";
+    private static final String KEY_COINS = "coins";
     private static final int BOARD_SIZE = 8;
     private static final int TILE_KINDS = 6;
     private static final int LEVEL_COUNT = 120;
     private static final int LEVELS_PER_PAGE = 60;
+    private static final int CONTINUE_COST = 10;
     private static final int NONE = -1;
     private static final int SPECIAL_NORMAL = 0;
     private static final int SPECIAL_ROW = 1;
@@ -106,6 +108,8 @@ public class GameView extends View {
     private int levelMapPage;
     private int lastStars;
     private int lastBonusScore;
+    private int coins;
+    private int lastCoinReward;
     private int rewardTargetMilestone;
     private int rewardObstacleMilestone;
     private long feedbackStartTime;
@@ -157,8 +161,22 @@ public class GameView extends View {
             return true;
         }
 
-        if (levelComplete || levelFailed) {
-            startLevel(levelComplete ? (levelIndex + 1) % levels.size() : levelIndex);
+        if (levelComplete) {
+            startLevel((levelIndex + 1) % levels.size());
+            invalidate();
+            return true;
+        }
+
+        if (levelFailed) {
+            if (coins >= CONTINUE_COST) {
+                // 金币续步给玩家一次翻盘机会。
+                coins -= CONTINUE_COST;
+                movesLeft = 5;
+                levelFailed = false;
+                saveCoins();
+            } else {
+                startLevel(levelIndex);
+            }
             invalidate();
             return true;
         }
@@ -239,6 +257,7 @@ public class GameView extends View {
         levelComplete = false;
         levelFailed = false;
         activeProp = NONE;
+        lastCoinReward = 0;
         rewardTargetMilestone = 0;
         rewardObstacleMilestone = 0;
         targetKind = level.targetKind;
@@ -576,6 +595,9 @@ public class GameView extends View {
             levelComplete = true;
             lastBonusScore = movesLeft * 80;
             score += lastBonusScore;
+            lastStars = movesLeft > level.moves / 2 ? 3 : (movesLeft > level.moves / 5 ? 2 : 1);
+            lastCoinReward = 10 + lastStars * 5;
+            coins += lastCoinReward;
             saveLevelProgress();
         } else if (movesLeft <= 0) {
             levelFailed = true;
@@ -584,6 +606,7 @@ public class GameView extends View {
 
     private void loadProgress() {
         highestUnlockedLevel = Math.min(prefs.getInt(KEY_UNLOCKED_LEVEL, 0), levels.size() - 1);
+        coins = prefs.getInt(KEY_COINS, 30);
         for (int i = 0; i < levels.size(); i++) {
             levelStars[i] = prefs.getInt(KEY_STARS_PREFIX + i, 0);
         }
@@ -591,17 +614,17 @@ public class GameView extends View {
 
     private void saveLevelProgress() {
         Level level = levels.get(levelIndex);
-        lastStars = movesLeft > level.moves / 2 ? 3 : (movesLeft > level.moves / 5 ? 2 : 1);
-        if (lastStars <= levelStars[levelIndex] && highestUnlockedLevel >= Math.min(levelIndex + 1, levels.size() - 1)) {
-            return;
-        }
-
         levelStars[levelIndex] = Math.max(levelStars[levelIndex], lastStars);
         highestUnlockedLevel = Math.max(highestUnlockedLevel, Math.min(levelIndex + 1, levels.size() - 1));
         prefs.edit()
                 .putInt(KEY_UNLOCKED_LEVEL, highestUnlockedLevel)
                 .putInt(KEY_STARS_PREFIX + levelIndex, levelStars[levelIndex])
+                .putInt(KEY_COINS, coins)
                 .apply();
+    }
+
+    private void saveCoins() {
+        prefs.edit().putInt(KEY_COINS, coins).apply();
     }
 
     private void handleLevelMapTap(float x, float y) {
@@ -835,7 +858,7 @@ public class GameView extends View {
                     dp(13), dp(13), paint);
         }
         canvas.drawText("步数 " + movesLeft, getWidth() - dp(22), dp(78), textPaint);
-        canvas.drawText("关卡 " + levels.size(), getWidth() - dp(22), dp(104), textPaint);
+        canvas.drawText("金币 " + coins, getWidth() - dp(22), dp(104), textPaint);
         canvas.drawText("冰" + iceRemaining + " 蜜" + honeyRemaining + " 石" + stoneRemaining,
                 getWidth() - dp(22), dp(130), textPaint);
         textPaint.setTextSize(sp(13));
@@ -1291,9 +1314,11 @@ public class GameView extends View {
         textPaint.setTextSize(sp(16));
         if (levelComplete) {
             canvas.drawText(buildStars(lastStars) + "  步数奖励 +" + lastBonusScore, getWidth() / 2f, getHeight() * 0.49f, textPaint);
-            canvas.drawText("点击继续", getWidth() / 2f, getHeight() * 0.55f, textPaint);
+            canvas.drawText("金币 +" + lastCoinReward + "  点击继续", getWidth() / 2f, getHeight() * 0.55f, textPaint);
+        } else if (coins >= CONTINUE_COST) {
+            canvas.drawText("点击续步 -10金币", getWidth() / 2f, getHeight() * 0.49f, textPaint);
         } else {
-            canvas.drawText("点击继续", getWidth() / 2f, getHeight() * 0.49f, textPaint);
+            canvas.drawText("金币不足，点击重试", getWidth() / 2f, getHeight() * 0.49f, textPaint);
         }
     }
 
