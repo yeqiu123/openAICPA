@@ -4,10 +4,14 @@
 
 ## 当前进度
 
-- Android 原生工程骨架。
-- 单 Activity 竖屏游戏入口。
-- 纯 Java 自绘游戏视图，后续逐步扩展玩法、美术和关卡。
+- Android 原生工程骨架，单 Activity 竖屏游戏入口。
+- 8x8 三消棋盘、交换、消除、下落补充、连锁消除。
+- 60 个关卡，包含分数、收集、冰块障碍三类目标。
+- 道具包含锤子、炸弹、重排、十字、同色消除。
+- 四连/五连特殊棋子、连击反馈、选关地图、星级和本地进度保存。
 
 ## 开发
 
 使用 Android Studio 打开项目根目录，等待 Gradle 同步后运行 `app` 模块。
+
+如果本机已有 Gradle，也可以执行 `gradle assembleDebug`。当前仓库只提交了 wrapper 配置，未包含 `gradle-wrapper.jar`，首次构建建议直接使用 Android Studio 同步。
