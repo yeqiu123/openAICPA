@@ -1026,7 +1026,11 @@ public class GameView extends View {
     }
 
     private boolean isHiddenChallengeLevel() {
-        return levelIndex >= 10 && levelIndex % 11 == 0;
+        return isHiddenChallengeLevel(levelIndex);
+    }
+
+    private boolean isHiddenChallengeLevel(int level) {
+        return level >= 10 && level % 11 == 0;
     }
 
     private int calculateLevelRank(Level level) {
@@ -2116,9 +2120,43 @@ public class GameView extends View {
                 textPaint.setColor(Color.WHITE);
                 canvas.drawText(buildRankText(levelRanks[level]), rect.right - dp(10), rect.top + dp(12), textPaint);
             }
+            drawLevelTypeMark(canvas, level, rect);
         }
 
         drawLevelMapPager(canvas);
+    }
+
+    private void drawLevelTypeMark(Canvas canvas, int levelIndex, RectF rect) {
+        String mark = buildLevelTypeMark(levelIndex);
+        if (mark.length() == 0) {
+            return;
+        }
+
+        paint.setColor(Color.argb(190, 33, 37, 56));
+        RectF badge = new RectF(rect.left + dp(4), rect.bottom - dp(18), rect.left + dp(22), rect.bottom - dp(4));
+        canvas.drawRoundRect(badge, dp(5), dp(5), paint);
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setTextSize(sp(8));
+        textPaint.setColor(Color.WHITE);
+        canvas.drawText(mark, badge.centerX(), badge.centerY() + dp(3), textPaint);
+    }
+
+    private String buildLevelTypeMark(int levelIndex) {
+        Level level = levels.get(levelIndex);
+        if (isHiddenChallengeLevel(levelIndex)) {
+            return "隐";
+        } else if (level.scoreGoal > 0) {
+            return "分";
+        } else if (level.comboGoal > 0) {
+            return "连";
+        } else if (level.moveLimitGoal > 0) {
+            return "步";
+        } else if (level.portalCount > 0) {
+            return "传";
+        } else if (level.gemCount > 0) {
+            return "钻";
+        }
+        return "";
     }
 
     private void drawMapLock(Canvas canvas, RectF rect) {
