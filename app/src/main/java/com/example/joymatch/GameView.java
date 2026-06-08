@@ -6076,6 +6076,23 @@ public class GameView extends View {
             text += " 月票";
         }
         drawTextFit(canvas, text, dailyGoalRect, 12, claimable ? Color.rgb(33, 37, 56) : Color.WHITE);
+        drawDailyGoalProgressBar(canvas, dailyGoalRect, claimable);
+    }
+
+    private void drawDailyGoalProgressBar(Canvas canvas, RectF rect, boolean claimable) {
+        if (dailyGoalClaimed) {
+            return;
+        }
+
+        // 每日目标进度条让今日星数积累更直观。
+        float progress = Math.min(1f, dailyGoalProgress / 6f);
+        float left = rect.left + dp(10);
+        float right = rect.right - dp(10);
+        float top = rect.bottom - dp(7);
+        paint.setColor(Color.argb(70, 33, 37, 56));
+        canvas.drawRoundRect(new RectF(left, top, right, top + dp(4)), dp(2), dp(2), paint);
+        paint.setColor(claimable ? Color.argb(220, 255, 255, 255) : Color.argb(210, 116, 219, 214));
+        canvas.drawRoundRect(new RectF(left, top, left + (right - left) * progress, top + dp(4)), dp(2), dp(2), paint);
     }
 
     private void drawChapterChestEntry(Canvas canvas) {
