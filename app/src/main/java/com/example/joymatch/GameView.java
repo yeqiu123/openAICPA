@@ -2088,9 +2088,13 @@ public class GameView extends View {
         paint.setColor(Color.argb(70, 33, 37, 56));
         RectF track = new RectF(left, top, left + width, top + dp(8));
         canvas.drawRoundRect(track, dp(4), dp(4), paint);
-        paint.setColor(Color.argb(210, 255, 236, 133));
+        paint.setColor(comboEnergy >= 80 ? Color.argb(235, 255, 244, 170) : Color.argb(210, 255, 236, 133));
         RectF fill = new RectF(left, top, left + width * progress, top + dp(8));
         canvas.drawRoundRect(fill, dp(4), dp(4), paint);
+        if (comboEnergy >= 80) {
+            paint.setColor(Color.argb(150, 255, 255, 255));
+            canvas.drawCircle(fill.right, fill.centerY(), dp(4), paint);
+        }
     }
 
     private int getPreviewStars(Level level) {
