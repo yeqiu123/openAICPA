@@ -165,6 +165,7 @@ public class GameView extends View {
     private int rewardTargetMilestone;
     private int rewardObstacleMilestone;
     private int rewardComboMilestone;
+    private int rewardKeyMilestone;
     private int lastTaskRewardType;
     private long feedbackStartTime;
     private long hintUntilTime;
@@ -379,6 +380,7 @@ public class GameView extends View {
         rewardTargetMilestone = 0;
         rewardObstacleMilestone = 0;
         rewardComboMilestone = 0;
+        rewardKeyMilestone = 0;
         lastTaskRewardType = 0;
         targetKind = level.targetKind;
         targetRemaining = level.targetAmount;
@@ -1326,6 +1328,16 @@ public class GameView extends View {
             honeySpreadCount = 0;
             showFeedback(Math.max(2, bestCombo), 3);
         }
+
+        if (level.keyCount > 0 && keyRemaining <= 0 && rewardKeyMilestone == 0) {
+            // 收齐钥匙后补一个强力道具，让额外目标有即时爽感。
+            propInventory[PROP_COLOR_BLAST]++;
+            rewardKeyMilestone = 1;
+            lastTaskRewardType = 4;
+            lastGiftReward = 0;
+            honeySpreadCount = 0;
+            showFeedback(1, level.keyCount);
+        }
     }
 
     private boolean createsInitialMatch(int row, int col) {
@@ -2233,6 +2245,8 @@ public class GameView extends View {
             text = "清障奖励";
         } else if (lastTaskRewardType == 3 && age < 900) {
             text = "连击奖励";
+        } else if (lastTaskRewardType == 4 && age < 900) {
+            text = "钥匙奖励";
         }
 
         textPaint.setTextAlign(Paint.Align.CENTER);
