@@ -6292,7 +6292,25 @@ public class GameView extends View {
         textPaint.setTextSize(sp(12));
         drawTextFit(canvas, buildStarChestLabel(), starChestRect, 12, Color.rgb(33, 37, 56));
         drawTextFit(canvas, buildRankChestLabel(), rankChestRect, 12, Color.rgb(33, 37, 56));
+        drawMapChestProgressBar(canvas, starChestRect, getTotalStars(), getNextStarChestTarget(), getAvailableStarChests() > 0);
+        drawMapChestProgressBar(canvas, rankChestRect, getTotalRankScore(), getNextRankChestTarget(), getAvailableRankChests() > 0);
         drawStarChestNotice(canvas, top);
+    }
+
+    private void drawMapChestProgressBar(Canvas canvas, RectF rect, int current, int target, boolean claimable) {
+        if (claimable) {
+            return;
+        }
+
+        // 底部宝箱进度条提示距离下一次可领取还差多少。
+        float progress = Math.min(1f, current / (float) Math.max(1, target));
+        float left = rect.left + dp(8);
+        float right = rect.right - dp(8);
+        float top = rect.bottom - dp(7);
+        paint.setColor(Color.argb(70, 33, 37, 56));
+        canvas.drawRoundRect(new RectF(left, top, right, top + dp(4)), dp(2), dp(2), paint);
+        paint.setColor(Color.argb(190, 255, 236, 133));
+        canvas.drawRoundRect(new RectF(left, top, left + (right - left) * progress, top + dp(4)), dp(2), dp(2), paint);
     }
 
     private int getLevelMapPageCount() {
