@@ -49,13 +49,13 @@ public class GameView extends View {
     private static final String KEY_HAPTIC_ENABLED = "haptic_enabled";
     private static final int BOARD_SIZE = 8;
     private static final int TILE_KINDS = 6;
-    private static final int LEVEL_COUNT = 180;
+    private static final int LEVEL_COUNT = 200;
     private static final int LEVELS_PER_PAGE = 60;
     private static final int CONTINUE_COST = 10;
     private static final int STAR_CHEST_STEP = 30;
     private static final int RANK_CHEST_STEP = 45;
     private static final int CHAPTER_SIZE = 20;
-    private static final int CHAPTER_COUNT = 9;
+    private static final int CHAPTER_COUNT = 10;
     private static final int CHAPTER_CHEST_STARS = 45;
     private static final int ACHIEVEMENT_COUNT = 18;
     private static final int NONE = -1;
@@ -175,7 +175,8 @@ public class GameView extends View {
             Color.rgb(255, 186, 82),
             Color.rgb(76, 211, 194),
             Color.rgb(238, 122, 159),
-            Color.rgb(110, 125, 255)
+            Color.rgb(110, 125, 255),
+            Color.rgb(37, 197, 168)
     };
     private final int[] chapterBottomColors = {
             Color.rgb(255, 151, 132),
@@ -186,10 +187,11 @@ public class GameView extends View {
             Color.rgb(92, 202, 166),
             Color.rgb(255, 214, 92),
             Color.rgb(117, 182, 255),
-            Color.rgb(255, 174, 208)
+            Color.rgb(255, 174, 208),
+            Color.rgb(255, 129, 104)
     };
     private final String[] chapterNames = {
-            "糖果森林", "云朵海湾", "果冻火山", "薄荷花园", "星光梦境", "蜂蜜工坊", "珊瑚集市", "极光城堡", "月光游乐园"
+            "糖果森林", "云朵海湾", "果冻火山", "薄荷花园", "星光梦境", "蜂蜜工坊", "珊瑚集市", "极光城堡", "月光游乐园", "烟花星港"
     };
 
     private int levelIndex = 0;
@@ -3956,7 +3958,7 @@ public class GameView extends View {
                 canvas.drawLine(x - dp(18), y + dp(12), x + dp(18), y - dp(12), paint);
                 paint.setColor(Color.argb(55, 255, 255, 255));
             }
-        } else {
+        } else if (chapter == 8) {
             for (int i = 0; i < 5; i++) {
                 float x = getWidth() * (0.12f + i * 0.18f);
                 float y = getHeight() * (0.17f + (i % 2) * 0.2f);
@@ -3971,6 +3973,18 @@ public class GameView extends View {
                 }
                 paint.setStyle(Paint.Style.FILL);
                 drawStar(canvas, x + dp(22), y - dp(18), dp(5 + i % 2));
+            }
+        } else {
+            for (int i = 0; i < 6; i++) {
+                float x = getWidth() * (0.1f + i * 0.16f);
+                float y = getHeight() * (0.16f + (i % 3) * 0.14f);
+                // 烟花星港用升空轨迹和爆点表现终章后的庆典感。
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setStrokeWidth(dp(2));
+                canvas.drawLine(x, y + dp(24), x + (float) Math.sin(time / 800.0 + i) * dp(10), y, paint);
+                paint.setStyle(Paint.Style.FILL);
+                drawStar(canvas, x, y - dp(6), dp(7 + i % 3));
+                canvas.drawCircle(x + dp(18), y + dp(8), dp(3 + i % 2), paint);
             }
         }
     }
