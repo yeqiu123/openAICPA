@@ -25,6 +25,7 @@ public class GameView extends View {
     private static final String KEY_UNLOCKED_LEVEL = "unlocked_level";
     private static final String KEY_STARS_PREFIX = "stars_";
     private static final String KEY_COINS = "coins";
+    private static final String KEY_DAILY_REWARD_DAY = "daily_reward_day";
     private static final int BOARD_SIZE = 8;
     private static final int TILE_KINDS = 6;
     private static final int LEVEL_COUNT = 120;
@@ -112,6 +113,7 @@ public class GameView extends View {
     private int lastBonusScore;
     private int coins;
     private int lastCoinReward;
+    private int dailyRewardAmount;
     private int rewardTargetMilestone;
     private int rewardObstacleMilestone;
     private long feedbackStartTime;
@@ -626,6 +628,7 @@ public class GameView extends View {
     private void loadProgress() {
         highestUnlockedLevel = Math.min(prefs.getInt(KEY_UNLOCKED_LEVEL, 0), levels.size() - 1);
         coins = prefs.getInt(KEY_COINS, 30);
+        grantDailyReward();
         for (int i = 0; i < levels.size(); i++) {
             levelStars[i] = prefs.getInt(KEY_STARS_PREFIX + i, 0);
         }
@@ -644,6 +647,22 @@ public class GameView extends View {
 
     private void saveCoins() {
         prefs.edit().putInt(KEY_COINS, coins).apply();
+    }
+
+    private void grantDailyReward() {
+        long today = System.currentTimeMillis() / 86400000L;
+        if (prefs.getLong(KEY_DAILY_REWARD_DAY, -1L) == today) {
+            dailyRewardAmount = 0;
+            return;
+        }
+
+        // 每日登录补给金币，降低卡关后的挫败感。
+        dailyRewardAmount = 20;
+        coins += dailyRewardAmount;
+        prefs.edit()
+                .putLong(KEY_DAILY_REWARD_DAY, today)
+                .putInt(KEY_COINS, coins)
+                .apply();
     }
 
     private void handleLevelMapTap(float x, float y) {
@@ -877,7 +896,8 @@ public class GameView extends View {
                     dp(13), dp(13), paint);
         }
         canvas.drawText("步数 " + movesLeft, getWidth() - dp(22), dp(78), textPaint);
-        canvas.drawText("金币 " + coins, getWidth() - dp(22), dp(104), textPaint);
+        canvas.drawText("金币 " + coins + (dailyRewardAmount > 0 ? " +" + dailyRewardAmount : ""),
+                getWidth() - dp(22), dp(104), textPaint);
         canvas.drawText("冰" + iceRemaining + " 蜜" + honeyRemaining + " 石" + stoneRemaining,
                 getWidth() - dp(22), dp(130), textPaint);
         textPaint.setTextSize(sp(13));
