@@ -2101,7 +2101,7 @@ public class GameView extends View {
             drawPropIcon(canvas, prop, rect.centerX(), rect.centerY() - dp(7));
 
             textPaint.setTextAlign(Paint.Align.CENTER);
-            textPaint.setTextSize(sp(11));
+            textPaint.setTextSize(sp(PROP_COUNT > 7 ? 10 : 11));
             textPaint.setColor(Color.WHITE);
             String label = propInventory[prop] > 0
                     ? getPropName(prop) + " x" + propInventory[prop]
