@@ -49,15 +49,15 @@ public class GameView extends View {
     private static final String KEY_HAPTIC_ENABLED = "haptic_enabled";
     private static final int BOARD_SIZE = 8;
     private static final int TILE_KINDS = 6;
-    private static final int LEVEL_COUNT = 240;
+    private static final int LEVEL_COUNT = 280;
     private static final int LEVELS_PER_PAGE = 60;
     private static final int CONTINUE_COST = 10;
     private static final int STAR_CHEST_STEP = 30;
     private static final int RANK_CHEST_STEP = 45;
     private static final int CHAPTER_SIZE = 20;
-    private static final int CHAPTER_COUNT = 12;
+    private static final int CHAPTER_COUNT = 14;
     private static final int CHAPTER_CHEST_STARS = 45;
-    private static final int ACHIEVEMENT_COUNT = 24;
+    private static final int ACHIEVEMENT_COUNT = 26;
     private static final int NONE = -1;
     private static final int SPECIAL_NORMAL = 0;
     private static final int SPECIAL_ROW = 1;
@@ -184,7 +184,9 @@ public class GameView extends View {
             Color.rgb(110, 125, 255),
             Color.rgb(37, 197, 168),
             Color.rgb(255, 116, 196),
-            Color.rgb(83, 221, 144)
+            Color.rgb(83, 221, 144),
+            Color.rgb(124, 220, 255),
+            Color.rgb(255, 148, 136)
     };
     private final int[] chapterBottomColors = {
             Color.rgb(255, 151, 132),
@@ -198,10 +200,12 @@ public class GameView extends View {
             Color.rgb(255, 174, 208),
             Color.rgb(255, 129, 104),
             Color.rgb(106, 225, 255),
-            Color.rgb(255, 221, 96)
+            Color.rgb(255, 221, 96),
+            Color.rgb(255, 214, 112),
+            Color.rgb(124, 226, 168)
     };
     private final String[] chapterNames = {
-            "糖果森林", "云朵海湾", "果冻火山", "薄荷花园", "星光梦境", "蜂蜜工坊", "珊瑚集市", "极光城堡", "月光游乐园", "烟花星港", "流星彩虹谷", "奇迹糖晶塔"
+            "糖果森林", "云朵海湾", "果冻火山", "薄荷花园", "星光梦境", "蜂蜜工坊", "珊瑚集市", "极光城堡", "月光游乐园", "烟花星港", "流星彩虹谷", "奇迹糖晶塔", "泡泡星河岛", "花火薄荷城"
     };
 
     private int levelIndex = 0;
@@ -563,6 +567,15 @@ public class GameView extends View {
             int meteorTrailCount = i < 186 || i % 14 != 5 ? 0 : 1;
             int rainbowArcCount = i < 204 || i % 12 != 7 ? 0 : 1;
             int crystalCoreCount = i < 222 || i % 11 != 2 ? 0 : 1;
+            if (i >= 240) {
+                // 新增两章把后期机关混搭得更密，延长主线和重玩空间。
+                meteorTrailCount += i % 5 == 0 ? 1 : 0;
+                rainbowArcCount += i % 4 == 1 ? 1 : 0;
+                crystalCoreCount += i % 6 == 2 ? 1 : 0;
+                starportBeaconCount += i % 7 == 3 ? 1 : 0;
+                fireworkCannon += i % 10 == 4 ? 1 : 0;
+                starCompass += i % 9 == 5 ? 1 : 0;
+            }
             int countdownBombCount = i < 58 || i % 10 != 7 ? 0 : 1 + (i % 30 == 7 ? 1 : 0);
             int moveLimitGoal = i >= 18 && i % 4 == 0 ? Math.max(8, moves - 5) : 0;
             int comboGoal = i >= 22 && i % 5 == 0 ? 3 + (i / 25) : 0;
@@ -2275,13 +2288,15 @@ public class GameView extends View {
         checkAchievement(15, getTotalStars() >= 420, 320);
         checkAchievement(16, getTotalRankScore() >= 700, 360);
         checkAchievement(17, getFullyClearedChapterCount() >= CHAPTER_COUNT, 420);
-        // 扩展到 240 关后补充更长线的星数、评级和新章节追求。
-        checkAchievement(18, highestUnlockedLevel >= 220, 360);
+        // 扩展到 280 关后补充更长线的星数、评级和新章节追求。
+        checkAchievement(18, highestUnlockedLevel >= 260, 360);
         checkAchievement(19, getTotalStars() >= 600, 460);
         checkAchievement(20, getTotalRankScore() >= 1000, 520);
         checkAchievement(21, getChapterStars(CHAPTER_COUNT - 2) >= 54, 420);
         checkAchievement(22, getChapterStars(CHAPTER_COUNT - 1) >= 54, 520);
         checkAchievement(23, getTotalClearedEliteCount() >= 16, 560);
+        checkAchievement(24, getTotalStars() >= 780, 620);
+        checkAchievement(25, getTotalRankScore() >= 1300, 680);
     }
 
     private void checkAchievement(int index, boolean reached, int reward) {
@@ -2312,8 +2327,11 @@ public class GameView extends View {
         } else if (index == 17 || index == 21 || index == 22) {
             prop = PROP_STAR_COMPASS;
             amount = 1;
-        } else if (index == 23) {
+        } else if (index == 23 || index == 25) {
             prop = PROP_FIREWORK_CANNON;
+            amount = 2;
+        } else if (index == 24) {
+            prop = PROP_STAR_COMPASS;
             amount = 2;
         }
         if (prop == NONE) {
@@ -2442,6 +2460,12 @@ public class GameView extends View {
             propInventory[PROP_AURORA_ORB]++;
         } else if (isCrystalTowerChapter(chapter)) {
             propInventory[PROP_STAR_COMPASS]++;
+        } else if (isBubbleGalaxyChapter(chapter)) {
+            propInventory[PROP_AURORA_ORB]++;
+            propInventory[PROP_STAR_COMPASS]++;
+        } else if (isMintFireworksChapter(chapter)) {
+            propInventory[PROP_FIREWORK_CANNON]++;
+            propInventory[PROP_CLEANSE]++;
         }
         prefs.edit()
                 .putBoolean(KEY_CHAPTER_MASTERY_PREFIX + chapter, true)
@@ -2467,6 +2491,11 @@ public class GameView extends View {
             propInventory[PROP_STAR_COMPASS]++;
         } else if (isCrystalTowerChapter(chapter)) {
             propInventory[PROP_FIREWORK_CANNON]++;
+        } else if (isBubbleGalaxyChapter(chapter)) {
+            propInventory[PROP_AURORA_ORB]++;
+        } else if (isMintFireworksChapter(chapter)) {
+            propInventory[PROP_FIREWORK_CANNON]++;
+            propInventory[PROP_STAR_COMPASS]++;
         }
         prefs.edit()
                 .putBoolean(KEY_CHAPTER_ELITE_PREFIX + chapter, true)
@@ -2495,6 +2524,12 @@ public class GameView extends View {
         } else if (isCrystalTowerChapter(chapter)) {
             propInventory[PROP_FIREWORK_CANNON]++;
             propInventory[PROP_STAR_COMPASS]++;
+        } else if (isBubbleGalaxyChapter(chapter)) {
+            propInventory[PROP_AURORA_ORB]++;
+            propInventory[PROP_STAR_COMPASS]++;
+        } else if (isMintFireworksChapter(chapter)) {
+            propInventory[PROP_FIREWORK_CANNON]++;
+            propInventory[PROP_STAR_COMPASS]++;
         }
         prefs.edit()
                 .putBoolean(KEY_CHAPTER_RANK_PREFIX + chapter, true)
@@ -2512,6 +2547,14 @@ public class GameView extends View {
 
     private boolean isCrystalTowerChapter(int chapter) {
         return chapterNames[chapter].equals("奇迹糖晶塔");
+    }
+
+    private boolean isBubbleGalaxyChapter(int chapter) {
+        return chapterNames[chapter].equals("泡泡星河岛");
+    }
+
+    private boolean isMintFireworksChapter(int chapter) {
+        return chapterNames[chapter].equals("花火薄荷城");
     }
 
     private int getChapterRankRewardTarget() {
@@ -4541,7 +4584,7 @@ public class GameView extends View {
                 drawStar(canvas, x + dp(18), y - dp(10), dp(6 + i % 3));
                 canvas.drawCircle(x - dp(18), y + dp(12), dp(3 + i % 2), paint);
             }
-        } else {
+        } else if (chapter == 11) {
             for (int i = 0; i < 7; i++) {
                 float x = getWidth() * (0.1f + i * 0.14f);
                 float y = getHeight() * (0.15f + (i % 3) * 0.15f);
@@ -4555,6 +4598,27 @@ public class GameView extends View {
                 crystal.close();
                 canvas.drawPath(crystal, paint);
                 drawStar(canvas, x + dp(18), y - dp(16), dp(5 + i % 2));
+            }
+        } else if (chapter == 12) {
+            for (int i = 0; i < 8; i++) {
+                float x = getWidth() * (0.08f + i * 0.12f);
+                float y = getHeight() * (0.15f + (i % 4) * 0.13f);
+                // 泡泡星河岛用泡泡和星线做轻盈的后期主题。
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setStrokeWidth(dp(2));
+                canvas.drawCircle(x, y, dp(12 + i % 3 * 3), paint);
+                canvas.drawLine(x - dp(16), y + dp(18), x + dp(16), y - dp(18), paint);
+                paint.setStyle(Paint.Style.FILL);
+                drawStar(canvas, x + dp(18), y - dp(16), dp(5 + i % 2));
+            }
+        } else {
+            for (int i = 0; i < 8; i++) {
+                float x = getWidth() * (0.08f + i * 0.12f);
+                float y = getHeight() * (0.16f + (i % 4) * 0.12f);
+                // 花火薄荷城混合烟花和叶片，作为新终章的庆典视觉。
+                drawLeaf(canvas, x - dp(10), y + dp(10), dp(12), 35);
+                drawStar(canvas, x + dp(16), y - dp(12), dp(6 + i % 3));
+                canvas.drawCircle(x, y, dp(4 + i % 2), paint);
             }
         }
     }
@@ -7054,6 +7118,10 @@ public class GameView extends View {
             return " 极光+1";
         } else if (isCrystalTowerChapter(chapter)) {
             return " 罗盘+1";
+        } else if (isBubbleGalaxyChapter(chapter)) {
+            return " 极光+1 罗盘+1";
+        } else if (isMintFireworksChapter(chapter)) {
+            return " 礼炮+1 净化+1";
         }
         return buildFireworksChapterRewardText();
     }
@@ -7064,6 +7132,10 @@ public class GameView extends View {
             return " 罗盘+1";
         } else if (isCrystalTowerChapter(chapter)) {
             return " 礼炮+1";
+        } else if (isBubbleGalaxyChapter(chapter)) {
+            return " 极光+1";
+        } else if (isMintFireworksChapter(chapter)) {
+            return " 礼炮+1 罗盘+1";
         }
         return buildFireworksChapterRewardText();
     }
@@ -7073,6 +7145,10 @@ public class GameView extends View {
         if (isRainbowValleyChapter(chapter)) {
             return " 极光+1 罗盘+1";
         } else if (isCrystalTowerChapter(chapter)) {
+            return " 礼炮+1 罗盘+1";
+        } else if (isBubbleGalaxyChapter(chapter)) {
+            return " 极光+1 罗盘+1";
+        } else if (isMintFireworksChapter(chapter)) {
             return " 礼炮+1 罗盘+1";
         }
         return buildFireworksChapterRewardText() + buildFireworksChapterCompassText();
