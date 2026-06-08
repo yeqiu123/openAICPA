@@ -171,6 +171,7 @@ public class GameView extends View {
     private int lastGiftReward;
     private int lastMoveChestReward;
     private int lastCloudReward;
+    private int lastEnergyRewardProp = NONE;
     private int dailyRewardAmount;
     private int dailyStreak;
     private int rewardTargetMilestone;
@@ -395,6 +396,7 @@ public class GameView extends View {
         lastGiftReward = 0;
         lastMoveChestReward = 0;
         lastCloudReward = 0;
+        lastEnergyRewardProp = NONE;
         honeySpreadCount = 0;
         challengeCleared = false;
         comboChallengeCleared = false;
@@ -531,6 +533,7 @@ public class GameView extends View {
             honeySpreadCount = 0;
             lastMoveChestReward = 0;
             lastCloudReward = 0;
+            lastEnergyRewardProp = NONE;
             showFeedback(1, 1);
         } else if (activeProp == PROP_BRUSH) {
             // 克隆刷把普通棋升级成方向特效，方便玩家主动铺垫连锁。
@@ -543,6 +546,7 @@ public class GameView extends View {
             honeySpreadCount = 0;
             lastMoveChestReward = 0;
             lastCloudReward = 0;
+            lastEnergyRewardProp = NONE;
             showFeedback(1, 1);
         }
         playHaptic(HapticFeedbackConstants.CONFIRM);
@@ -759,7 +763,8 @@ public class GameView extends View {
             comboEnergy = Math.min(100, comboEnergy + combo * 12 + totalCleared / 2);
             if (comboEnergy >= 100) {
                 comboEnergy = 0;
-                propInventory[random.nextInt(PROP_COUNT)]++;
+                lastEnergyRewardProp = random.nextInt(PROP_COUNT);
+                propInventory[lastEnergyRewardProp]++;
                 lastTaskRewardType = 3;
                 lastGiftReward = 0;
                 honeySpreadCount = 0;
@@ -1374,6 +1379,7 @@ public class GameView extends View {
             honeySpreadCount = 0;
             lastMoveChestReward = 0;
             lastCloudReward = 0;
+            lastEnergyRewardProp = NONE;
             saveCoins();
         } else {
             propInventory[random.nextInt(PROP_COUNT)]++;
@@ -1381,6 +1387,7 @@ public class GameView extends View {
             honeySpreadCount = 0;
             lastMoveChestReward = 0;
             lastCloudReward = 0;
+            lastEnergyRewardProp = NONE;
         }
     }
 
@@ -1411,6 +1418,7 @@ public class GameView extends View {
         lastGiftReward = 0;
         lastMoveChestReward = 0;
         lastCloudReward = 0;
+        lastEnergyRewardProp = NONE;
         showFeedback(1, honeySpreadCount);
     }
 
@@ -1441,6 +1449,7 @@ public class GameView extends View {
             honeySpreadCount = 0;
             lastMoveChestReward = 0;
             lastCloudReward = 0;
+            lastEnergyRewardProp = NONE;
             showFeedback(1, 5);
         }
 
@@ -1457,6 +1466,7 @@ public class GameView extends View {
             honeySpreadCount = 0;
             lastMoveChestReward = 0;
             lastCloudReward = 0;
+            lastEnergyRewardProp = NONE;
             showFeedback(1, 6);
         }
 
@@ -1470,6 +1480,7 @@ public class GameView extends View {
             honeySpreadCount = 0;
             lastMoveChestReward = 0;
             lastCloudReward = 0;
+            lastEnergyRewardProp = NONE;
             showFeedback(Math.max(2, bestCombo), 3);
         }
 
@@ -1482,6 +1493,7 @@ public class GameView extends View {
             honeySpreadCount = 0;
             lastMoveChestReward = 0;
             lastCloudReward = 0;
+            lastEnergyRewardProp = NONE;
             showFeedback(1, level.keyCount);
         }
     }
@@ -2492,7 +2504,7 @@ public class GameView extends View {
         } else if (lastTaskRewardType == 2 && age < 900) {
             text = "清障奖励";
         } else if (lastTaskRewardType == 3 && age < 900) {
-            text = "连击奖励";
+            text = lastEnergyRewardProp == NONE ? "连击奖励" : "能量奖励 " + getPropName(lastEnergyRewardProp);
         } else if (lastTaskRewardType == 4 && age < 900) {
             text = "钥匙奖励";
         } else if (lastTaskRewardType == 5 && age < 900) {
@@ -2565,6 +2577,7 @@ public class GameView extends View {
 
     private void showNormalFeedback(int combo, int cleared) {
         lastTaskRewardType = 0;
+        lastEnergyRewardProp = NONE;
         showFeedback(combo, cleared);
     }
 
