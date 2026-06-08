@@ -2632,29 +2632,33 @@ public class GameView extends View {
     private void grantDailyChallengeMilestoneReward() {
         lastDailyChallengeMilestoneProp = NONE;
         lastDailyChallengeMilestoneAmount = 0;
-        if (dailyChallengeStreak == 3) {
-            lastDailyChallengeMilestoneProp = PROP_ROCKET;
-            lastDailyChallengeMilestoneAmount = 1;
-        } else if (dailyChallengeStreak == 7) {
-            lastDailyChallengeMilestoneProp = PROP_AURORA_ORB;
-            lastDailyChallengeMilestoneAmount = 1;
-        } else if (dailyChallengeStreak == 14) {
-            lastDailyChallengeMilestoneProp = PROP_MOON_TICKET;
+        lastDailyChallengeMilestoneProp = getDailyChallengeMilestoneProp(dailyChallengeStreak);
+        if (lastDailyChallengeMilestoneProp == PROP_MOON_TICKET || lastDailyChallengeMilestoneProp == PROP_SNOW_GLOBE) {
             lastDailyChallengeMilestoneAmount = 2;
-        } else if (dailyChallengeStreak == 21) {
-            lastDailyChallengeMilestoneProp = PROP_BUBBLE_WAND;
+        } else if (lastDailyChallengeMilestoneProp != NONE) {
             lastDailyChallengeMilestoneAmount = 1;
-        } else if (dailyChallengeStreak == 45) {
-            lastDailyChallengeMilestoneProp = PROP_STAR_HARP;
-            lastDailyChallengeMilestoneAmount = 1;
-        } else if (dailyChallengeStreak > 0 && dailyChallengeStreak % 30 == 0) {
-            lastDailyChallengeMilestoneProp = PROP_SNOW_GLOBE;
-            lastDailyChallengeMilestoneAmount = 2;
         }
         if (lastDailyChallengeMilestoneProp != NONE) {
             // 每日挑战连胜节点给稀有道具，强化持续回访动力。
             addReserveProp(lastDailyChallengeMilestoneProp, lastDailyChallengeMilestoneAmount);
         }
+    }
+
+    private int getDailyChallengeMilestoneProp(int streak) {
+        if (streak == 3) {
+            return PROP_ROCKET;
+        } else if (streak == 7) {
+            return PROP_AURORA_ORB;
+        } else if (streak == 14) {
+            return PROP_MOON_TICKET;
+        } else if (streak == 21) {
+            return PROP_BUBBLE_WAND;
+        } else if (streak == 45) {
+            return PROP_STAR_HARP;
+        } else if (streak > 0 && streak % 30 == 0) {
+            return PROP_SNOW_GLOBE;
+        }
+        return NONE;
     }
 
     private void updateDailyGoalProgress() {
@@ -6033,8 +6037,15 @@ public class GameView extends View {
         if (dailyChallengeStreak > 1) {
             text += " 连" + dailyChallengeStreak;
         }
+        text += buildNextDailyChallengeRewardHint();
         drawTextFit(canvas, text, dailyChallengeRect, 12, claimed ? Color.WHITE : Color.rgb(33, 37, 56));
         drawDailyGoalEntry(canvas);
+    }
+
+    private String buildNextDailyChallengeRewardHint() {
+        int nextStreak = dailyChallengeStreak + 1;
+        int prop = getDailyChallengeMilestoneProp(nextStreak);
+        return prop == NONE ? "" : " 奖" + getPropName(prop);
     }
 
     private void drawDailyGoalEntry(Canvas canvas) {
