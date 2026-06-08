@@ -96,8 +96,9 @@ public class GameView extends View {
     private static final int PROP_FIREWORK_CANNON = 25;
     private static final int PROP_STAR_COMPASS = 26;
     private static final int PROP_BUBBLE_WAND = 27;
-    private static final int PROP_COUNT = 28;
-    private static final int[] PROP_COSTS = {8, 12, 10, 16, 18, 14, 22, 20, 24, 20, 18, 16, 18, 26, 18, 20, 22, 24, 20, 22, 24, 26, 28, 24, 26, 30, 32, 34};
+    private static final int PROP_SNOW_GLOBE = 28;
+    private static final int PROP_COUNT = 29;
+    private static final int[] PROP_COSTS = {8, 12, 10, 16, 18, 14, 22, 20, 24, 20, 18, 16, 18, 26, 18, 20, 22, 24, 20, 22, 24, 26, 28, 24, 26, 30, 32, 34, 36};
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -544,6 +545,7 @@ public class GameView extends View {
             int fireworkCannon = i >= 184 && i % 15 == 4 ? 1 : 0;
             int starCompass = i >= 190 && i % 17 == 3 ? 1 : 0;
             int bubbleWand = i >= 242 && i % 13 == 8 ? 1 : 0;
+            int snowGlobe = i >= 286 && i % 14 == 6 ? 1 : 0;
             int targetKind = i % TILE_KINDS;
             int targetAmount = 8 + (i % 7) + i / 10;
             int iceCount = i < 4 ? i * 2 : Math.min(24, 6 + i / 2);
@@ -616,6 +618,7 @@ public class GameView extends View {
                 fireworkCannon += i % 8 == 2 ? 1 : 0;
                 starCompass += i % 7 == 4 ? 1 : 0;
                 bubbleWand += i % 6 == 5 ? 1 : 0;
+                snowGlobe += i % 9 == 7 ? 1 : 0;
             }
             int moveLimitGoal = i >= 18 && i % 4 == 0 ? Math.max(8, moves - 5) : 0;
             int comboGoal = i >= 22 && i % 5 == 0 ? 3 + (i / 25) : 0;
@@ -629,7 +632,7 @@ public class GameView extends View {
                 honeyCount = Math.min(20, honeyCount + 2);
             }
             levels.add(new Level(targetScore, moves, hammer, bomb, shuffle, rowBlast, colorBlast, extraMoves,
-                    magicWand, brush, portalProp, cleanse, freeze, magnet, clock, starHammer, rocket, targetBrush, shield, energyCore, chainBreaker, lightning, meteor, tide, auroraOrb, starfishPick, moonTicket, fireworkCannon, starCompass, bubbleWand, targetKind, targetAmount, iceCount, honeyCount, stoneCount, vineCount, giftCount,
+                    magicWand, brush, portalProp, cleanse, freeze, magnet, clock, starHammer, rocket, targetBrush, shield, energyCore, chainBreaker, lightning, meteor, tide, auroraOrb, starfishPick, moonTicket, fireworkCannon, starCompass, bubbleWand, snowGlobe, targetKind, targetAmount, iceCount, honeyCount, stoneCount, vineCount, giftCount,
                     chainCount, shellCount, flowerCount, coralReefCount, keyCount, moveChestCount, cloudCount, gemCount, goldenEggCount, coinPouchCount, paintBucketCount, windmillCount, jewelBowCount, stardustJarCount, wishLampCount, resonanceDrumCount, auroraPrismCount, rainbowBottleCount, energyPotionCount, butterflyCount, portalCount, hourglassCount, luckyStarCount, luckyCloverCount, mysteryBoxCount, pearlCount, carouselCount, ferrisTicketCount, fireworksBarrelCount, starportBeaconCount, meteorTrailCount, rainbowArcCount, crystalCoreCount, countdownBombCount,
                     moveLimitGoal, comboGoal, scoreGoal, elite));
         }
@@ -771,6 +774,7 @@ public class GameView extends View {
         propInventory[PROP_FIREWORK_CANNON] = level.fireworkCannons;
         propInventory[PROP_STAR_COMPASS] = level.starCompasses;
         propInventory[PROP_BUBBLE_WAND] = level.bubbleWands;
+        propInventory[PROP_SNOW_GLOBE] = level.snowGlobes;
         applyChapterMasteryStarterPerks();
         for (int prop = 0; prop < PROP_COUNT; prop++) {
             // 长期奖励道具作为储备带入新关卡，提升收集和回访价值。
@@ -1185,6 +1189,55 @@ public class GameView extends View {
                     lastRainbowArcReward = 0;
                     lastCrystalCoreReward = 0;
                     showFeedback(1, Math.max(1, cleaned));
+                    checkLevelState();
+                    activeProp = NONE;
+                    selectedRow = NONE;
+                    selectedCol = NONE;
+                } else if (prop == PROP_SNOW_GLOBE) {
+                    // 雪花球冻结蜂蜜和炸弹，同时削弱多层障碍，适合终盘稳住局面。
+                    consumeProp(prop);
+                    honeyFreezeMoves = Math.max(honeyFreezeMoves, 5);
+                    extendCountdownBombs(3);
+                    int chipped = chipLayeredObstacles(6);
+                    int cleaned = cleanseRandomObstacles(4);
+                    if (chipped + cleaned <= 0) {
+                        clearCells(buildRandomCells(5), 190);
+                    } else {
+                        score += cleaned * 70 + chipped * 90;
+                        grantTaskRewards();
+                    }
+                    comboEnergy = Math.min(100, comboEnergy + 18);
+                    lastTaskRewardType = 19;
+                    lastGiftReward = 0;
+                    lastMoveChestReward = 0;
+                    lastCloudReward = 0;
+                    lastFlowerReward = 0;
+                    lastGemReward = 0;
+                    lastGoldenEggReward = 0;
+                    lastCoinPouchReward = 0;
+                    lastPaintBucketReward = 0;
+                    lastWindmillReward = 0;
+                    lastJewelBowReward = 0;
+                    lastStardustJarReward = 0;
+                    lastWishLampReward = 0;
+                    lastResonanceDrumReward = 0;
+                    lastAuroraPrismReward = 0;
+                    lastRainbowBottleReward = 0;
+                    lastEnergyPotionReward = 0;
+                    lastButterflyReward = 0;
+                    lastPortalReward = 0;
+                    lastHourglassReward = 0;
+                    lastLuckyStarRewardProp = NONE;
+                    lastLuckyCloverRewardType = 0;
+                    lastMysteryRewardType = 0;
+                    lastPearlReward = 0;
+                    lastFerrisTicketReward = 0;
+                    lastFireworksBarrelReward = 0;
+                    lastStarportBeaconReward = 0;
+                    lastMeteorTrailReward = 0;
+                    lastRainbowArcReward = 0;
+                    lastCrystalCoreReward = 0;
+                    showFeedback(1, Math.max(1, chipped + cleaned));
                     checkLevelState();
                     activeProp = NONE;
                     selectedRow = NONE;
@@ -2322,7 +2375,7 @@ public class GameView extends View {
             lastDailyChallengeMilestoneProp = PROP_BUBBLE_WAND;
             lastDailyChallengeMilestoneAmount = 1;
         } else if (dailyChallengeStreak > 0 && dailyChallengeStreak % 30 == 0) {
-            lastDailyChallengeMilestoneProp = PROP_METEOR;
+            lastDailyChallengeMilestoneProp = PROP_SNOW_GLOBE;
             lastDailyChallengeMilestoneAmount = 2;
         }
         if (lastDailyChallengeMilestoneProp != NONE) {
@@ -2401,7 +2454,7 @@ public class GameView extends View {
             lastWinStreakRewardProp = PROP_BUBBLE_WAND;
             lastWinStreakRewardAmount = 1;
         } else if (winStreak > 0 && winStreak % 15 == 0) {
-            lastWinStreakRewardProp = PROP_STAR_COMPASS;
+            lastWinStreakRewardProp = PROP_SNOW_GLOBE;
             lastWinStreakRewardAmount = 2;
         }
         if (lastWinStreakRewardProp != NONE) {
@@ -2496,7 +2549,7 @@ public class GameView extends View {
             prop = PROP_BUBBLE_WAND;
             amount = 2;
         } else if (index == 26 || index == 27) {
-            prop = PROP_FIREWORK_CANNON;
+            prop = PROP_SNOW_GLOBE;
             amount = 2;
         }
         if (prop == NONE) {
@@ -2631,7 +2684,10 @@ public class GameView extends View {
     private void grantSeasonPropReward(int step) {
         lastSeasonRewardProp = NONE;
         lastSeasonRewardAmount = 0;
-        if (step % 6 == 0) {
+        if (step % 8 == 0) {
+            lastSeasonRewardProp = PROP_SNOW_GLOBE;
+            lastSeasonRewardAmount = 1;
+        } else if (step % 6 == 0) {
             lastSeasonRewardProp = PROP_BUBBLE_WAND;
             lastSeasonRewardAmount = 1;
         } else if (step % 4 == 0) {
@@ -2910,7 +2966,7 @@ public class GameView extends View {
             lastDailyRewardProp = PROP_BUBBLE_WAND;
             lastDailyRewardPropAmount = 1;
         } else if (dailyStreak > 0 && dailyStreak % 30 == 0) {
-            lastDailyRewardProp = PROP_FIREWORK_CANNON;
+            lastDailyRewardProp = PROP_SNOW_GLOBE;
             lastDailyRewardPropAmount = 2;
         }
         if (lastDailyRewardProp != NONE) {
@@ -3061,7 +3117,10 @@ public class GameView extends View {
     private void grantStarChestPropReward() {
         lastChestRewardProp = NONE;
         lastChestRewardAmount = 0;
-        if (starChestClaimed % 12 == 0) {
+        if (starChestClaimed % 16 == 0) {
+            lastChestRewardProp = PROP_SNOW_GLOBE;
+            lastChestRewardAmount = 1;
+        } else if (starChestClaimed % 12 == 0) {
             lastChestRewardProp = PROP_BUBBLE_WAND;
             lastChestRewardAmount = 1;
         } else if (starChestClaimed % 8 == 0) {
@@ -6177,6 +6236,17 @@ public class GameView extends View {
             paint.setStyle(Paint.Style.FILL);
             paint.setColor(Color.WHITE);
             canvas.drawCircle(centerX + dp(7), centerY - dp(13), dp(2), paint);
+        } else if (prop == PROP_SNOW_GLOBE) {
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(dp(3));
+            canvas.drawCircle(centerX, centerY - dp(2), dp(14), paint);
+            canvas.drawLine(centerX - dp(13), centerY + dp(14), centerX + dp(13), centerY + dp(14), paint);
+            canvas.drawLine(centerX - dp(7), centerY + dp(20), centerX + dp(7), centerY + dp(20), paint);
+            canvas.drawLine(centerX - dp(9), centerY - dp(2), centerX + dp(9), centerY - dp(2), paint);
+            canvas.drawLine(centerX, centerY - dp(11), centerX, centerY + dp(7), paint);
+            canvas.drawLine(centerX - dp(6), centerY - dp(8), centerX + dp(6), centerY + dp(4), paint);
+            canvas.drawLine(centerX + dp(6), centerY - dp(8), centerX - dp(6), centerY + dp(4), paint);
+            paint.setStyle(Paint.Style.FILL);
         } else {
             canvas.drawRoundRect(new RectF(centerX - dp(13), centerY - dp(10), centerX + dp(13), centerY - dp(2)),
                     dp(4), dp(4), paint);
@@ -6256,6 +6326,8 @@ public class GameView extends View {
             return "罗盘";
         } else if (prop == PROP_BUBBLE_WAND) {
             return "泡泡棒";
+        } else if (prop == PROP_SNOW_GLOBE) {
+            return "雪花球";
         }
         return "加步";
     }
@@ -7229,6 +7301,8 @@ public class GameView extends View {
             text = "星轨罗盘 全线展开";
         } else if (lastTaskRewardType == 18 && age < 900) {
             text = "泡泡棒 净化+" + feedbackCleared;
+        } else if (lastTaskRewardType == 19 && age < 900) {
+            text = "雪花球 稳场+" + feedbackCleared;
         }
 
         textPaint.setTextAlign(Paint.Align.CENTER);
@@ -7698,6 +7772,7 @@ public class GameView extends View {
         final int fireworkCannons;
         final int starCompasses;
         final int bubbleWands;
+        final int snowGlobes;
         final int targetKind;
         final int targetAmount;
         final int iceCount;
@@ -7746,7 +7821,7 @@ public class GameView extends View {
 
         Level(int targetScore, int moves, int hammers, int bombs, int shuffles, int rowBlasts, int colorBlasts,
                 int extraMoves, int magicWands, int brushes, int portalProps, int cleanses, int freezes,
-                int magnets, int clocks, int starHammers, int rockets, int targetBrushes, int shields, int energyCores, int chainBreakers, int lightnings, int meteors, int tides, int auroraOrbs, int starfishPicks, int moonTickets, int fireworkCannons, int starCompasses, int bubbleWands, int targetKind, int targetAmount, int iceCount, int honeyCount, int stoneCount, int vineCount,
+                int magnets, int clocks, int starHammers, int rockets, int targetBrushes, int shields, int energyCores, int chainBreakers, int lightnings, int meteors, int tides, int auroraOrbs, int starfishPicks, int moonTickets, int fireworkCannons, int starCompasses, int bubbleWands, int snowGlobes, int targetKind, int targetAmount, int iceCount, int honeyCount, int stoneCount, int vineCount,
                 int giftCount, int chainCount, int shellCount, int flowerCount, int coralReefCount, int keyCount, int moveChestCount,
                 int cloudCount, int gemCount, int goldenEggCount, int coinPouchCount, int paintBucketCount, int windmillCount, int jewelBowCount, int stardustJarCount, int wishLampCount, int resonanceDrumCount, int auroraPrismCount, int rainbowBottleCount, int energyPotionCount, int butterflyCount,
                 int portalCount, int hourglassCount, int luckyStarCount, int luckyCloverCount,
@@ -7781,6 +7856,7 @@ public class GameView extends View {
             this.fireworkCannons = fireworkCannons;
             this.starCompasses = starCompasses;
             this.bubbleWands = bubbleWands;
+            this.snowGlobes = snowGlobes;
             this.targetKind = targetKind;
             this.targetAmount = targetAmount;
             this.iceCount = iceCount;
