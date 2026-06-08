@@ -4716,8 +4716,39 @@ public class GameView extends View {
             // 棋盘环境光给章节和低步数状态更多视觉反馈，不参与玩法计算。
             canvas.drawLine(x, boardRect.top - dp(10), Math.min(boardRect.right, x + dp(42)), boardRect.top - dp(10), paint);
         }
+        drawFeverSparks(canvas, boardRect);
         paint.setStyle(Paint.Style.FILL);
         postInvalidateOnAnimation();
+    }
+
+    private void drawFeverSparks(Canvas canvas, RectF boardRect) {
+        if (comboFeverMoves <= 0) {
+            return;
+        }
+
+        long time = System.currentTimeMillis();
+        paint.setStyle(Paint.Style.FILL);
+        for (int i = 0; i < 10; i++) {
+            float progress = ((time / (520f + i * 24)) + i * 0.13f) % 1f;
+            float x;
+            float y;
+            if (i % 4 == 0) {
+                x = boardRect.left + boardRect.width() * progress;
+                y = boardRect.top - dp(12);
+            } else if (i % 4 == 1) {
+                x = boardRect.right + dp(12);
+                y = boardRect.top + boardRect.height() * progress;
+            } else if (i % 4 == 2) {
+                x = boardRect.right - boardRect.width() * progress;
+                y = boardRect.bottom + dp(12);
+            } else {
+                x = boardRect.left - dp(12);
+                y = boardRect.bottom - boardRect.height() * progress;
+            }
+            int alpha = 120 + (int) (90 * Math.abs(Math.sin(time / 180.0 + i)));
+            paint.setColor(Color.argb(alpha, 255, 236, 118));
+            canvas.drawCircle(x, y, dp(3 + i % 3), paint);
+        }
     }
 
     private void drawLevelMap(Canvas canvas) {
