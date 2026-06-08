@@ -2,3 +2,9 @@ node_modules/
 dist/
 .vite/
 *.log
+.gradle/
+build/
+app/build/
+local.properties
+*.iml
+.idea/
