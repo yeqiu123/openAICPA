@@ -6111,6 +6111,18 @@ public class GameView extends View {
         canvas.drawText("成就 " + getClaimedAchievementCount() + "/" + ACHIEVEMENT_COUNT
                 + "  评级 " + getTotalRankScore() + "  赛季 " + seasonLevels + "/" + getNextSeasonLevelTarget()
                 + "关 " + seasonStars + "/" + getNextSeasonStarTarget() + "星", getWidth() / 2f, top + dp(22), textPaint);
+        drawSeasonProgressBar(canvas, left, top + dp(30), right);
+    }
+
+    private void drawSeasonProgressBar(Canvas canvas, float left, float top, float right) {
+        float levelProgress = seasonLevels / (float) Math.max(1, getNextSeasonLevelTarget());
+        float starProgress = seasonStars / (float) Math.max(1, getNextSeasonStarTarget());
+        float progress = Math.min(1f, Math.max(levelProgress, starProgress));
+        // 赛季进度用较亮进度条呈现，便于判断下一阶段奖励距离。
+        paint.setColor(Color.argb(70, 33, 37, 56));
+        canvas.drawRoundRect(new RectF(left, top, right, top + dp(6)), dp(3), dp(3), paint);
+        paint.setColor(Color.argb(210, 255, 213, 92));
+        canvas.drawRoundRect(new RectF(left, top, left + (right - left) * progress, top + dp(6)), dp(3), dp(3), paint);
     }
 
     private void drawReplayHintEntry(Canvas canvas) {
