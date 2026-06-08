@@ -507,6 +507,26 @@ public class GameView extends View {
             selectedCol = NONE;
             return;
         }
+        if (specialOf(fromPiece) != SPECIAL_NORMAL || specialOf(toPiece) != SPECIAL_NORMAL) {
+            movesLeft--;
+            movesUsed++;
+            clearHint();
+            // 特殊棋与普通棋互换时直接触发，减少误操作挫败感。
+            Set<Cell> triggerCells = buildSpecialTriggerCells(selectedRow, selectedCol, row, col);
+            if (specialOf(fromPiece) == SPECIAL_RAINBOW) {
+                board[selectedRow][selectedCol] = makePiece(colorOf(fromPiece), SPECIAL_NORMAL);
+            } else if (specialOf(toPiece) == SPECIAL_RAINBOW) {
+                board[row][col] = makePiece(colorOf(toPiece), SPECIAL_NORMAL);
+            }
+            clearCells(triggerCells, 240);
+            spreadHoneyAfterMove();
+            checkLevelState();
+            playHaptic(HapticFeedbackConstants.CONFIRM);
+            playSuccessTone();
+            selectedRow = NONE;
+            selectedCol = NONE;
+            return;
+        }
 
         swap(selectedRow, selectedCol, row, col);
         Set<Cell> matches = findMatches();
@@ -598,6 +618,35 @@ public class GameView extends View {
         } else {
             cells.addAll(buildCrossCells(rowA, colA));
             cells.addAll(buildCrossCells(rowB, colB));
+        }
+        cells.add(new Cell(rowA, colA));
+        cells.add(new Cell(rowB, colB));
+        return cells;
+    }
+
+    private Set<Cell> buildSpecialTriggerCells(int rowA, int colA, int rowB, int colB) {
+        int specialA = specialOf(board[rowA][colA]);
+        int specialRow = specialA == SPECIAL_NORMAL ? rowB : rowA;
+        int specialCol = specialA == SPECIAL_NORMAL ? colB : colA;
+        int targetRow = specialA == SPECIAL_NORMAL ? rowA : rowB;
+        int targetCol = specialA == SPECIAL_NORMAL ? colA : colB;
+        int special = specialOf(board[specialRow][specialCol]);
+        Set<Cell> cells;
+
+        if (special == SPECIAL_RAINBOW) {
+            cells = buildColorCells(colorOf(board[targetRow][targetCol]));
+        } else if (special == SPECIAL_ROW) {
+            cells = new HashSet<>();
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                cells.add(new Cell(specialRow, col));
+            }
+        } else if (special == SPECIAL_COLUMN) {
+            cells = new HashSet<>();
+            for (int row = 0; row < BOARD_SIZE; row++) {
+                cells.add(new Cell(row, specialCol));
+            }
+        } else {
+            cells = buildBombCells(specialRow, specialCol);
         }
         cells.add(new Cell(rowA, colA));
         cells.add(new Cell(rowB, colB));
