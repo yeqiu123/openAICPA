@@ -8832,6 +8832,10 @@ public class GameView extends View {
         if (dailyChallengeMode) {
             return "下一目标 回到主线继续推进";
         }
+        int chapter = getChapterIndex(levelIndex);
+        if (canClaimChapterChest(chapter)) {
+            return "下一目标 " + chapterNames[chapter] + "宝箱可领取";
+        }
         if (getAvailableStarChests() > 0) {
             return "下一目标 星级宝箱可领取";
         }
