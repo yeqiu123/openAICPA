@@ -14,4 +14,4 @@
 
 使用 Android Studio 打开项目根目录，等待 Gradle 同步后运行 `app` 模块。
 
-如果本机已有 Gradle，也可以执行 `gradle assembleDebug`。当前仓库只提交了 wrapper 配置，未包含 `gradle-wrapper.jar`，首次构建建议直接使用 Android Studio 同步。
+如果不想打开 IDE，也可以执行 `gradlew.bat assembleDebug`。
