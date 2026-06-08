@@ -67,8 +67,9 @@ public class GameView extends View {
     private static final int PROP_MAGIC_WAND = 6;
     private static final int PROP_BRUSH = 7;
     private static final int PROP_PORTAL = 8;
-    private static final int PROP_COUNT = 9;
-    private static final int[] PROP_COSTS = {8, 12, 10, 16, 18, 14, 22, 20, 24};
+    private static final int PROP_CLEANSE = 9;
+    private static final int PROP_COUNT = 10;
+    private static final int[] PROP_COSTS = {8, 12, 10, 16, 18, 14, 22, 20, 24, 20};
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -382,6 +383,7 @@ public class GameView extends View {
             int magicWand = i >= 20 && i % 14 == 0 ? 1 : 0;
             int brush = i >= 26 && i % 16 == 0 ? 1 : 0;
             int portalProp = i >= 34 && i % 18 == 0 ? 1 : 0;
+            int cleanse = i >= 30 && i % 13 == 0 ? 1 : 0;
             int targetKind = i % TILE_KINDS;
             int targetAmount = 8 + (i % 7) + i / 10;
             int iceCount = i < 4 ? i * 2 : Math.min(24, 6 + i / 2);
@@ -409,7 +411,7 @@ public class GameView extends View {
                 honeyCount = Math.min(20, honeyCount + 2);
             }
             levels.add(new Level(targetScore, moves, hammer, bomb, shuffle, rowBlast, colorBlast, extraMoves,
-                    magicWand, brush, portalProp, targetKind, targetAmount, iceCount, honeyCount, stoneCount, vineCount, giftCount,
+                    magicWand, brush, portalProp, cleanse, targetKind, targetAmount, iceCount, honeyCount, stoneCount, vineCount, giftCount,
                     chainCount, shellCount, flowerCount, keyCount, moveChestCount, cloudCount, gemCount, portalCount, moveLimitGoal, comboGoal,
                     scoreGoal, elite));
         }
@@ -480,6 +482,7 @@ public class GameView extends View {
         propInventory[PROP_MAGIC_WAND] = level.magicWands;
         propInventory[PROP_BRUSH] = level.brushes;
         propInventory[PROP_PORTAL] = level.portalProps;
+        propInventory[PROP_CLEANSE] = level.cleanses;
         applyChapterMasteryStarterPerks();
 
         // 初始化时避开天然三连，让玩家第一步更清晰。
@@ -626,6 +629,23 @@ public class GameView extends View {
             lastPortalReward = 0;
             lastEnergyRewardProp = NONE;
             showFeedback(1, 1);
+        } else if (activeProp == PROP_CLEANSE) {
+            // 净化道具直接削弱周围障碍，适合处理蜂蜜和多层阻挡。
+            propInventory[PROP_CLEANSE]--;
+            int cleaned = cleanseAround(row, col);
+            score += cleaned * 70;
+            spawnParticles(buildBombCells(row, col));
+            grantTaskRewards();
+            lastTaskRewardType = 7;
+            lastGiftReward = 0;
+            honeySpreadCount = 0;
+            lastMoveChestReward = 0;
+            lastCloudReward = 0;
+            lastFlowerReward = 0;
+            lastGemReward = 0;
+            lastPortalReward = 0;
+            lastEnergyRewardProp = NONE;
+            showFeedback(1, Math.max(1, cleaned));
         }
         playHaptic(HapticFeedbackConstants.CONFIRM);
         playSuccessTone();
@@ -727,6 +747,54 @@ public class GameView extends View {
             }
         }
         return cells;
+    }
+
+    private int cleanseAround(int row, int col) {
+        int cleaned = 0;
+        for (Cell cell : buildBombCells(row, col)) {
+            cleaned += cleanseCell(cell.row, cell.col);
+        }
+        return cleaned;
+    }
+
+    private int cleanseCell(int row, int col) {
+        int cleaned = 0;
+        if (ice[row][col] > 0) {
+            cleaned++;
+            ice[row][col] = 0;
+            iceRemaining--;
+        }
+        if (honey[row][col] > 0) {
+            cleaned++;
+            honey[row][col] = 0;
+            honeyRemaining--;
+        }
+        if (vine[row][col] > 0) {
+            cleaned++;
+            vine[row][col] = 0;
+            vineRemaining--;
+        }
+        if (chain[row][col] > 0) {
+            cleaned++;
+            chain[row][col] = 0;
+            chainRemaining--;
+        }
+        if (stone[row][col] > 0) {
+            cleaned += stone[row][col];
+            stone[row][col] = 0;
+            stoneRemaining--;
+        }
+        if (shell[row][col] > 0) {
+            cleaned += shell[row][col];
+            shell[row][col] = 0;
+            shellRemaining--;
+        }
+        if (flower[row][col] > 0) {
+            cleaned += flower[row][col];
+            flower[row][col] = 0;
+            flowerRemaining--;
+        }
+        return cleaned;
     }
 
     private Set<Cell> buildCrossCells(int row, int col) {
@@ -2627,25 +2695,29 @@ public class GameView extends View {
     private void drawPropBar(Canvas canvas) {
         float top = boardTop + tileSize * BOARD_SIZE + dp(18);
         float gap = dp(6);
-        float buttonWidth = (getWidth() - dp(32) - gap * (PROP_COUNT - 1)) / PROP_COUNT;
+        int columns = PROP_COUNT > 9 ? 5 : PROP_COUNT;
+        float buttonWidth = (getWidth() - dp(32) - gap * (columns - 1)) / columns;
         for (int prop = 0; prop < PROP_COUNT; prop++) {
-            float left = dp(16) + prop * (buttonWidth + gap);
-            RectF rect = new RectF(left, top, left + buttonWidth, top + dp(60));
+            int row = prop / columns;
+            int col = prop % columns;
+            float left = dp(16) + col * (buttonWidth + gap);
+            float rowTop = top + row * dp(54);
+            RectF rect = new RectF(left, rowTop, left + buttonWidth, rowTop + dp(48));
             propRects[prop] = rect;
 
             paint.setColor(activeProp == prop ? Color.argb(235, 255, 255, 255) : Color.argb(120, 255, 255, 255));
-            canvas.drawRoundRect(rect, dp(16), dp(16), paint);
+            canvas.drawRoundRect(rect, dp(12), dp(12), paint);
 
             paint.setColor(Color.argb(propInventory[prop] > 0 ? 220 : 85, 33, 37, 56));
-            drawPropIcon(canvas, prop, rect.centerX(), rect.centerY() - dp(7));
+            drawPropIcon(canvas, prop, rect.centerX(), rect.centerY() - dp(6));
 
             textPaint.setTextAlign(Paint.Align.CENTER);
-            textPaint.setTextSize(sp(PROP_COUNT > 8 ? 9 : 10));
+            textPaint.setTextSize(sp(9));
             textPaint.setColor(Color.WHITE);
             String label = propInventory[prop] > 0
                     ? getPropName(prop) + " x" + propInventory[prop]
                     : getPropName(prop) + " " + PROP_COSTS[prop] + "币";
-            canvas.drawText(label, rect.centerX(), rect.bottom - dp(10), textPaint);
+            canvas.drawText(label, rect.centerX(), rect.bottom - dp(7), textPaint);
         }
     }
 
@@ -2699,6 +2771,12 @@ public class GameView extends View {
             canvas.drawArc(new RectF(centerX - dp(14), centerY - dp(14), centerX + dp(14), centerY + dp(14)),
                     40, 250, false, paint);
             paint.setStyle(Paint.Style.FILL);
+        } else if (prop == PROP_CLEANSE) {
+            canvas.drawCircle(centerX, centerY, dp(14), paint);
+            paint.setColor(Color.WHITE);
+            paint.setStrokeWidth(dp(3));
+            canvas.drawLine(centerX - dp(8), centerY, centerX - dp(1), centerY + dp(7), paint);
+            canvas.drawLine(centerX - dp(1), centerY + dp(7), centerX + dp(10), centerY - dp(8), paint);
         } else {
             canvas.drawRoundRect(new RectF(centerX - dp(13), centerY - dp(10), centerX + dp(13), centerY - dp(2)),
                     dp(4), dp(4), paint);
@@ -2723,6 +2801,8 @@ public class GameView extends View {
             return "克隆";
         } else if (prop == PROP_PORTAL) {
             return "传送";
+        } else if (prop == PROP_CLEANSE) {
+            return "净化";
         }
         return "加步";
     }
@@ -3104,6 +3184,8 @@ public class GameView extends View {
             text = "魔棒生成";
         } else if (lastTaskRewardType == 6 && age < 900) {
             text = "特效生成";
+        } else if (lastTaskRewardType == 7 && age < 900) {
+            text = "净化 +" + feedbackCleared;
         }
 
         textPaint.setTextAlign(Paint.Align.CENTER);
@@ -3341,6 +3423,7 @@ public class GameView extends View {
         final int magicWands;
         final int brushes;
         final int portalProps;
+        final int cleanses;
         final int targetKind;
         final int targetAmount;
         final int iceCount;
@@ -3362,7 +3445,7 @@ public class GameView extends View {
         final boolean elite;
 
         Level(int targetScore, int moves, int hammers, int bombs, int shuffles, int rowBlasts, int colorBlasts,
-                int extraMoves, int magicWands, int brushes, int portalProps,
+                int extraMoves, int magicWands, int brushes, int portalProps, int cleanses,
                 int targetKind, int targetAmount, int iceCount, int honeyCount, int stoneCount, int vineCount,
                 int giftCount, int chainCount, int shellCount, int flowerCount, int keyCount, int moveChestCount,
                 int cloudCount, int gemCount, int portalCount, int moveLimitGoal, int comboGoal, int scoreGoal,
@@ -3378,6 +3461,7 @@ public class GameView extends View {
             this.magicWands = magicWands;
             this.brushes = brushes;
             this.portalProps = portalProps;
+            this.cleanses = cleanses;
             this.targetKind = targetKind;
             this.targetAmount = targetAmount;
             this.iceCount = iceCount;
