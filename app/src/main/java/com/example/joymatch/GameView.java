@@ -3396,6 +3396,9 @@ public class GameView extends View {
         } else if (dailyStreak == 21) {
             lastDailyRewardProp = PROP_BUBBLE_WAND;
             lastDailyRewardPropAmount = 1;
+        } else if (dailyStreak == 45) {
+            lastDailyRewardProp = PROP_STAR_HARP;
+            lastDailyRewardPropAmount = 1;
         } else if (dailyStreak > 0 && dailyStreak % 30 == 0) {
             lastDailyRewardProp = PROP_SNOW_GLOBE;
             lastDailyRewardPropAmount = 2;
