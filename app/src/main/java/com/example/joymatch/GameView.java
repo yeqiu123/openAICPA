@@ -26,6 +26,8 @@ public class GameView extends View {
     private static final String KEY_STARS_PREFIX = "stars_";
     private static final int BOARD_SIZE = 8;
     private static final int TILE_KINDS = 6;
+    private static final int LEVEL_COUNT = 120;
+    private static final int LEVELS_PER_PAGE = 60;
     private static final int NONE = -1;
     private static final int SPECIAL_NORMAL = 0;
     private static final int SPECIAL_ROW = 1;
@@ -47,10 +49,12 @@ public class GameView extends View {
     private final int[][] stone = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[] propInventory = new int[PROP_COUNT];
     private final RectF[] propRects = new RectF[PROP_COUNT];
-    private final RectF[] levelRects = new RectF[60];
+    private final RectF[] levelRects = new RectF[LEVELS_PER_PAGE];
     private final RectF mapButtonRect = new RectF();
     private final RectF hintButtonRect = new RectF();
-    private final int[] levelStars = new int[60];
+    private final RectF prevPageRect = new RectF();
+    private final RectF nextPageRect = new RectF();
+    private final int[] levelStars = new int[LEVEL_COUNT];
     private final List<Level> levels = new ArrayList<>();
     private final int[] palette = {
             Color.rgb(255, 99, 132),
@@ -79,6 +83,7 @@ public class GameView extends View {
     private int feedbackCombo;
     private int feedbackCleared;
     private int highestUnlockedLevel;
+    private int levelMapPage;
     private int lastStars;
     private int lastBonusScore;
     private int rewardTargetMilestone;
@@ -138,6 +143,7 @@ public class GameView extends View {
         }
 
         if (mapButtonRect.contains(event.getX(), event.getY())) {
+            levelMapPage = levelIndex / LEVELS_PER_PAGE;
             showingLevelMap = true;
             invalidate();
             return true;
@@ -186,7 +192,7 @@ public class GameView extends View {
     }
 
     private void buildLevels() {
-        for (int i = 0; i < 60; i++) {
+        for (int i = 0; i < LEVEL_COUNT; i++) {
             int targetScore = 1200 + i * 260 + (i % 5) * 180;
             int moves = Math.max(14, 25 - i / 5);
             int hammer = 2 + (i % 3 == 0 ? 1 : 0);
@@ -576,11 +582,22 @@ public class GameView extends View {
     }
 
     private void handleLevelMapTap(float x, float y) {
-        for (int i = 0; i < levels.size(); i++) {
+        if (prevPageRect.contains(x, y) && levelMapPage > 0) {
+            levelMapPage--;
+            return;
+        }
+        if (nextPageRect.contains(x, y) && (levelMapPage + 1) * LEVELS_PER_PAGE < levels.size()) {
+            levelMapPage++;
+            return;
+        }
+
+        int pageStart = levelMapPage * LEVELS_PER_PAGE;
+        for (int i = 0; i < LEVELS_PER_PAGE && pageStart + i < levels.size(); i++) {
             RectF rect = levelRects[i];
-            if (rect != null && rect.contains(x, y) && i <= highestUnlockedLevel) {
+            int level = pageStart + i;
+            if (rect != null && rect.contains(x, y) && level <= highestUnlockedLevel) {
                 showingLevelMap = false;
-                startLevel(i);
+                startLevel(level);
                 return;
             }
         }
@@ -825,39 +842,70 @@ public class GameView extends View {
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setColor(Color.WHITE);
         textPaint.setTextSize(sp(24));
-        canvas.drawText("关卡地图", getWidth() / 2f, dp(54), textPaint);
+        canvas.drawText("关卡地图 " + (levelMapPage + 1) + "/" + getLevelMapPageCount(), getWidth() / 2f, dp(54), textPaint);
 
         int columns = 6;
-        int rows = (int) Math.ceil(levels.size() / (float) columns);
+        int pageStart = levelMapPage * LEVELS_PER_PAGE;
+        int pageCount = Math.min(LEVELS_PER_PAGE, levels.size() - pageStart);
+        int rows = (int) Math.ceil(pageCount / (float) columns);
         float gap = dp(6);
         float sizeByWidth = (getWidth() - dp(32) - gap * (columns - 1)) / columns;
-        float sizeByHeight = (getHeight() - dp(130) - gap * (rows - 1)) / rows;
+        float sizeByHeight = (getHeight() - dp(172) - gap * (rows - 1)) / rows;
         float size = Math.min(sizeByWidth, sizeByHeight);
         float startX = (getWidth() - columns * size - (columns - 1) * gap) / 2f;
         float startY = dp(82);
 
-        for (int i = 0; i < levels.size(); i++) {
+        for (int i = 0; i < LEVELS_PER_PAGE; i++) {
+            levelRects[i] = null;
+        }
+
+        for (int i = 0; i < pageCount; i++) {
             int row = i / columns;
             int col = i % columns;
+            int level = pageStart + i;
             float left = startX + col * (size + gap);
             float top = startY + row * (size + gap);
             RectF rect = new RectF(left, top, left + size, top + size);
             levelRects[i] = rect;
 
-            boolean unlocked = i <= highestUnlockedLevel;
+            boolean unlocked = level <= highestUnlockedLevel;
             paint.setColor(unlocked ? Color.argb(170, 255, 255, 255) : Color.argb(75, 33, 37, 56));
             canvas.drawRoundRect(rect, dp(10), dp(10), paint);
 
             textPaint.setTextSize(sp(14));
             textPaint.setColor(unlocked ? Color.rgb(33, 37, 56) : Color.argb(145, 255, 255, 255));
-            canvas.drawText(String.valueOf(i + 1), rect.centerX(), rect.centerY() - dp(1), textPaint);
+            canvas.drawText(String.valueOf(level + 1), rect.centerX(), rect.centerY() - dp(1), textPaint);
 
             // 星级记录让关卡重玩有明确追求。
-            if (levelStars[i] > 0) {
+            if (levelStars[level] > 0) {
                 textPaint.setTextSize(sp(10));
-                canvas.drawText(buildStars(levelStars[i]), rect.centerX(), rect.bottom - dp(6), textPaint);
+                canvas.drawText(buildStars(levelStars[level]), rect.centerX(), rect.bottom - dp(6), textPaint);
             }
         }
+
+        drawLevelMapPager(canvas);
+    }
+
+    private void drawLevelMapPager(Canvas canvas) {
+        float top = getHeight() - dp(64);
+        prevPageRect.set(dp(24), top, dp(114), top + dp(38));
+        nextPageRect.set(getWidth() - dp(114), top, getWidth() - dp(24), top + dp(38));
+
+        paint.setColor(levelMapPage > 0 ? Color.argb(150, 255, 255, 255) : Color.argb(55, 255, 255, 255));
+        canvas.drawRoundRect(prevPageRect, dp(14), dp(14), paint);
+        paint.setColor((levelMapPage + 1) < getLevelMapPageCount()
+                ? Color.argb(150, 255, 255, 255) : Color.argb(55, 255, 255, 255));
+        canvas.drawRoundRect(nextPageRect, dp(14), dp(14), paint);
+
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setTextSize(sp(14));
+        textPaint.setColor(Color.WHITE);
+        canvas.drawText("上一页", prevPageRect.centerX(), prevPageRect.centerY() + dp(5), textPaint);
+        canvas.drawText("下一页", nextPageRect.centerX(), nextPageRect.centerY() + dp(5), textPaint);
+    }
+
+    private int getLevelMapPageCount() {
+        return (int) Math.ceil(levels.size() / (float) LEVELS_PER_PAGE);
     }
 
     private String buildStars(int count) {
