@@ -85,6 +85,7 @@ public class GameView extends View {
     private final int[][] cloud = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[][] flower = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[][] gem = new int[BOARD_SIZE][BOARD_SIZE];
+    private final int[][] portal = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[] propInventory = new int[PROP_COUNT];
     private final RectF[] propRects = new RectF[PROP_COUNT];
     private final RectF[] levelRects = new RectF[LEVELS_PER_PAGE];
@@ -192,6 +193,7 @@ public class GameView extends View {
     private int lastCloudReward;
     private int lastFlowerReward;
     private int lastGemReward;
+    private int lastPortalReward;
     private int lastEnergyRewardProp = NONE;
     private int lastChestNoticeType;
     private int dailyRewardAmount;
@@ -391,12 +393,13 @@ public class GameView extends View {
             int moveChestCount = i >= 16 && i % 6 == 0 ? 1 + (i % 18 == 0 ? 1 : 0) : 0;
             int cloudCount = i < 18 ? 0 : Math.min(10, 2 + i / 18);
             int gemCount = i < 24 ? 0 : Math.min(7, 1 + i / 20);
+            int portalCount = i < 32 || i % 5 != 1 ? 0 : 2;
             int moveLimitGoal = i >= 18 && i % 4 == 0 ? Math.max(8, moves - 5) : 0;
             int comboGoal = i >= 22 && i % 5 == 0 ? 3 + (i / 25) : 0;
             int scoreGoal = i >= 30 && i % 6 == 0 ? targetScore + 800 + i * 40 : 0;
             levels.add(new Level(targetScore, moves, hammer, bomb, shuffle, rowBlast, colorBlast, extraMoves,
                     magicWand, brush, targetKind, targetAmount, iceCount, honeyCount, stoneCount, vineCount, giftCount,
-                    chainCount, shellCount, flowerCount, keyCount, moveChestCount, cloudCount, gemCount, moveLimitGoal, comboGoal,
+                    chainCount, shellCount, flowerCount, keyCount, moveChestCount, cloudCount, gemCount, portalCount, moveLimitGoal, comboGoal,
                     scoreGoal));
         }
     }
@@ -432,6 +435,7 @@ public class GameView extends View {
         lastCloudReward = 0;
         lastFlowerReward = 0;
         lastGemReward = 0;
+        lastPortalReward = 0;
         lastEnergyRewardProp = NONE;
         honeySpreadCount = 0;
         challengeCleared = false;
@@ -480,6 +484,7 @@ public class GameView extends View {
                 cloud[row][col] = 0;
                 flower[row][col] = 0;
                 gem[row][col] = 0;
+                portal[row][col] = 0;
                 do {
                     board[row][col] = makePiece(random.nextInt(TILE_KINDS), SPECIAL_NORMAL);
                 } while (createsInitialMatch(row, col));
@@ -497,6 +502,7 @@ public class GameView extends View {
         placeMoveChest(level.moveChestCount);
         placeCloud(level.cloudCount);
         placeGem(level.gemCount);
+        placePortal(level.portalCount);
         ensurePlayableBoard();
         levelIntroUntilTime = System.currentTimeMillis() + 1400;
     }
@@ -579,6 +585,7 @@ public class GameView extends View {
             lastCloudReward = 0;
             lastFlowerReward = 0;
             lastGemReward = 0;
+            lastPortalReward = 0;
             lastEnergyRewardProp = NONE;
             showFeedback(1, 1);
         } else if (activeProp == PROP_BRUSH) {
@@ -594,6 +601,7 @@ public class GameView extends View {
             lastCloudReward = 0;
             lastFlowerReward = 0;
             lastGemReward = 0;
+            lastPortalReward = 0;
             lastEnergyRewardProp = NONE;
             showFeedback(1, 1);
         }
@@ -668,6 +676,7 @@ public class GameView extends View {
         lastCloudReward = 0;
         lastFlowerReward = 0;
         lastGemReward = 0;
+        lastPortalReward = 0;
         cells = expandSpecialCells(cells);
         score += bonusScore + cells.size() * 45;
         spawnParticles(cells);
@@ -797,6 +806,7 @@ public class GameView extends View {
         lastCloudReward = 0;
         lastFlowerReward = 0;
         lastGemReward = 0;
+        lastPortalReward = 0;
         while (!matches.isEmpty()) {
             combo++;
             matches = expandSpecialCells(matches);
@@ -1557,6 +1567,20 @@ public class GameView extends View {
         }
     }
 
+    private void placePortal(int count) {
+        int placed = 0;
+        while (placed < count) {
+            int row = random.nextInt(BOARD_SIZE);
+            int col = random.nextInt(BOARD_SIZE);
+            if (portal[row][col] == 0 && gift[row][col] == 0 && moveChest[row][col] == 0
+                    && cloud[row][col] == 0 && gem[row][col] == 0 && flower[row][col] == 0) {
+                // 传送门格被清掉后会扰动棋盘，制造新的连锁机会。
+                portal[row][col] = 1;
+                placed++;
+            }
+        }
+    }
+
     private void removeCells(Set<Cell> cells) {
         for (Cell cell : cells) {
             int piece = board[cell.row][cell.col];
@@ -1629,8 +1653,24 @@ public class GameView extends View {
                 lastGemReward += 3;
                 saveCoins();
             }
+            if (portal[cell.row][cell.col] > 0) {
+                portal[cell.row][cell.col] = 0;
+                triggerPortalShift();
+            }
             board[cell.row][cell.col] = NONE;
         }
+    }
+
+    private void triggerPortalShift() {
+        Cell first = new Cell(random.nextInt(BOARD_SIZE), random.nextInt(BOARD_SIZE));
+        Cell second = new Cell(random.nextInt(BOARD_SIZE), random.nextInt(BOARD_SIZE));
+        if (first.equals(second)) {
+            return;
+        }
+
+        swap(first.row, first.col, second.row, second.col);
+        lastPortalReward++;
+        score += 80;
     }
 
     private void openGift() {
@@ -2394,6 +2434,7 @@ public class GameView extends View {
         drawFlower(canvas, row, col, rect);
         drawCloud(canvas, row, col, rect);
         drawGem(canvas, row, col, rect);
+        drawPortal(canvas, row, col, rect);
         drawKey(canvas, row, col, rect);
         drawMoveChest(canvas, row, col, rect);
     }
@@ -2782,6 +2823,24 @@ public class GameView extends View {
         canvas.drawCircle(centerX - dp(3), centerY - dp(3), dp(3), paint);
     }
 
+    private void drawPortal(Canvas canvas, int row, int col, RectF rect) {
+        if (portal[row][col] <= 0) {
+            return;
+        }
+
+        float centerX = rect.right - dp(18);
+        float centerY = rect.bottom - dp(18);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(3));
+        paint.setColor(Color.argb(220, 153, 102, 255));
+        canvas.drawCircle(centerX, centerY, dp(12), paint);
+        paint.setColor(Color.argb(190, 255, 236, 118));
+        canvas.drawArc(new RectF(centerX - dp(12), centerY - dp(12), centerX + dp(12), centerY + dp(12)),
+                (System.currentTimeMillis() / 8) % 360, 230, false, paint);
+        paint.setStyle(Paint.Style.FILL);
+        postInvalidateOnAnimation();
+    }
+
     private void drawKey(Canvas canvas, int row, int col, RectF rect) {
         if (keys[row][col] <= 0) {
             return;
@@ -2892,6 +2951,8 @@ public class GameView extends View {
             text = "花苞 +" + lastFlowerReward;
         } else if (lastGemReward > 0 && age < 900) {
             text = "钻石 +" + lastGemReward;
+        } else if (lastPortalReward > 0 && age < 900) {
+            text = "传送门 x" + lastPortalReward;
         } else if (honeySpreadCount > 0 && age < 900) {
             text = "蜂蜜蔓延";
         } else if (lastTaskRewardType == 1 && age < 900) {
@@ -2956,6 +3017,9 @@ public class GameView extends View {
         }
         if (level.gemCount > 0) {
             goalText += "  钻石 " + level.gemCount;
+        }
+        if (level.portalCount > 0) {
+            goalText += "  传送门 " + level.portalCount;
         }
         if (level.scoreGoal > 0) {
             goalText += "  高分 " + level.scoreGoal;
@@ -3145,6 +3209,7 @@ public class GameView extends View {
         final int moveChestCount;
         final int cloudCount;
         final int gemCount;
+        final int portalCount;
         final int moveLimitGoal;
         final int comboGoal;
         final int scoreGoal;
@@ -3153,7 +3218,7 @@ public class GameView extends View {
                 int extraMoves, int magicWands, int brushes,
                 int targetKind, int targetAmount, int iceCount, int honeyCount, int stoneCount, int vineCount,
                 int giftCount, int chainCount, int shellCount, int flowerCount, int keyCount, int moveChestCount,
-                int cloudCount, int gemCount, int moveLimitGoal, int comboGoal, int scoreGoal) {
+                int cloudCount, int gemCount, int portalCount, int moveLimitGoal, int comboGoal, int scoreGoal) {
             this.targetScore = targetScore;
             this.moves = moves;
             this.hammers = hammers;
@@ -3178,6 +3243,7 @@ public class GameView extends View {
             this.moveChestCount = moveChestCount;
             this.cloudCount = cloudCount;
             this.gemCount = gemCount;
+            this.portalCount = portalCount;
             this.moveLimitGoal = moveLimitGoal;
             this.comboGoal = comboGoal;
             this.scoreGoal = scoreGoal;
