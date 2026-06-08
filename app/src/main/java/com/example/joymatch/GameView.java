@@ -46,6 +46,9 @@ public class GameView extends View {
     private static final String KEY_DAILY_GOAL_DAY = "daily_goal_day";
     private static final String KEY_DAILY_GOAL_PROGRESS = "daily_goal_progress";
     private static final String KEY_DAILY_GOAL_CLAIMED = "daily_goal_claimed";
+    private static final String KEY_SEASON_LEVELS = "season_levels";
+    private static final String KEY_SEASON_STARS = "season_stars";
+    private static final String KEY_SEASON_REWARD_STEP = "season_reward_step";
     private static final String KEY_SOUND_ENABLED = "sound_enabled";
     private static final String KEY_HAPTIC_ENABLED = "haptic_enabled";
     private static final int BOARD_SIZE = 8;
@@ -324,6 +327,12 @@ public class GameView extends View {
     private int lastDailyRewardPropAmount;
     private int dailyChallengeStreak;
     private int dailyGoalProgress;
+    private int seasonLevels;
+    private int seasonStars;
+    private int seasonRewardStep;
+    private int lastSeasonReward;
+    private int lastSeasonRewardProp = NONE;
+    private int lastSeasonRewardAmount;
     private int lastDailyChallengeMilestoneProp = NONE;
     private int lastDailyChallengeMilestoneAmount;
     private int lastDailyGoalReward;
@@ -659,6 +668,9 @@ public class GameView extends View {
         lastFirstClearReward = 0;
         lastFullStarReward = 0;
         lastDailyGoalReward = 0;
+        lastSeasonReward = 0;
+        lastSeasonRewardProp = NONE;
+        lastSeasonRewardAmount = 0;
         lastDailyChallengeMilestoneProp = NONE;
         lastDailyChallengeMilestoneAmount = 0;
         lastChestReward = 0;
@@ -2504,6 +2516,9 @@ public class GameView extends View {
         rankChestClaimed = prefs.getInt(KEY_RANK_CHEST_CLAIMED, 0);
         winStreak = prefs.getInt(KEY_WIN_STREAK, 0);
         dailyChallengeStreak = prefs.getInt(KEY_DAILY_CHALLENGE_STREAK, 0);
+        seasonLevels = prefs.getInt(KEY_SEASON_LEVELS, 0);
+        seasonStars = prefs.getInt(KEY_SEASON_STARS, 0);
+        seasonRewardStep = prefs.getInt(KEY_SEASON_REWARD_STEP, 0);
         soundEnabled = prefs.getBoolean(KEY_SOUND_ENABLED, true);
         hapticEnabled = prefs.getBoolean(KEY_HAPTIC_ENABLED, true);
         for (int prop = 0; prop < PROP_COUNT; prop++) {
@@ -2557,6 +2572,7 @@ public class GameView extends View {
         grantEliteLevelReward(level);
         grantPerfectClearReward(level);
         grantAchievementRewards();
+        updateSeasonQuestProgress();
         grantChapterEliteReward();
         grantChapterRankReward();
         grantChapterMasteryReward();
@@ -2587,6 +2603,59 @@ public class GameView extends View {
         // 首次通关奖励强化主线推进感，和重玩补星奖励区分开。
         lastFirstClearReward = 18 + Math.min(60, levelIndex / 2) + (level.elite ? 18 : 0);
         coins += lastFirstClearReward;
+    }
+
+    private void updateSeasonQuestProgress() {
+        if (dailyChallengeMode) {
+            return;
+        }
+
+        // 赛季任务记录持续通关和补星成果，给长线玩家稳定的阶段奖励。
+        seasonLevels++;
+        seasonStars += lastStars;
+        int nextStep = seasonRewardStep + 1;
+        int levelTarget = nextStep * 8;
+        int starTarget = nextStep * 22;
+        if (seasonLevels < levelTarget && seasonStars < starTarget) {
+            saveSeasonProgress();
+            return;
+        }
+
+        seasonRewardStep = nextStep;
+        lastSeasonReward = 70 + seasonRewardStep * 18;
+        coins += lastSeasonReward;
+        grantSeasonPropReward(seasonRewardStep);
+        saveSeasonProgress();
+    }
+
+    private void grantSeasonPropReward(int step) {
+        lastSeasonRewardProp = NONE;
+        lastSeasonRewardAmount = 0;
+        if (step % 6 == 0) {
+            lastSeasonRewardProp = PROP_BUBBLE_WAND;
+            lastSeasonRewardAmount = 1;
+        } else if (step % 4 == 0) {
+            lastSeasonRewardProp = PROP_STAR_COMPASS;
+            lastSeasonRewardAmount = 1;
+        } else if (step % 3 == 0) {
+            lastSeasonRewardProp = PROP_FIREWORK_CANNON;
+            lastSeasonRewardAmount = 1;
+        } else if (step % 2 == 0) {
+            lastSeasonRewardProp = PROP_AURORA_ORB;
+            lastSeasonRewardAmount = 1;
+        }
+        if (lastSeasonRewardProp != NONE) {
+            addReserveProp(lastSeasonRewardProp, lastSeasonRewardAmount);
+        }
+    }
+
+    private void saveSeasonProgress() {
+        prefs.edit()
+                .putInt(KEY_SEASON_LEVELS, seasonLevels)
+                .putInt(KEY_SEASON_STARS, seasonStars)
+                .putInt(KEY_SEASON_REWARD_STEP, seasonRewardStep)
+                .putInt(KEY_COINS, coins)
+                .apply();
     }
 
     private void grantEliteLevelReward(Level level) {
@@ -5381,7 +5450,8 @@ public class GameView extends View {
         textPaint.setTextSize(sp(11));
         textPaint.setColor(Color.WHITE);
         canvas.drawText("成就 " + getClaimedAchievementCount() + "/" + ACHIEVEMENT_COUNT
-                + "  评级 " + getTotalRankScore(), getWidth() / 2f, top + dp(22), textPaint);
+                + "  评级 " + getTotalRankScore() + "  赛季 " + seasonLevels + "/" + getNextSeasonLevelTarget()
+                + "关 " + seasonStars + "/" + getNextSeasonStarTarget() + "星", getWidth() / 2f, top + dp(22), textPaint);
     }
 
     private void drawReplayHintEntry(Canvas canvas) {
@@ -5551,6 +5621,14 @@ public class GameView extends View {
             }
         }
         return count;
+    }
+
+    private int getNextSeasonLevelTarget() {
+        return (seasonRewardStep + 1) * 8;
+    }
+
+    private int getNextSeasonStarTarget() {
+        return (seasonRewardStep + 1) * 22;
     }
 
     private boolean canClaimChapterChest(int chapter) {
@@ -7406,6 +7484,10 @@ public class GameView extends View {
         return lastAchievementRewardProp == NONE ? "" : " " + getPropName(lastAchievementRewardProp) + "+" + lastAchievementRewardAmount;
     }
 
+    private String buildSeasonPropRewardText() {
+        return lastSeasonRewardProp == NONE ? "" : " " + getPropName(lastSeasonRewardProp) + "+" + lastSeasonRewardAmount;
+    }
+
     private void playClickTone() {
         if (!soundEnabled) {
             return;
@@ -7451,7 +7533,8 @@ public class GameView extends View {
         if (levelComplete && (lastAchievementReward > 0 || lastStarUpgradeReward > 0 || lastRankUpgradeReward > 0
                 || lastPerfectReward > 0 || lastHiddenReward > 0 || lastWinStreakReward > 0
                 || lastEliteReward > 0 || lastFirstClearReward > 0 || lastFullStarReward > 0
-                || lastChapterMasteryReward > 0 || lastChapterEliteReward > 0 || lastChapterRankReward > 0)) {
+                || lastChapterMasteryReward > 0 || lastChapterEliteReward > 0 || lastChapterRankReward > 0
+                || lastSeasonReward > 0)) {
             drawRewardSparkles(canvas, getWidth() / 2f, getHeight() * 0.42f - dp(12));
         }
 
@@ -7491,6 +7574,9 @@ public class GameView extends View {
             if (lastChapterRankReward > 0) {
                 bonusText += "  章节评级";
             }
+            if (lastSeasonReward > 0) {
+                bonusText += "  赛季任务";
+            }
             canvas.drawText(bonusText, getWidth() / 2f, getHeight() * 0.49f, textPaint);
             drawChallengeBadges(canvas, getWidth() / 2f, getHeight() * 0.515f);
             String scoreText = dailyChallengeMode ? "挑战分 " + score : "最佳分 " + levelBestScores[levelIndex];
@@ -7515,6 +7601,9 @@ public class GameView extends View {
             } else if (lastAchievementReward > 0) {
                 rewardText = "金币 +" + lastCoinReward + "  成就奖励+" + lastAchievementReward
                         + buildAchievementPropRewardText() + "  点击继续";
+            } else if (lastSeasonReward > 0) {
+                rewardText = "金币 +" + lastCoinReward + "  赛季+" + lastSeasonReward
+                        + buildSeasonPropRewardText() + "  点击继续";
             } else if (lastFirstClearReward > 0) {
                 rewardText = "金币 +" + lastCoinReward + "  首通+" + lastFirstClearReward + "  点击继续";
             } else if (lastFullStarReward > 0) {
