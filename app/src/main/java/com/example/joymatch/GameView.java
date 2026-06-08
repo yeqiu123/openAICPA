@@ -8156,9 +8156,26 @@ public class GameView extends View {
         if (!dailyChallengeMode && levelRanks[levelIndex] > 0) {
             goalText += "  最佳" + buildRankText(levelRanks[levelIndex]);
         }
+        String replayGoal = buildLevelIntroReplayGoal();
+        if (replayGoal.length() > 0) {
+            goalText += "  " + replayGoal;
+        }
         RectF goalRect = new RectF(dp(42), centerY + dp(18), getWidth() - dp(42), centerY + dp(44));
         drawTextFit(canvas, goalText, goalRect, 15, Color.WHITE);
         postInvalidateOnAnimation();
+    }
+
+    private String buildLevelIntroReplayGoal() {
+        if (dailyChallengeMode || levelStars[levelIndex] <= 0) {
+            return "";
+        }
+        if (levelStars[levelIndex] < 3) {
+            return "再冲" + (3 - levelStars[levelIndex]) + "星";
+        }
+        if (levelRanks[levelIndex] < 4) {
+            return "再冲" + buildRankText(4);
+        }
+        return "";
     }
 
     private int getLevelObstacleCount(Level level) {
