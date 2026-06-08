@@ -3562,17 +3562,8 @@ public class GameView extends View {
     private void grantStarChestPropReward() {
         lastChestRewardProp = NONE;
         lastChestRewardAmount = 0;
-        if (starChestClaimed % 16 == 0) {
-            lastChestRewardProp = PROP_SNOW_GLOBE;
-            lastChestRewardAmount = 1;
-        } else if (starChestClaimed % 12 == 0) {
-            lastChestRewardProp = PROP_BUBBLE_WAND;
-            lastChestRewardAmount = 1;
-        } else if (starChestClaimed % 8 == 0) {
-            lastChestRewardProp = PROP_STAR_COMPASS;
-            lastChestRewardAmount = 1;
-        } else if (starChestClaimed % 4 == 0) {
-            lastChestRewardProp = PROP_AURORA_ORB;
+        lastChestRewardProp = getStarChestRewardProp(starChestClaimed);
+        if (lastChestRewardProp != NONE) {
             lastChestRewardAmount = 1;
         }
         if (lastChestRewardProp != NONE) {
@@ -3581,20 +3572,41 @@ public class GameView extends View {
         }
     }
 
+    private int getStarChestRewardProp(int claimedCount) {
+        if (claimedCount % 16 == 0) {
+            return PROP_SNOW_GLOBE;
+        } else if (claimedCount % 12 == 0) {
+            return PROP_BUBBLE_WAND;
+        } else if (claimedCount % 8 == 0) {
+            return PROP_STAR_COMPASS;
+        } else if (claimedCount % 4 == 0) {
+            return PROP_AURORA_ORB;
+        }
+        return NONE;
+    }
+
     private void grantRankChestPropReward() {
         lastChestRewardProp = NONE;
         lastChestRewardAmount = 0;
-        if (rankChestClaimed % 8 == 0) {
-            lastChestRewardProp = PROP_FIREWORK_CANNON;
-            lastChestRewardAmount = 1;
-        } else if (rankChestClaimed % 4 == 0) {
-            lastChestRewardProp = PROP_MOON_TICKET;
+        lastChestRewardProp = getRankChestRewardProp(rankChestClaimed);
+        if (lastChestRewardProp == PROP_MOON_TICKET) {
             lastChestRewardAmount = 2;
+        } else if (lastChestRewardProp != NONE) {
+            lastChestRewardAmount = 1;
         }
         if (lastChestRewardProp != NONE) {
             // 评级宝箱节点奖励更偏向冲榜和高连击关卡。
             addReserveProp(lastChestRewardProp, lastChestRewardAmount);
         }
+    }
+
+    private int getRankChestRewardProp(int claimedCount) {
+        if (claimedCount % 8 == 0) {
+            return PROP_FIREWORK_CANNON;
+        } else if (claimedCount % 4 == 0) {
+            return PROP_MOON_TICKET;
+        }
+        return NONE;
     }
 
     private void claimChapterChest() {
@@ -6224,16 +6236,26 @@ public class GameView extends View {
 
     private String buildStarChestLabel() {
         if (getAvailableStarChests() > 0) {
-            return "宝箱+" + (25 + (starChestClaimed + 1) * 5);
+            return "宝箱+" + (25 + (starChestClaimed + 1) * 5) + buildNextStarChestPropHint();
         }
         return "星 " + getTotalStars() + "/" + getNextStarChestTarget();
     }
 
     private String buildRankChestLabel() {
         if (getAvailableRankChests() > 0) {
-            return "评级+" + (40 + (rankChestClaimed + 1) * 8);
+            return "评级+" + (40 + (rankChestClaimed + 1) * 8) + buildNextRankChestPropHint();
         }
         return "评 " + getTotalRankScore() + "/" + getNextRankChestTarget();
+    }
+
+    private String buildNextStarChestPropHint() {
+        int prop = getStarChestRewardProp(starChestClaimed + 1);
+        return prop == NONE ? "" : " " + getPropName(prop);
+    }
+
+    private String buildNextRankChestPropHint() {
+        int prop = getRankChestRewardProp(rankChestClaimed + 1);
+        return prop == NONE ? "" : " " + getPropName(prop);
     }
 
     private void drawStarChestNotice(Canvas canvas, float pagerTop) {
