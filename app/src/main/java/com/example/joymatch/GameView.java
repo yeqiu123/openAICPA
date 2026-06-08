@@ -5655,7 +5655,7 @@ public class GameView extends View {
         if (bombShieldCount > 0) {
             starText += " 护盾" + bombShieldCount;
         }
-        canvas.drawText(starText, getWidth() - dp(22), dp(154), textPaint);
+        drawTextFitRight(canvas, starText, new RectF(getWidth() * 0.34f, dp(142), getWidth() - dp(18), dp(160)), 13, Color.WHITE);
         drawComboEnergy(canvas);
     }
 
