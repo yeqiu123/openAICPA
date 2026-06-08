@@ -8687,10 +8687,15 @@ public class GameView extends View {
         if (lastDailyChallengeMilestoneProp != NONE) {
             lines.add("每日连胜 " + getPropName(lastDailyChallengeMilestoneProp) + "+" + lastDailyChallengeMilestoneAmount);
         }
-        while (lines.size() > 4) {
-            lines.remove(1);
-        }
+        trimRewardLines(lines);
         return lines;
+    }
+
+    private void trimRewardLines(List<String> lines) {
+        while (lines.size() > 4) {
+            // 奖励过多时优先保留金币和后续高价值稀有奖励，避免章节/完美奖励被挤掉。
+            lines.remove(lines.size() > 5 ? 1 : 2);
+        }
     }
 
     private void addRewardLine(List<String> lines, String label, int amount, String extra) {
