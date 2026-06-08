@@ -5807,6 +5807,7 @@ public class GameView extends View {
             }
             drawLevelTypeMark(canvas, level, rect);
             drawFailAssistMark(canvas, level, rect, unlocked);
+            drawFullStarMapMark(canvas, level, rect, unlocked);
         }
 
         drawLevelMapPager(canvas);
@@ -5821,6 +5822,23 @@ public class GameView extends View {
         canvas.drawRoundRect(new RectF(rect.left + dp(2), rect.top + dp(2), rect.right - dp(2), rect.bottom - dp(2)),
                 dp(9), dp(9), paint);
         paint.setStyle(Paint.Style.FILL);
+    }
+
+    private void drawFullStarMapMark(Canvas canvas, int level, RectF rect, boolean unlocked) {
+        if (!unlocked || levelStars[level] < 3) {
+            return;
+        }
+
+        // 满星角标让补星成果在地图上更像可收集的勋章。
+        paint.setColor(Color.argb(220, 255, 213, 92));
+        Path crown = new Path();
+        crown.moveTo(rect.right - dp(24), rect.bottom - dp(8));
+        crown.lineTo(rect.right - dp(20), rect.bottom - dp(20));
+        crown.lineTo(rect.right - dp(15), rect.bottom - dp(13));
+        crown.lineTo(rect.right - dp(10), rect.bottom - dp(20));
+        crown.lineTo(rect.right - dp(6), rect.bottom - dp(8));
+        crown.close();
+        canvas.drawPath(crown, paint);
     }
 
     private void drawFailAssistMark(Canvas canvas, int level, RectF rect, boolean unlocked) {
