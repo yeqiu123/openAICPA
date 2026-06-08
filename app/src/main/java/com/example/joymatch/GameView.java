@@ -49,13 +49,13 @@ public class GameView extends View {
     private static final String KEY_HAPTIC_ENABLED = "haptic_enabled";
     private static final int BOARD_SIZE = 8;
     private static final int TILE_KINDS = 6;
-    private static final int LEVEL_COUNT = 200;
+    private static final int LEVEL_COUNT = 240;
     private static final int LEVELS_PER_PAGE = 60;
     private static final int CONTINUE_COST = 10;
     private static final int STAR_CHEST_STEP = 30;
     private static final int RANK_CHEST_STEP = 45;
     private static final int CHAPTER_SIZE = 20;
-    private static final int CHAPTER_COUNT = 10;
+    private static final int CHAPTER_COUNT = 12;
     private static final int CHAPTER_CHEST_STARS = 45;
     private static final int ACHIEVEMENT_COUNT = 18;
     private static final int NONE = -1;
@@ -180,7 +180,9 @@ public class GameView extends View {
             Color.rgb(76, 211, 194),
             Color.rgb(238, 122, 159),
             Color.rgb(110, 125, 255),
-            Color.rgb(37, 197, 168)
+            Color.rgb(37, 197, 168),
+            Color.rgb(255, 116, 196),
+            Color.rgb(83, 221, 144)
     };
     private final int[] chapterBottomColors = {
             Color.rgb(255, 151, 132),
@@ -192,10 +194,12 @@ public class GameView extends View {
             Color.rgb(255, 214, 92),
             Color.rgb(117, 182, 255),
             Color.rgb(255, 174, 208),
-            Color.rgb(255, 129, 104)
+            Color.rgb(255, 129, 104),
+            Color.rgb(106, 225, 255),
+            Color.rgb(255, 221, 96)
     };
     private final String[] chapterNames = {
-            "糖果森林", "云朵海湾", "果冻火山", "薄荷花园", "星光梦境", "蜂蜜工坊", "珊瑚集市", "极光城堡", "月光游乐园", "烟花星港"
+            "糖果森林", "云朵海湾", "果冻火山", "薄荷花园", "星光梦境", "蜂蜜工坊", "珊瑚集市", "极光城堡", "月光游乐园", "烟花星港", "流星彩虹谷", "奇迹糖晶塔"
     };
 
     private int levelIndex = 0;
@@ -4205,7 +4209,7 @@ public class GameView extends View {
                 paint.setStyle(Paint.Style.FILL);
                 drawStar(canvas, x + dp(22), y - dp(18), dp(5 + i % 2));
             }
-        } else {
+        } else if (chapter == 9) {
             for (int i = 0; i < 6; i++) {
                 float x = getWidth() * (0.1f + i * 0.16f);
                 float y = getHeight() * (0.16f + (i % 3) * 0.14f);
@@ -4216,6 +4220,34 @@ public class GameView extends View {
                 paint.setStyle(Paint.Style.FILL);
                 drawStar(canvas, x, y - dp(6), dp(7 + i % 3));
                 canvas.drawCircle(x + dp(18), y + dp(8), dp(3 + i % 2), paint);
+            }
+        } else if (chapter == 10) {
+            for (int i = 0; i < 8; i++) {
+                float x = getWidth() * (0.08f + i * 0.12f);
+                float y = getHeight() * (0.14f + (i % 4) * 0.13f);
+                // 流星彩虹谷用弧形轨迹和星点强化新章节的流动感。
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setStrokeWidth(dp(3));
+                canvas.drawArc(new RectF(x - dp(22), y - dp(16), x + dp(22), y + dp(16)),
+                        205, 120, false, paint);
+                paint.setStyle(Paint.Style.FILL);
+                drawStar(canvas, x + dp(18), y - dp(10), dp(6 + i % 3));
+                canvas.drawCircle(x - dp(18), y + dp(12), dp(3 + i % 2), paint);
+            }
+        } else {
+            for (int i = 0; i < 7; i++) {
+                float x = getWidth() * (0.1f + i * 0.14f);
+                float y = getHeight() * (0.15f + (i % 3) * 0.15f);
+                // 奇迹糖晶塔用晶体轮廓区分最终扩展章节。
+                Path crystal = new Path();
+                crystal.moveTo(x, y - dp(20));
+                crystal.lineTo(x + dp(14), y - dp(2));
+                crystal.lineTo(x + dp(8), y + dp(20));
+                crystal.lineTo(x - dp(10), y + dp(18));
+                crystal.lineTo(x - dp(15), y - dp(1));
+                crystal.close();
+                canvas.drawPath(crystal, paint);
+                drawStar(canvas, x + dp(18), y - dp(16), dp(5 + i % 2));
             }
         }
     }
