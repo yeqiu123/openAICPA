@@ -128,6 +128,7 @@ public class GameView extends View {
     private int honeyRemaining;
     private int stoneRemaining;
     private int vineRemaining;
+    private int honeySpreadCount;
     private int selectedRow = NONE;
     private int selectedCol = NONE;
     private int activeProp = NONE;
@@ -358,6 +359,7 @@ public class GameView extends View {
         lastChestReward = 0;
         lastChapterChestReward = 0;
         lastGiftReward = 0;
+        honeySpreadCount = 0;
         challengeCleared = false;
         comboChallengeCleared = false;
         rewardTargetMilestone = 0;
@@ -368,6 +370,7 @@ public class GameView extends View {
         honeyRemaining = level.honeyCount;
         stoneRemaining = level.stoneCount;
         vineRemaining = level.vineCount;
+        honeySpreadCount = 0;
         propInventory[PROP_HAMMER] = level.hammers;
         propInventory[PROP_BOMB] = level.bombs;
         propInventory[PROP_SHUFFLE] = level.shuffles;
@@ -479,6 +482,7 @@ public class GameView extends View {
             movesUsed++;
             clearHint();
             clearCells(buildSpecialComboCells(selectedRow, selectedCol, row, col), 360);
+            spreadHoneyAfterMove();
             checkLevelState();
             playHaptic(HapticFeedbackConstants.CONFIRM);
             playSuccessTone();
@@ -499,6 +503,7 @@ public class GameView extends View {
             clearHint();
             createSpecialFromMatch(matches, row, col);
             resolveMatches(matches);
+            spreadHoneyAfterMove();
             checkLevelState();
             playHaptic(HapticFeedbackConstants.CONFIRM);
             playSuccessTone();
@@ -1097,10 +1102,54 @@ public class GameView extends View {
             int reward = 5 + random.nextInt(8);
             coins += reward;
             lastGiftReward += reward;
+            honeySpreadCount = 0;
             saveCoins();
         } else {
             propInventory[random.nextInt(PROP_COUNT)]++;
             lastGiftReward++;
+            honeySpreadCount = 0;
+        }
+    }
+
+    private void spreadHoneyAfterMove() {
+        Level level = levels.get(levelIndex);
+        if (level.honeyCount <= 0 || movesUsed % 3 != 0 || honeyRemaining >= 24) {
+            return;
+        }
+
+        List<Cell> candidates = new ArrayList<>();
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (honey[row][col] <= 0) {
+                    continue;
+                }
+                collectHoneySpreadCells(row, col, candidates);
+            }
+        }
+        if (candidates.isEmpty()) {
+            return;
+        }
+
+        // 蜂蜜会定期蔓延，给玩家制造必须尽快清理的动态压力。
+        Cell cell = candidates.get(random.nextInt(candidates.size()));
+        honey[cell.row][cell.col] = 1;
+        honeyRemaining++;
+        honeySpreadCount++;
+        lastGiftReward = 0;
+        showFeedback(1, honeySpreadCount);
+    }
+
+    private void collectHoneySpreadCells(int row, int col, List<Cell> candidates) {
+        addHoneySpreadCell(row - 1, col, candidates);
+        addHoneySpreadCell(row + 1, col, candidates);
+        addHoneySpreadCell(row, col - 1, candidates);
+        addHoneySpreadCell(row, col + 1, candidates);
+    }
+
+    private void addHoneySpreadCell(int row, int col, List<Cell> candidates) {
+        if (isInside(row, col) && honey[row][col] == 0 && ice[row][col] == 0
+                && stone[row][col] == 0 && vine[row][col] == 0 && gift[row][col] == 0) {
+            candidates.add(new Cell(row, col));
         }
     }
 
@@ -1911,6 +1960,8 @@ public class GameView extends View {
         String text = feedbackCombo > 1 ? "连击 x" + feedbackCombo : "消除 +" + feedbackCleared;
         if (lastGiftReward > 0 && age < 900) {
             text = "礼盒奖励 +" + lastGiftReward;
+        } else if (honeySpreadCount > 0 && age < 900) {
+            text = "蜂蜜蔓延";
         }
 
         textPaint.setTextAlign(Paint.Align.CENTER);
