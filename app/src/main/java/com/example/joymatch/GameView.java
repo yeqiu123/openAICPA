@@ -5896,8 +5896,23 @@ public class GameView extends View {
             textPaint.setTextAlign(Paint.Align.CENTER);
             textPaint.setTextSize(sp(10));
             textPaint.setColor(Color.WHITE);
-            drawTextFit(canvas, chapterNames[chapter] + " " + getChapterStars(chapter), rect, 10, Color.WHITE);
+            drawTextFit(canvas, chapterNames[chapter] + " " + getChapterStars(chapter) + buildChapterMapBadgeText(chapter),
+                    rect, 10, Color.WHITE);
         }
+    }
+
+    private String buildChapterMapBadgeText(int chapter) {
+        String text = "";
+        if (getChapterStars(chapter) >= CHAPTER_SIZE * 3) {
+            text += " 满";
+        }
+        if (getChapterRankScore(chapter) >= getChapterRankRewardTarget()) {
+            text += " 评";
+        }
+        if (getChapterEliteCount(chapter) > 0 && getChapterClearedEliteCount(chapter) >= getChapterEliteCount(chapter)) {
+            text += " 精";
+        }
+        return text;
     }
 
     private String buildLevelTypeMark(int levelIndex) {
