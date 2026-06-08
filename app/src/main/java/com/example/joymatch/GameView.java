@@ -822,6 +822,7 @@ public class GameView extends View {
         canvas.drawText("分数 " + score, dp(22), dp(104), textPaint);
         canvas.drawText("收集 " + targetRemaining, dp(22), dp(130), textPaint);
         drawTargetSwatch(canvas, dp(96), dp(124));
+        drawGoalProgress(canvas, level);
 
         textPaint.setTextAlign(Paint.Align.RIGHT);
         if (movesLeft <= 5 && !levelComplete && !levelFailed) {
@@ -833,6 +834,8 @@ public class GameView extends View {
         canvas.drawText("关卡 " + levels.size(), getWidth() - dp(22), dp(104), textPaint);
         canvas.drawText("冰" + iceRemaining + " 蜜" + honeyRemaining + " 石" + stoneRemaining,
                 getWidth() - dp(22), dp(130), textPaint);
+        textPaint.setTextSize(sp(13));
+        canvas.drawText(buildStars(getPreviewStars(level)), getWidth() - dp(22), dp(154), textPaint);
     }
 
     private void drawBoard(Canvas canvas) {
@@ -1001,6 +1004,30 @@ public class GameView extends View {
         canvas.drawCircle(centerX, centerY, dp(8), paint);
         paint.setColor(Color.argb(170, 255, 255, 255));
         canvas.drawCircle(centerX - dp(3), centerY - dp(3), dp(3), paint);
+    }
+
+    private void drawGoalProgress(Canvas canvas, Level level) {
+        float left = dp(22);
+        float top = dp(144);
+        float width = getWidth() * 0.42f;
+        float progress = Math.min(1f, score / (float) level.targetScore);
+
+        paint.setColor(Color.argb(70, 33, 37, 56));
+        RectF track = new RectF(left, top, left + width, top + dp(8));
+        canvas.drawRoundRect(track, dp(4), dp(4), paint);
+
+        paint.setColor(Color.argb(210, 255, 255, 255));
+        RectF fill = new RectF(left, top, left + width * progress, top + dp(8));
+        canvas.drawRoundRect(fill, dp(4), dp(4), paint);
+    }
+
+    private int getPreviewStars(Level level) {
+        if (movesLeft > level.moves / 2) {
+            return 3;
+        } else if (movesLeft > level.moves / 5) {
+            return 2;
+        }
+        return 1;
     }
 
     private boolean isHintCell(int row, int col) {
