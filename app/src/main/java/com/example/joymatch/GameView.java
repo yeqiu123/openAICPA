@@ -5599,7 +5599,8 @@ public class GameView extends View {
         int pageCount = Math.min(LEVELS_PER_PAGE, levels.size() - pageStart);
         int rows = (int) Math.ceil(pageCount / (float) columns);
         float gap = dp(6);
-        float startY = dp(212);
+        // 地图上方信息区分层摆放，避免推荐、成就和关卡格互相压住。
+        float startY = dp(262);
         float pagerTop = getHeight() - dp(64);
         float sizeByWidth = (getWidth() - dp(32) - gap * (columns - 1)) / columns;
         float sizeByHeight = (pagerTop - startY - dp(10) - gap * (rows - 1)) / rows;
@@ -5702,8 +5703,7 @@ public class GameView extends View {
             textPaint.setTextAlign(Paint.Align.CENTER);
             textPaint.setTextSize(sp(10));
             textPaint.setColor(Color.WHITE);
-            canvas.drawText(chapterNames[chapter] + " " + getChapterStars(chapter),
-                    rect.centerX(), rect.centerY() + dp(4), textPaint);
+            drawTextFit(canvas, chapterNames[chapter] + " " + getChapterStars(chapter), rect, 10, Color.WHITE);
         }
     }
 
@@ -5807,14 +5807,11 @@ public class GameView extends View {
             postInvalidateOnAnimation();
         }
 
-        textPaint.setTextAlign(Paint.Align.CENTER);
-        textPaint.setTextSize(sp(12));
-        textPaint.setColor(claimed ? Color.WHITE : Color.rgb(33, 37, 56));
         String text = claimed ? "每日挑战 再玩" : "每日挑战 奖励";
         if (dailyChallengeStreak > 1) {
             text += " 连" + dailyChallengeStreak;
         }
-        canvas.drawText(text, dailyChallengeRect.centerX(), dailyChallengeRect.centerY() + dp(5), textPaint);
+        drawTextFit(canvas, text, dailyChallengeRect, 12, claimed ? Color.WHITE : Color.rgb(33, 37, 56));
         drawDailyGoalEntry(canvas);
     }
 
@@ -5830,15 +5827,12 @@ public class GameView extends View {
             postInvalidateOnAnimation();
         }
 
-        textPaint.setTextAlign(Paint.Align.CENTER);
-        textPaint.setTextSize(sp(12));
-        textPaint.setColor(claimable ? Color.rgb(33, 37, 56) : Color.WHITE);
         String text = dailyGoalClaimed ? "每日目标 已领"
                 : "每日目标 " + Math.min(6, dailyGoalProgress) + "/6星";
         if (claimable) {
             text += " 月票";
         }
-        canvas.drawText(text, dailyGoalRect.centerX(), dailyGoalRect.centerY() + dp(5), textPaint);
+        drawTextFit(canvas, text, dailyGoalRect, 12, claimable ? Color.rgb(33, 37, 56) : Color.WHITE);
     }
 
     private void drawChapterChestEntry(Canvas canvas) {
@@ -5894,7 +5888,7 @@ public class GameView extends View {
 
     private void drawAchievementProgress(Canvas canvas) {
         float left = dp(34);
-        float top = dp(194);
+        float top = dp(206);
         float right = getWidth() - dp(34);
         float progress = getClaimedAchievementCount() / (float) ACHIEVEMENT_COUNT;
 
@@ -5912,7 +5906,7 @@ public class GameView extends View {
     }
 
     private void drawReplayHintEntry(Canvas canvas) {
-        replayHintRect.set(dp(28), dp(186), getWidth() - dp(28), dp(210));
+        replayHintRect.set(dp(28), dp(232), getWidth() - dp(28), dp(256));
         int replayLevel = findReplayTargetLevel();
         paint.setColor(replayLevel >= 0 ? Color.argb(120, 255, 236, 133) : Color.argb(70, 255, 255, 255));
         canvas.drawRoundRect(replayHintRect, dp(10), dp(10), paint);
@@ -5923,6 +5917,18 @@ public class GameView extends View {
         String text = replayLevel >= 0 ? "智能推荐 第" + (replayLevel + 1) + "关  " + buildReplayReason(replayLevel)
                 : "已通关卡暂无补星目标";
         canvas.drawText(text, replayHintRect.centerX(), replayHintRect.centerY() + dp(4), textPaint);
+    }
+
+    private void drawTextFit(Canvas canvas, String text, RectF rect, float baseSize, int color) {
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setTextSize(sp(baseSize));
+        textPaint.setColor(color);
+        float maxWidth = Math.max(dp(20), rect.width() - dp(8));
+        while (baseSize > 8 && textPaint.measureText(text) > maxWidth) {
+            baseSize -= 1;
+            textPaint.setTextSize(sp(baseSize));
+        }
+        canvas.drawText(text, rect.centerX(), rect.centerY() + dp(4), textPaint);
     }
 
     private void drawSettings(Canvas canvas) {
