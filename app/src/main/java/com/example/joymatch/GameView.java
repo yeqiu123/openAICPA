@@ -58,8 +58,9 @@ public class GameView extends View {
     private static final int PROP_ROW_BLAST = 3;
     private static final int PROP_COLOR_BLAST = 4;
     private static final int PROP_EXTRA_MOVES = 5;
-    private static final int PROP_COUNT = 6;
-    private static final int[] PROP_COSTS = {8, 12, 10, 16, 18, 14};
+    private static final int PROP_MAGIC_WAND = 6;
+    private static final int PROP_COUNT = 7;
+    private static final int[] PROP_COSTS = {8, 12, 10, 16, 18, 14, 22};
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -338,6 +339,7 @@ public class GameView extends View {
             int rowBlast = i >= 5 ? 1 + (i % 8 == 0 ? 1 : 0) : 0;
             int colorBlast = i >= 10 ? 1 + (i % 12 == 0 ? 1 : 0) : 0;
             int extraMoves = i >= 12 ? 1 + (i % 15 == 0 ? 1 : 0) : 0;
+            int magicWand = i >= 20 && i % 14 == 0 ? 1 : 0;
             int targetKind = i % TILE_KINDS;
             int targetAmount = 8 + (i % 7) + i / 10;
             int iceCount = i < 4 ? i * 2 : Math.min(24, 6 + i / 2);
@@ -350,8 +352,8 @@ public class GameView extends View {
             int moveLimitGoal = i >= 18 && i % 4 == 0 ? Math.max(8, moves - 5) : 0;
             int comboGoal = i >= 22 && i % 5 == 0 ? 3 + (i / 25) : 0;
             levels.add(new Level(targetScore, moves, hammer, bomb, shuffle, rowBlast, colorBlast, extraMoves,
-                    targetKind, targetAmount, iceCount, honeyCount, stoneCount, vineCount, giftCount, chainCount,
-                    keyCount, moveLimitGoal, comboGoal));
+                    magicWand, targetKind, targetAmount, iceCount, honeyCount, stoneCount, vineCount, giftCount,
+                    chainCount, keyCount, moveLimitGoal, comboGoal));
         }
     }
 
@@ -397,6 +399,7 @@ public class GameView extends View {
         propInventory[PROP_ROW_BLAST] = level.rowBlasts;
         propInventory[PROP_COLOR_BLAST] = level.colorBlasts;
         propInventory[PROP_EXTRA_MOVES] = level.extraMoves;
+        propInventory[PROP_MAGIC_WAND] = level.magicWands;
 
         // 初始化时避开天然三连，让玩家第一步更清晰。
         for (int row = 0; row < BOARD_SIZE; row++) {
@@ -490,6 +493,15 @@ public class GameView extends View {
         } else if (activeProp == PROP_COLOR_BLAST) {
             propInventory[PROP_COLOR_BLAST]--;
             clearCells(buildColorCells(colorOf(board[row][col])), 220);
+        } else if (activeProp == PROP_MAGIC_WAND) {
+            // 魔法棒把指定棋子升级成彩虹棋，让玩家主动创造关键大招。
+            propInventory[PROP_MAGIC_WAND]--;
+            board[row][col] = makePiece(colorOf(board[row][col]), SPECIAL_RAINBOW);
+            spawnParticles(buildSingleCell(row, col));
+            lastTaskRewardType = 5;
+            lastGiftReward = 0;
+            honeySpreadCount = 0;
+            showFeedback(1, 1);
         }
         playHaptic(HapticFeedbackConstants.CONFIRM);
         playSuccessTone();
@@ -1981,13 +1993,20 @@ public class GameView extends View {
             canvas.drawCircle(centerX, centerY, dp(14), paint);
             paint.setStyle(Paint.Style.FILL);
             canvas.drawCircle(centerX, centerY, dp(5), paint);
-        } else {
+        } else if (prop == PROP_EXTRA_MOVES) {
             canvas.drawCircle(centerX, centerY, dp(14), paint);
             paint.setColor(Color.WHITE);
             textPaint.setTextAlign(Paint.Align.CENTER);
             textPaint.setTextSize(sp(14));
             textPaint.setColor(Color.rgb(33, 37, 56));
             canvas.drawText("+5", centerX, centerY + dp(5), textPaint);
+        } else {
+            paint.setStrokeWidth(dp(4));
+            canvas.drawLine(centerX - dp(12), centerY + dp(12), centerX + dp(10), centerY - dp(10), paint);
+            paint.setStyle(Paint.Style.STROKE);
+            canvas.drawCircle(centerX + dp(12), centerY - dp(12), dp(5), paint);
+            paint.setStyle(Paint.Style.FILL);
+            canvas.drawCircle(centerX - dp(14), centerY + dp(14), dp(3), paint);
         }
     }
 
@@ -2002,6 +2021,8 @@ public class GameView extends View {
             return "十字";
         } else if (prop == PROP_COLOR_BLAST) {
             return "同色";
+        } else if (prop == PROP_MAGIC_WAND) {
+            return "魔棒";
         }
         return "加步";
     }
@@ -2247,6 +2268,8 @@ public class GameView extends View {
             text = "连击奖励";
         } else if (lastTaskRewardType == 4 && age < 900) {
             text = "钥匙奖励";
+        } else if (lastTaskRewardType == 5 && age < 900) {
+            text = "魔棒生成";
         }
 
         textPaint.setTextAlign(Paint.Align.CENTER);
@@ -2399,6 +2422,7 @@ public class GameView extends View {
         final int rowBlasts;
         final int colorBlasts;
         final int extraMoves;
+        final int magicWands;
         final int targetKind;
         final int targetAmount;
         final int iceCount;
@@ -2412,7 +2436,7 @@ public class GameView extends View {
         final int comboGoal;
 
         Level(int targetScore, int moves, int hammers, int bombs, int shuffles, int rowBlasts, int colorBlasts,
-                int extraMoves,
+                int extraMoves, int magicWands,
                 int targetKind, int targetAmount, int iceCount, int honeyCount, int stoneCount, int vineCount,
                 int giftCount, int chainCount, int keyCount, int moveLimitGoal, int comboGoal) {
             this.targetScore = targetScore;
@@ -2423,6 +2447,7 @@ public class GameView extends View {
             this.rowBlasts = rowBlasts;
             this.colorBlasts = colorBlasts;
             this.extraMoves = extraMoves;
+            this.magicWands = magicWands;
             this.targetKind = targetKind;
             this.targetAmount = targetAmount;
             this.iceCount = iceCount;
