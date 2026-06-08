@@ -58,6 +58,9 @@ public class GameView extends View {
     private int selectedRow = NONE;
     private int selectedCol = NONE;
     private int activeProp = NONE;
+    private int feedbackCombo;
+    private int feedbackCleared;
+    private long feedbackStartTime;
     private float boardLeft;
     private float boardTop;
     private float tileSize;
@@ -79,6 +82,7 @@ public class GameView extends View {
         drawBackground(canvas);
         drawHud(canvas);
         drawBoard(canvas);
+        drawFeedback(canvas);
         drawStatus(canvas);
     }
 
@@ -227,6 +231,7 @@ public class GameView extends View {
         cells = expandSpecialCells(cells);
         score += bonusScore + cells.size() * 45;
         removeCells(cells);
+        showFeedback(1, cells.size());
         collapseBoard();
         resolveMatches(findMatches());
     }
@@ -267,12 +272,19 @@ public class GameView extends View {
     }
 
     private void resolveMatches(Set<Cell> matches) {
+        int combo = 0;
+        int totalCleared = 0;
         while (!matches.isEmpty()) {
+            combo++;
             matches = expandSpecialCells(matches);
-            score += matches.size() * 60;
+            totalCleared += matches.size();
+            score += matches.size() * 60 + (combo - 1) * 120;
             removeCells(matches);
             collapseBoard();
             matches = findMatches();
+        }
+        if (totalCleared > 0) {
+            showFeedback(combo, totalCleared);
         }
     }
 
@@ -648,6 +660,31 @@ public class GameView extends View {
         canvas.drawLine(rect.left + rect.width() * 0.63f, rect.top + rect.height() * 0.58f,
                 rect.left + rect.width() * 0.44f, rect.bottom - rect.height() * 0.16f, paint);
         paint.setStyle(Paint.Style.FILL);
+    }
+
+    private void drawFeedback(Canvas canvas) {
+        long age = System.currentTimeMillis() - feedbackStartTime;
+        if (feedbackCleared <= 0 || age > 1100) {
+            return;
+        }
+
+        float progress = age / 1100f;
+        int alpha = (int) (255 * (1f - progress));
+        float y = boardTop - dp(18) - progress * dp(20);
+        String text = feedbackCombo > 1 ? "连击 x" + feedbackCombo : "消除 +" + feedbackCleared;
+
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setTextSize(sp(feedbackCombo > 1 ? 24 : 19));
+        textPaint.setColor(Color.argb(alpha, 255, 255, 255));
+        canvas.drawText(text, getWidth() / 2f, y, textPaint);
+        textPaint.setColor(Color.WHITE);
+        postInvalidateOnAnimation();
+    }
+
+    private void showFeedback(int combo, int cleared) {
+        feedbackCombo = combo;
+        feedbackCleared = cleared;
+        feedbackStartTime = System.currentTimeMillis();
     }
 
     private void drawStatus(Canvas canvas) {
