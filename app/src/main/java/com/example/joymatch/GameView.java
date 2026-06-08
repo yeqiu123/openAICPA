@@ -183,6 +183,7 @@ public class GameView extends View {
     private int lastRankUpgradeReward;
     private int lastPerfectReward;
     private int lastHiddenReward;
+    private int lastEliteReward;
     private int starChestClaimed;
     private int rankChestClaimed;
     private int lastChestReward;
@@ -399,10 +400,18 @@ public class GameView extends View {
             int moveLimitGoal = i >= 18 && i % 4 == 0 ? Math.max(8, moves - 5) : 0;
             int comboGoal = i >= 22 && i % 5 == 0 ? 3 + (i / 25) : 0;
             int scoreGoal = i >= 30 && i % 6 == 0 ? targetScore + 800 + i * 40 : 0;
+            boolean elite = i >= 14 && (i + 1) % 15 == 0;
+            if (elite) {
+                // 精英关提高一点目标压力，形成每章里更醒目的冲刺节点。
+                targetScore += 650 + i * 25;
+                targetAmount += 3;
+                iceCount = Math.min(26, iceCount + 2);
+                honeyCount = Math.min(20, honeyCount + 2);
+            }
             levels.add(new Level(targetScore, moves, hammer, bomb, shuffle, rowBlast, colorBlast, extraMoves,
                     magicWand, brush, portalProp, targetKind, targetAmount, iceCount, honeyCount, stoneCount, vineCount, giftCount,
                     chainCount, shellCount, flowerCount, keyCount, moveChestCount, cloudCount, gemCount, portalCount, moveLimitGoal, comboGoal,
-                    scoreGoal));
+                    scoreGoal, elite));
         }
     }
 
@@ -427,6 +436,7 @@ public class GameView extends View {
         lastRankUpgradeReward = 0;
         lastPerfectReward = 0;
         lastHiddenReward = 0;
+        lastEliteReward = 0;
         lastChestReward = 0;
         lastRankChestReward = 0;
         lastChapterChestReward = 0;
@@ -1033,6 +1043,14 @@ public class GameView extends View {
         return level >= 10 && level % 11 == 0;
     }
 
+    private boolean isEliteLevel() {
+        return isEliteLevel(levelIndex);
+    }
+
+    private boolean isEliteLevel(int level) {
+        return levels.get(level).elite;
+    }
+
     private int calculateLevelRank(Level level) {
         int rank = lastStars;
         if (score >= level.targetScore * 2) {
@@ -1198,6 +1216,7 @@ public class GameView extends View {
             coins += lastHiddenReward;
             propInventory[PROP_BOMB]++;
         }
+        grantEliteLevelReward(level);
         grantPerfectClearReward(level);
         grantAchievementRewards();
         grantChapterMasteryReward();
@@ -1210,6 +1229,16 @@ public class GameView extends View {
                 .putInt(KEY_STAR_CHEST_CLAIMED, starChestClaimed)
                 .putInt(KEY_RANK_CHEST_CLAIMED, rankChestClaimed)
                 .apply();
+    }
+
+    private void grantEliteLevelReward(Level level) {
+        if (dailyChallengeMode || !level.elite) {
+            return;
+        }
+
+        // 精英关固定给额外金币，让阶段性难关更有通关价值。
+        lastEliteReward = 26 + lastStars * 6 + getChapterIndex(levelIndex) * 4;
+        coins += lastEliteReward;
     }
 
     private void grantChapterMasteryReward() {
@@ -1993,6 +2022,9 @@ public class GameView extends View {
         canvas.drawText(obstacleText, getWidth() - dp(22), dp(130), textPaint);
         textPaint.setTextSize(sp(13));
         String starText = buildStars(getPreviewStars(level));
+        if (isEliteLevel()) {
+            starText += " 精英";
+        }
         if (level.moveLimitGoal > 0) {
             starText += " 挑" + movesUsed + "/" + getMoveLimitGoal(level);
         }
@@ -2143,7 +2175,9 @@ public class GameView extends View {
 
     private String buildLevelTypeMark(int levelIndex) {
         Level level = levels.get(levelIndex);
-        if (isHiddenChallengeLevel(levelIndex)) {
+        if (isEliteLevel(levelIndex)) {
+            return "精";
+        } else if (isHiddenChallengeLevel(levelIndex)) {
             return "隐";
         } else if (level.scoreGoal > 0) {
             return "分";
@@ -3124,6 +3158,9 @@ public class GameView extends View {
         if (level.portalCount > 0) {
             goalText += "  传送门 " + level.portalCount;
         }
+        if (level.elite) {
+            goalText += "  精英奖励";
+        }
         if (level.scoreGoal > 0) {
             goalText += "  高分 " + level.scoreGoal;
         }
@@ -3196,7 +3233,7 @@ public class GameView extends View {
         canvas.drawCircle(getWidth() / 2f, getHeight() * 0.42f - dp(12), dp(92), paint);
         if (levelComplete && (lastAchievementReward > 0 || lastStarUpgradeReward > 0 || lastRankUpgradeReward > 0
                 || lastPerfectReward > 0 || lastHiddenReward > 0 || lastWinStreakReward > 0
-                || lastChapterMasteryReward > 0)) {
+                || lastEliteReward > 0 || lastChapterMasteryReward > 0)) {
             drawRewardSparkles(canvas, getWidth() / 2f, getHeight() * 0.42f - dp(12));
         }
 
@@ -3218,6 +3255,9 @@ public class GameView extends View {
             if (hiddenChallengeCleared) {
                 bonusText += "  隐藏达成";
             }
+            if (lastEliteReward > 0) {
+                bonusText += "  精英通关";
+            }
             if (lastPerfectReward > 0) {
                 bonusText += "  完美通关";
             }
@@ -3235,6 +3275,8 @@ public class GameView extends View {
                 rewardText = "金币 +" + lastCoinReward + "  成就奖励+" + lastAchievementReward + "  点击继续";
             } else if (lastStarUpgradeReward > 0) {
                 rewardText = "金币 +" + lastCoinReward + "  补星+" + lastStarUpgradeReward + "  点击继续";
+            } else if (lastEliteReward > 0) {
+                rewardText = "金币 +" + lastCoinReward + "  精英+" + lastEliteReward + "  点击继续";
             } else if (lastPerfectReward > 0) {
                 rewardText = "金币 +" + lastCoinReward + "  完美+" + lastPerfectReward + "  点击继续";
             } else if (lastHiddenReward > 0) {
@@ -3317,12 +3359,14 @@ public class GameView extends View {
         final int moveLimitGoal;
         final int comboGoal;
         final int scoreGoal;
+        final boolean elite;
 
         Level(int targetScore, int moves, int hammers, int bombs, int shuffles, int rowBlasts, int colorBlasts,
                 int extraMoves, int magicWands, int brushes, int portalProps,
                 int targetKind, int targetAmount, int iceCount, int honeyCount, int stoneCount, int vineCount,
                 int giftCount, int chainCount, int shellCount, int flowerCount, int keyCount, int moveChestCount,
-                int cloudCount, int gemCount, int portalCount, int moveLimitGoal, int comboGoal, int scoreGoal) {
+                int cloudCount, int gemCount, int portalCount, int moveLimitGoal, int comboGoal, int scoreGoal,
+                boolean elite) {
             this.targetScore = targetScore;
             this.moves = moves;
             this.hammers = hammers;
@@ -3352,6 +3396,7 @@ public class GameView extends View {
             this.moveLimitGoal = moveLimitGoal;
             this.comboGoal = comboGoal;
             this.scoreGoal = scoreGoal;
+            this.elite = elite;
         }
     }
 
