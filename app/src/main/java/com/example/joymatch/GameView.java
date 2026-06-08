@@ -81,6 +81,8 @@ public class GameView extends View {
     private int highestUnlockedLevel;
     private int lastStars;
     private int lastBonusScore;
+    private int rewardTargetMilestone;
+    private int rewardObstacleMilestone;
     private long feedbackStartTime;
     private long hintUntilTime;
     private float boardLeft;
@@ -210,6 +212,8 @@ public class GameView extends View {
         levelComplete = false;
         levelFailed = false;
         activeProp = NONE;
+        rewardTargetMilestone = 0;
+        rewardObstacleMilestone = 0;
         targetKind = level.targetKind;
         targetRemaining = level.targetAmount;
         iceRemaining = level.iceCount;
@@ -313,6 +317,7 @@ public class GameView extends View {
         cells = expandSpecialCells(cells);
         score += bonusScore + cells.size() * 45;
         removeCells(cells);
+        grantTaskRewards();
         showFeedback(1, cells.size());
         collapseBoard();
         resolveMatches(findMatches());
@@ -403,6 +408,7 @@ public class GameView extends View {
             totalCleared += matches.size();
             score += matches.size() * 60 + (combo - 1) * 120;
             removeCells(matches);
+            grantTaskRewards();
             collapseBoard();
             matches = findMatches();
         }
@@ -638,6 +644,28 @@ public class GameView extends View {
                 }
             }
             board[cell.row][cell.col] = NONE;
+        }
+    }
+
+    private void grantTaskRewards() {
+        Level level = levels.get(levelIndex);
+        int collected = level.targetAmount - targetRemaining;
+        int targetMilestone = collected / 5;
+        if (targetMilestone > rewardTargetMilestone) {
+            // 局内阶段奖励，让收集目标也能持续反馈玩家。
+            propInventory[PROP_HAMMER] += targetMilestone - rewardTargetMilestone;
+            rewardTargetMilestone = targetMilestone;
+            showFeedback(1, 5);
+        }
+
+        int clearedObstacles = level.iceCount + level.honeyCount + level.stoneCount
+                - iceRemaining - honeyRemaining - stoneRemaining;
+        int obstacleMilestone = clearedObstacles / 6;
+        if (obstacleMilestone > rewardObstacleMilestone) {
+            // 清障越积极，道具补给越快。
+            propInventory[PROP_BOMB] += obstacleMilestone - rewardObstacleMilestone;
+            rewardObstacleMilestone = obstacleMilestone;
+            showFeedback(1, 6);
         }
     }
 
