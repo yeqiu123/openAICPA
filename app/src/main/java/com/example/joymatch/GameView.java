@@ -11,6 +11,8 @@ import android.graphics.RadialGradient;
 import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.Typeface;
+import android.media.AudioManager;
+import android.media.ToneGenerator;
 import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.View;
@@ -62,6 +64,7 @@ public class GameView extends View {
     private final int[] levelStars = new int[LEVEL_COUNT];
     private final List<Particle> particles = new ArrayList<>();
     private final List<Level> levels = new ArrayList<>();
+    private final ToneGenerator toneGenerator = new ToneGenerator(AudioManager.STREAM_MUSIC, 45);
     private final int[] palette = {
             Color.rgb(255, 99, 132),
             Color.rgb(255, 205, 86),
@@ -163,12 +166,14 @@ public class GameView extends View {
         if (showingLevelMap) {
             handleLevelMapTap(event.getX(), event.getY());
             performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
+            playClickTone();
             invalidate();
             return true;
         }
 
         if (levelComplete) {
             performHapticFeedback(HapticFeedbackConstants.CONFIRM);
+            playSuccessTone();
             startLevel((levelIndex + 1) % levels.size());
             invalidate();
             return true;
@@ -182,9 +187,11 @@ public class GameView extends View {
                 levelFailed = false;
                 saveCoins();
                 performHapticFeedback(HapticFeedbackConstants.CONFIRM);
+                playSuccessTone();
             } else {
                 startLevel(levelIndex);
                 performHapticFeedback(HapticFeedbackConstants.REJECT);
+                playRejectTone();
             }
             invalidate();
             return true;
@@ -194,6 +201,7 @@ public class GameView extends View {
             levelMapPage = levelIndex / LEVELS_PER_PAGE;
             showingLevelMap = true;
             performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
+            playClickTone();
             invalidate();
             return true;
         }
@@ -201,6 +209,7 @@ public class GameView extends View {
         if (hintButtonRect.contains(event.getX(), event.getY())) {
             showAvailableHint();
             performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
+            playClickTone();
             invalidate();
             return true;
         }
@@ -327,6 +336,7 @@ public class GameView extends View {
                     selectedCol = NONE;
                 }
                 performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
+                playClickTone();
                 return true;
             }
         }
@@ -348,6 +358,7 @@ public class GameView extends View {
             clearCells(buildColorCells(colorOf(board[row][col])), 220);
         }
         performHapticFeedback(HapticFeedbackConstants.CONFIRM);
+        playSuccessTone();
         activeProp = NONE;
         selectedRow = NONE;
         selectedCol = NONE;
@@ -363,6 +374,7 @@ public class GameView extends View {
             clearCells(buildSpecialComboCells(selectedRow, selectedCol, row, col), 360);
             checkLevelState();
             performHapticFeedback(HapticFeedbackConstants.CONFIRM);
+            playSuccessTone();
             selectedRow = NONE;
             selectedCol = NONE;
             return;
@@ -373,6 +385,7 @@ public class GameView extends View {
         if (matches.isEmpty()) {
             swap(selectedRow, selectedCol, row, col);
             performHapticFeedback(HapticFeedbackConstants.REJECT);
+            playRejectTone();
         } else {
             movesLeft--;
             clearHint();
@@ -380,6 +393,7 @@ public class GameView extends View {
             resolveMatches(matches);
             checkLevelState();
             performHapticFeedback(HapticFeedbackConstants.CONFIRM);
+            playSuccessTone();
         }
         selectedRow = NONE;
         selectedCol = NONE;
@@ -1365,6 +1379,24 @@ public class GameView extends View {
         feedbackCombo = combo;
         feedbackCleared = cleared;
         feedbackStartTime = System.currentTimeMillis();
+    }
+
+    private void playClickTone() {
+        toneGenerator.startTone(ToneGenerator.TONE_PROP_BEEP, 45);
+    }
+
+    private void playSuccessTone() {
+        toneGenerator.startTone(ToneGenerator.TONE_PROP_ACK, 80);
+    }
+
+    private void playRejectTone() {
+        toneGenerator.startTone(ToneGenerator.TONE_PROP_NACK, 90);
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        toneGenerator.release();
+        super.onDetachedFromWindow();
     }
 
     private void drawStatus(Canvas canvas) {
