@@ -2380,6 +2380,10 @@ public class GameView extends View {
         propInventory[PROP_CLEANSE]++;
         if (isFireworksChapter(chapter)) {
             propInventory[PROP_FIREWORK_CANNON]++;
+        } else if (isRainbowValleyChapter(chapter)) {
+            propInventory[PROP_AURORA_ORB]++;
+        } else if (isCrystalTowerChapter(chapter)) {
+            propInventory[PROP_STAR_COMPASS]++;
         }
         prefs.edit()
                 .putBoolean(KEY_CHAPTER_MASTERY_PREFIX + chapter, true)
@@ -2400,6 +2404,10 @@ public class GameView extends View {
         coins += lastChapterEliteReward;
         propInventory[PROP_METEOR]++;
         if (isFireworksChapter(chapter)) {
+            propInventory[PROP_FIREWORK_CANNON]++;
+        } else if (isRainbowValleyChapter(chapter)) {
+            propInventory[PROP_STAR_COMPASS]++;
+        } else if (isCrystalTowerChapter(chapter)) {
             propInventory[PROP_FIREWORK_CANNON]++;
         }
         prefs.edit()
@@ -2423,6 +2431,12 @@ public class GameView extends View {
         if (isFireworksChapter(chapter)) {
             propInventory[PROP_FIREWORK_CANNON]++;
             propInventory[PROP_STAR_COMPASS]++;
+        } else if (isRainbowValleyChapter(chapter)) {
+            propInventory[PROP_AURORA_ORB]++;
+            propInventory[PROP_STAR_COMPASS]++;
+        } else if (isCrystalTowerChapter(chapter)) {
+            propInventory[PROP_FIREWORK_CANNON]++;
+            propInventory[PROP_STAR_COMPASS]++;
         }
         prefs.edit()
                 .putBoolean(KEY_CHAPTER_RANK_PREFIX + chapter, true)
@@ -2432,6 +2446,14 @@ public class GameView extends View {
 
     private boolean isFireworksChapter(int chapter) {
         return chapterNames[chapter].equals("烟花星港");
+    }
+
+    private boolean isRainbowValleyChapter(int chapter) {
+        return chapterNames[chapter].equals("流星彩虹谷");
+    }
+
+    private boolean isCrystalTowerChapter(int chapter) {
+        return chapterNames[chapter].equals("奇迹糖晶塔");
     }
 
     private int getChapterRankRewardTarget() {
@@ -6873,6 +6895,36 @@ public class GameView extends View {
         return isFireworksChapter(getChapterIndex(levelIndex)) ? " 罗盘+1" : "";
     }
 
+    private String buildChapterMasteryPropRewardText() {
+        int chapter = getChapterIndex(levelIndex);
+        if (isRainbowValleyChapter(chapter)) {
+            return " 极光+1";
+        } else if (isCrystalTowerChapter(chapter)) {
+            return " 罗盘+1";
+        }
+        return buildFireworksChapterRewardText();
+    }
+
+    private String buildChapterElitePropRewardText() {
+        int chapter = getChapterIndex(levelIndex);
+        if (isRainbowValleyChapter(chapter)) {
+            return " 罗盘+1";
+        } else if (isCrystalTowerChapter(chapter)) {
+            return " 礼炮+1";
+        }
+        return buildFireworksChapterRewardText();
+    }
+
+    private String buildChapterRankPropRewardText() {
+        int chapter = getChapterIndex(levelIndex);
+        if (isRainbowValleyChapter(chapter)) {
+            return " 极光+1 罗盘+1";
+        } else if (isCrystalTowerChapter(chapter)) {
+            return " 礼炮+1 罗盘+1";
+        }
+        return buildFireworksChapterRewardText() + buildFireworksChapterCompassText();
+    }
+
     private String buildWinStreakPropRewardText() {
         return lastWinStreakRewardProp == NONE ? "" : " " + getPropName(lastWinStreakRewardProp) + "+" + lastWinStreakRewardAmount;
     }
@@ -6976,13 +7028,13 @@ public class GameView extends View {
                 }
             } else if (lastChapterMasteryReward > 0) {
                 rewardText = "金币 +" + lastCoinReward + " 满星大师+" + lastChapterMasteryReward
-                        + " 净化+1" + buildFireworksChapterRewardText() + "  点击继续";
+                        + " 净化+1" + buildChapterMasteryPropRewardText() + "  点击继续";
             } else if (lastChapterEliteReward > 0) {
                 rewardText = "金币 +" + lastCoinReward + " 章节精英+" + lastChapterEliteReward + " 流星+1"
-                        + buildFireworksChapterRewardText() + "  点击继续";
+                        + buildChapterElitePropRewardText() + "  点击继续";
             } else if (lastChapterRankReward > 0) {
                 rewardText = "金币 +" + lastCoinReward + " 章节评级+" + lastChapterRankReward + " 潮汐+1"
-                        + buildFireworksChapterRewardText() + buildFireworksChapterCompassText() + "  点击继续";
+                        + buildChapterRankPropRewardText() + "  点击继续";
             } else if (lastAchievementReward > 0) {
                 rewardText = "金币 +" + lastCoinReward + "  成就奖励+" + lastAchievementReward + "  点击继续";
             } else if (lastFirstClearReward > 0) {
