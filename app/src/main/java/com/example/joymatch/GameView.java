@@ -36,6 +36,7 @@ public class GameView extends View {
     private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Random random = new Random(7);
     private final int[][] board = new int[BOARD_SIZE][BOARD_SIZE];
+    private final int[][] ice = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[] propInventory = new int[PROP_COUNT];
     private final RectF[] propRects = new RectF[PROP_COUNT];
     private final List<Level> levels = new ArrayList<>();
@@ -51,6 +52,9 @@ public class GameView extends View {
     private int levelIndex = 0;
     private int movesLeft;
     private int score;
+    private int targetKind;
+    private int targetRemaining;
+    private int iceRemaining;
     private int selectedRow = NONE;
     private int selectedCol = NONE;
     private int activeProp = NONE;
@@ -133,7 +137,10 @@ public class GameView extends View {
             int hammer = 2 + (i % 3 == 0 ? 1 : 0);
             int bomb = 1 + (i % 4 == 0 ? 1 : 0);
             int shuffle = 1 + (i % 6 == 0 ? 1 : 0);
-            levels.add(new Level(targetScore, moves, hammer, bomb, shuffle));
+            int targetKind = i % TILE_KINDS;
+            int targetAmount = 8 + (i % 7) + i / 10;
+            int iceCount = i < 4 ? i * 2 : Math.min(24, 6 + i / 2);
+            levels.add(new Level(targetScore, moves, hammer, bomb, shuffle, targetKind, targetAmount, iceCount));
         }
     }
 
@@ -145,6 +152,9 @@ public class GameView extends View {
         levelComplete = false;
         levelFailed = false;
         activeProp = NONE;
+        targetKind = level.targetKind;
+        targetRemaining = level.targetAmount;
+        iceRemaining = level.iceCount;
         propInventory[PROP_HAMMER] = level.hammers;
         propInventory[PROP_BOMB] = level.bombs;
         propInventory[PROP_SHUFFLE] = level.shuffles;
@@ -152,11 +162,13 @@ public class GameView extends View {
         // 初始化时避开天然三连，让玩家第一步更清晰。
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
+                ice[row][col] = 0;
                 do {
                     board[row][col] = makePiece(random.nextInt(TILE_KINDS), SPECIAL_NORMAL);
                 } while (createsInitialMatch(row, col));
             }
         }
+        placeIce(level.iceCount);
     }
 
     private boolean handlePropTap(float x, float y) {
@@ -214,9 +226,7 @@ public class GameView extends View {
     private void clearCells(Set<Cell> cells, int bonusScore) {
         cells = expandSpecialCells(cells);
         score += bonusScore + cells.size() * 45;
-        for (Cell cell : cells) {
-            board[cell.row][cell.col] = NONE;
-        }
+        removeCells(cells);
         collapseBoard();
         resolveMatches(findMatches());
     }
@@ -260,9 +270,7 @@ public class GameView extends View {
         while (!matches.isEmpty()) {
             matches = expandSpecialCells(matches);
             score += matches.size() * 60;
-            for (Cell cell : matches) {
-                board[cell.row][cell.col] = NONE;
-            }
+            removeCells(matches);
             collapseBoard();
             matches = findMatches();
         }
@@ -320,10 +328,36 @@ public class GameView extends View {
 
     private void checkLevelState() {
         Level level = levels.get(levelIndex);
-        if (score >= level.targetScore) {
+        if (score >= level.targetScore && targetRemaining <= 0 && iceRemaining <= 0) {
             levelComplete = true;
         } else if (movesLeft <= 0) {
             levelFailed = true;
+        }
+    }
+
+    private void placeIce(int count) {
+        int placed = 0;
+        while (placed < count) {
+            int row = random.nextInt(BOARD_SIZE);
+            int col = random.nextInt(BOARD_SIZE);
+            if (ice[row][col] == 0) {
+                ice[row][col] = 1;
+                placed++;
+            }
+        }
+    }
+
+    private void removeCells(Set<Cell> cells) {
+        for (Cell cell : cells) {
+            int piece = board[cell.row][cell.col];
+            if (piece != NONE && colorOf(piece) == targetKind && targetRemaining > 0) {
+                targetRemaining--;
+            }
+            if (ice[cell.row][cell.col] > 0) {
+                ice[cell.row][cell.col]--;
+                iceRemaining--;
+            }
+            board[cell.row][cell.col] = NONE;
         }
     }
 
@@ -423,17 +457,20 @@ public class GameView extends View {
         textPaint.setTextSize(sp(15));
         canvas.drawText("目标 " + level.targetScore, dp(22), dp(78), textPaint);
         canvas.drawText("分数 " + score, dp(22), dp(104), textPaint);
+        canvas.drawText("收集 " + targetRemaining, dp(22), dp(130), textPaint);
+        drawTargetSwatch(canvas, dp(96), dp(124));
 
         textPaint.setTextAlign(Paint.Align.RIGHT);
         canvas.drawText("步数 " + movesLeft, getWidth() - dp(22), dp(78), textPaint);
         canvas.drawText("关卡 " + levels.size(), getWidth() - dp(22), dp(104), textPaint);
+        canvas.drawText("冰块 " + iceRemaining, getWidth() - dp(22), dp(130), textPaint);
     }
 
     private void drawBoard(Canvas canvas) {
         float availableWidth = getWidth() - dp(32);
         tileSize = availableWidth / BOARD_SIZE;
         boardLeft = dp(16);
-        boardTop = Math.max(dp(138), (getHeight() - availableWidth) * 0.52f);
+        boardTop = Math.max(dp(164), (getHeight() - availableWidth) * 0.52f);
 
         paint.setColor(Color.argb(120, 255, 255, 255));
         RectF boardRect = new RectF(boardLeft - dp(8), boardTop - dp(8),
@@ -477,6 +514,14 @@ public class GameView extends View {
 
         drawTileIcon(canvas, colorOf(piece), centerX, centerY);
         drawSpecialMark(canvas, specialOf(piece), centerX, centerY);
+        drawIce(canvas, row, col, rect);
+    }
+
+    private void drawTargetSwatch(Canvas canvas, float centerX, float centerY) {
+        paint.setColor(palette[targetKind]);
+        canvas.drawCircle(centerX, centerY, dp(8), paint);
+        paint.setColor(Color.argb(170, 255, 255, 255));
+        canvas.drawCircle(centerX - dp(3), centerY - dp(3), dp(3), paint);
     }
 
     private void drawPropBar(Canvas canvas) {
@@ -589,6 +634,22 @@ public class GameView extends View {
         }
     }
 
+    private void drawIce(Canvas canvas, int row, int col, RectF rect) {
+        if (ice[row][col] <= 0) {
+            return;
+        }
+
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(3));
+        paint.setColor(Color.argb(185, 210, 245, 255));
+        canvas.drawRoundRect(rect, dp(14), dp(14), paint);
+        canvas.drawLine(rect.left + rect.width() * 0.24f, rect.top + rect.height() * 0.18f,
+                rect.left + rect.width() * 0.62f, rect.top + rect.height() * 0.58f, paint);
+        canvas.drawLine(rect.left + rect.width() * 0.63f, rect.top + rect.height() * 0.58f,
+                rect.left + rect.width() * 0.44f, rect.bottom - rect.height() * 0.16f, paint);
+        paint.setStyle(Paint.Style.FILL);
+    }
+
     private void drawStatus(Canvas canvas) {
         if (!levelComplete && !levelFailed) {
             return;
@@ -618,13 +679,20 @@ public class GameView extends View {
         final int hammers;
         final int bombs;
         final int shuffles;
+        final int targetKind;
+        final int targetAmount;
+        final int iceCount;
 
-        Level(int targetScore, int moves, int hammers, int bombs, int shuffles) {
+        Level(int targetScore, int moves, int hammers, int bombs, int shuffles,
+                int targetKind, int targetAmount, int iceCount) {
             this.targetScore = targetScore;
             this.moves = moves;
             this.hammers = hammers;
             this.bombs = bombs;
             this.shuffles = shuffles;
+            this.targetKind = targetKind;
+            this.targetAmount = targetAmount;
+            this.iceCount = iceCount;
         }
     }
 
