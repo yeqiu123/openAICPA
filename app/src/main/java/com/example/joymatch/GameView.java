@@ -169,6 +169,7 @@ public class GameView extends View {
     private int highestUnlockedLevel;
     private int levelMapPage;
     private int comboEnergy;
+    private int comboFeverMoves;
     private int bestCombo;
     private int lastStars;
     private int lastRank;
@@ -434,6 +435,7 @@ public class GameView extends View {
         levelFailed = false;
         activeProp = NONE;
         comboEnergy = 0;
+        comboFeverMoves = 0;
         bestCombo = 0;
         lastRank = 0;
         lastCoinReward = 0;
@@ -673,6 +675,7 @@ public class GameView extends View {
         if (specialOf(fromPiece) != SPECIAL_NORMAL && specialOf(toPiece) != SPECIAL_NORMAL) {
             movesLeft--;
             movesUsed++;
+            consumeComboFeverMove();
             clearHint();
             clearCells(buildSpecialComboCells(selectedRow, selectedCol, row, col), 360);
             spreadHoneyAfterMove();
@@ -686,6 +689,7 @@ public class GameView extends View {
         if (specialOf(fromPiece) != SPECIAL_NORMAL || specialOf(toPiece) != SPECIAL_NORMAL) {
             movesLeft--;
             movesUsed++;
+            consumeComboFeverMove();
             clearHint();
             // 特殊棋与普通棋互换时直接触发，减少误操作挫败感。
             Set<Cell> triggerCells = buildSpecialTriggerCells(selectedRow, selectedCol, row, col);
@@ -713,6 +717,7 @@ public class GameView extends View {
         } else {
             movesLeft--;
             movesUsed++;
+            consumeComboFeverMove();
             clearHint();
             createSpecialFromMatch(matches, row, col);
             resolveMatches(matches);
@@ -733,7 +738,7 @@ public class GameView extends View {
         lastPortalReward = 0;
         lastHourglassReward = 0;
         cells = expandSpecialCells(cells);
-        score += bonusScore + cells.size() * 45;
+        score += applyComboFeverScore(bonusScore + cells.size() * 45);
         spawnParticles(cells);
         removeCells(cells);
         grantTaskRewards();
@@ -915,7 +920,7 @@ public class GameView extends View {
             combo++;
             matches = expandSpecialCells(matches);
             totalCleared += matches.size();
-            score += matches.size() * 60 + (combo - 1) * 120;
+            score += applyComboFeverScore(matches.size() * 60 + (combo - 1) * 120);
             spawnParticles(matches);
             removeCells(matches);
             grantTaskRewards();
@@ -929,6 +934,7 @@ public class GameView extends View {
             comboEnergy = Math.min(100, comboEnergy + combo * 12 + totalCleared / 2);
             if (comboEnergy >= 100) {
                 comboEnergy = 0;
+                comboFeverMoves = 3;
                 lastEnergyRewardProp = random.nextInt(PROP_COUNT);
                 propInventory[lastEnergyRewardProp]++;
                 lastTaskRewardType = 3;
@@ -938,6 +944,16 @@ public class GameView extends View {
             } else if (lastTaskRewardType == 0) {
                 showNormalFeedback(combo, totalCleared);
             }
+        }
+    }
+
+    private int applyComboFeverScore(int baseScore) {
+        return comboFeverMoves > 0 ? (int) (baseScore * 1.25f) : baseScore;
+    }
+
+    private void consumeComboFeverMove() {
+        if (comboFeverMoves > 0) {
+            comboFeverMoves--;
         }
     }
 
@@ -2238,6 +2254,9 @@ public class GameView extends View {
         if (isHiddenChallengeLevel()) {
             starText += " 隐" + movesUsed + "/" + Math.max(7, level.moves - 4);
         }
+        if (comboFeverMoves > 0) {
+            starText += " 爆发" + comboFeverMoves;
+        }
         canvas.drawText(starText, getWidth() - dp(22), dp(154), textPaint);
         drawComboEnergy(canvas);
     }
@@ -2848,12 +2867,19 @@ public class GameView extends View {
         paint.setColor(Color.argb(70, 33, 37, 56));
         RectF track = new RectF(left, top, left + width, top + dp(8));
         canvas.drawRoundRect(track, dp(4), dp(4), paint);
-        paint.setColor(comboEnergy >= 80 ? Color.argb(235, 255, 244, 170) : Color.argb(210, 255, 236, 133));
+        paint.setColor(comboFeverMoves > 0 ? Color.argb(235, 255, 159, 64)
+                : (comboEnergy >= 80 ? Color.argb(235, 255, 244, 170) : Color.argb(210, 255, 236, 133)));
         RectF fill = new RectF(left, top, left + width * progress, top + dp(8));
         canvas.drawRoundRect(fill, dp(4), dp(4), paint);
         if (comboEnergy >= 80) {
             paint.setColor(Color.argb(150, 255, 255, 255));
             canvas.drawCircle(fill.right, fill.centerY(), dp(4), paint);
+        }
+        if (comboFeverMoves > 0) {
+            textPaint.setTextAlign(Paint.Align.RIGHT);
+            textPaint.setTextSize(sp(10));
+            textPaint.setColor(Color.WHITE);
+            canvas.drawText("爆发x1.25 " + comboFeverMoves, left + width, top - dp(3), textPaint);
         }
     }
 
@@ -3378,7 +3404,7 @@ public class GameView extends View {
         } else if (lastTaskRewardType == 2 && age < 900) {
             text = "清障奖励";
         } else if (lastTaskRewardType == 3 && age < 900) {
-            text = lastEnergyRewardProp == NONE ? "连击奖励" : "能量奖励 " + getPropName(lastEnergyRewardProp);
+            text = lastEnergyRewardProp == NONE ? "连击奖励" : "能量爆发 " + getPropName(lastEnergyRewardProp);
         } else if (lastTaskRewardType == 4 && age < 900) {
             text = "钥匙奖励";
         } else if (lastTaskRewardType == 5 && age < 900) {
