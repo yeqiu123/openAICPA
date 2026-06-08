@@ -27,6 +27,7 @@ public class GameView extends View {
     private static final String PREFS_NAME = "joy_match_progress";
     private static final String KEY_UNLOCKED_LEVEL = "unlocked_level";
     private static final String KEY_STARS_PREFIX = "stars_";
+    private static final String KEY_BEST_SCORE_PREFIX = "best_score_";
     private static final String KEY_COINS = "coins";
     private static final String KEY_DAILY_REWARD_DAY = "daily_reward_day";
     private static final String KEY_SOUND_ENABLED = "sound_enabled";
@@ -67,6 +68,7 @@ public class GameView extends View {
     private final RectF prevPageRect = new RectF();
     private final RectF nextPageRect = new RectF();
     private final int[] levelStars = new int[LEVEL_COUNT];
+    private final int[] levelBestScores = new int[LEVEL_COUNT];
     private final List<Particle> particles = new ArrayList<>();
     private final List<Level> levels = new ArrayList<>();
     private final ToneGenerator toneGenerator = new ToneGenerator(AudioManager.STREAM_MUSIC, 45);
@@ -685,16 +687,19 @@ public class GameView extends View {
         grantDailyReward();
         for (int i = 0; i < levels.size(); i++) {
             levelStars[i] = prefs.getInt(KEY_STARS_PREFIX + i, 0);
+            levelBestScores[i] = prefs.getInt(KEY_BEST_SCORE_PREFIX + i, 0);
         }
     }
 
     private void saveLevelProgress() {
         Level level = levels.get(levelIndex);
         levelStars[levelIndex] = Math.max(levelStars[levelIndex], lastStars);
+        levelBestScores[levelIndex] = Math.max(levelBestScores[levelIndex], score);
         highestUnlockedLevel = Math.max(highestUnlockedLevel, Math.min(levelIndex + 1, levels.size() - 1));
         prefs.edit()
                 .putInt(KEY_UNLOCKED_LEVEL, highestUnlockedLevel)
                 .putInt(KEY_STARS_PREFIX + levelIndex, levelStars[levelIndex])
+                .putInt(KEY_BEST_SCORE_PREFIX + levelIndex, levelBestScores[levelIndex])
                 .putInt(KEY_COINS, coins)
                 .apply();
     }
@@ -1065,6 +1070,11 @@ public class GameView extends View {
             if (levelStars[level] > 0) {
                 textPaint.setTextSize(sp(10));
                 canvas.drawText(buildStars(levelStars[level]), rect.centerX(), rect.bottom - dp(6), textPaint);
+            }
+            // 最佳分数给已通关关卡提供额外重玩目标。
+            if (levelBestScores[level] > 0) {
+                textPaint.setTextSize(sp(8));
+                canvas.drawText("高" + levelBestScores[level], rect.centerX(), rect.top + dp(12), textPaint);
             }
         }
 
@@ -1516,7 +1526,8 @@ public class GameView extends View {
         textPaint.setTextSize(sp(16));
         if (levelComplete) {
             canvas.drawText(buildStars(lastStars) + "  步数奖励 +" + lastBonusScore, getWidth() / 2f, getHeight() * 0.49f, textPaint);
-            canvas.drawText("金币 +" + lastCoinReward + "  点击继续", getWidth() / 2f, getHeight() * 0.55f, textPaint);
+            canvas.drawText("最佳分 " + levelBestScores[levelIndex], getWidth() / 2f, getHeight() * 0.55f, textPaint);
+            canvas.drawText("金币 +" + lastCoinReward + "  点击继续", getWidth() / 2f, getHeight() * 0.61f, textPaint);
         } else if (coins >= CONTINUE_COST) {
             canvas.drawText("点击续步 -10金币", getWidth() / 2f, getHeight() * 0.49f, textPaint);
         } else {
