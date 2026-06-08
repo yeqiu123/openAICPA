@@ -8136,8 +8136,8 @@ public class GameView extends View {
         if (!dailyChallengeMode && levelRanks[levelIndex] > 0) {
             goalText += "  最佳" + buildRankText(levelRanks[levelIndex]);
         }
-        canvas.drawText(goalText,
-                getWidth() / 2f, centerY + dp(32), textPaint);
+        RectF goalRect = new RectF(dp(42), centerY + dp(18), getWidth() - dp(42), centerY + dp(44));
+        drawTextFit(canvas, goalText, goalRect, 15, Color.WHITE);
         postInvalidateOnAnimation();
     }
 
