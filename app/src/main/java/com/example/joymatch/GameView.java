@@ -308,6 +308,8 @@ public class GameView extends View {
     private int lastChestNoticeType;
     private int dailyRewardAmount;
     private int dailyStreak;
+    private int lastDailyRewardProp = NONE;
+    private int lastDailyRewardPropAmount;
     private int dailyChallengeStreak;
     private int dailyGoalProgress;
     private int lastDailyChallengeMilestoneProp = NONE;
@@ -2553,6 +2555,8 @@ public class GameView extends View {
         dailyStreak = prefs.getInt(KEY_DAILY_STREAK, 0);
         if (lastRewardDay == today) {
             dailyRewardAmount = 0;
+            lastDailyRewardProp = NONE;
+            lastDailyRewardPropAmount = 0;
             return;
         }
 
@@ -2560,11 +2564,34 @@ public class GameView extends View {
         dailyStreak = lastRewardDay == today - 1 ? dailyStreak + 1 : 1;
         dailyRewardAmount = 20 + Math.min(6, dailyStreak - 1) * 5;
         coins += dailyRewardAmount;
+        grantDailyLoginPropReward();
         prefs.edit()
                 .putLong(KEY_DAILY_REWARD_DAY, today)
                 .putInt(KEY_DAILY_STREAK, dailyStreak)
                 .putInt(KEY_COINS, coins)
                 .apply();
+    }
+
+    private void grantDailyLoginPropReward() {
+        lastDailyRewardProp = NONE;
+        lastDailyRewardPropAmount = 0;
+        if (dailyStreak == 3) {
+            lastDailyRewardProp = PROP_ROCKET;
+            lastDailyRewardPropAmount = 1;
+        } else if (dailyStreak == 7) {
+            lastDailyRewardProp = PROP_AURORA_ORB;
+            lastDailyRewardPropAmount = 1;
+        } else if (dailyStreak == 14) {
+            lastDailyRewardProp = PROP_STAR_COMPASS;
+            lastDailyRewardPropAmount = 1;
+        } else if (dailyStreak > 0 && dailyStreak % 30 == 0) {
+            lastDailyRewardProp = PROP_FIREWORK_CANNON;
+            lastDailyRewardPropAmount = 2;
+        }
+        if (lastDailyRewardProp != NONE) {
+            // 连签节点送稀有道具，给每日回访一个更明确的期待。
+            propInventory[lastDailyRewardProp] += lastDailyRewardPropAmount;
+        }
     }
 
     private void loadDailyGoal() {
@@ -4576,6 +4603,9 @@ public class GameView extends View {
         String coinText = "金币 " + coins;
         if (dailyRewardAmount > 0) {
             coinText += " +" + dailyRewardAmount;
+            if (lastDailyRewardProp != NONE) {
+                coinText += " " + getPropName(lastDailyRewardProp) + "+" + lastDailyRewardPropAmount;
+            }
         }
         if (dailyStreak > 1) {
             coinText += " 连" + dailyStreak;
