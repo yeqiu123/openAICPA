@@ -3879,7 +3879,8 @@ public class GameView extends View {
                 ? (chapterMasteryClaimed[chapter] ? "  大师已领" : "  大师奖励") : "";
         canvas.drawText("章节进度 " + getChapterUnlockedCount(chapter) + "/" + CHAPTER_SIZE
                 + "  星 " + getChapterStars(chapter) + status, getWidth() / 2f, top + dp(26), textPaint);
-        canvas.drawText("章节评级 " + getChapterRankScore(chapter) + "/" + (CHAPTER_SIZE * 6),
+        canvas.drawText("章节评级 " + getChapterRankScore(chapter) + "/" + (CHAPTER_SIZE * 6)
+                        + "  精英 " + getChapterClearedEliteCount(chapter) + "/" + getChapterEliteCount(chapter),
                 getWidth() / 2f, top + dp(40), textPaint);
     }
 
@@ -4086,6 +4087,30 @@ public class GameView extends View {
         int end = Math.min(start + CHAPTER_SIZE, levels.size());
         for (int level = start; level < end; level++) {
             total += levelRanks[level];
+        }
+        return total;
+    }
+
+    private int getChapterEliteCount(int chapter) {
+        int total = 0;
+        int start = chapter * CHAPTER_SIZE;
+        int end = Math.min(start + CHAPTER_SIZE, levels.size());
+        for (int level = start; level < end; level++) {
+            if (isEliteLevel(level)) {
+                total++;
+            }
+        }
+        return total;
+    }
+
+    private int getChapterClearedEliteCount(int chapter) {
+        int total = 0;
+        int start = chapter * CHAPTER_SIZE;
+        int end = Math.min(start + CHAPTER_SIZE, levels.size());
+        for (int level = start; level < end; level++) {
+            if (isEliteLevel(level) && levelStars[level] > 0) {
+                total++;
+            }
         }
         return total;
     }
