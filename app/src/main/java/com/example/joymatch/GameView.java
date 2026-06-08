@@ -286,6 +286,8 @@ public class GameView extends View {
     private int lastRankUpgradeRewardProp = NONE;
     private int lastRankUpgradeRewardAmount;
     private int lastPerfectReward;
+    private int lastPerfectRewardProp = NONE;
+    private int lastPerfectRewardAmount;
     private int lastHiddenReward;
     private int lastEliteReward;
     private int lastFirstClearReward;
@@ -760,6 +762,8 @@ public class GameView extends View {
         lastRankUpgradeRewardProp = NONE;
         lastRankUpgradeRewardAmount = 0;
         lastPerfectReward = 0;
+        lastPerfectRewardProp = NONE;
+        lastPerfectRewardAmount = 0;
         lastHiddenReward = 0;
         lastEliteReward = 0;
         lastFirstClearReward = 0;
@@ -2594,7 +2598,9 @@ public class GameView extends View {
         // 完美通关奖励少步数、高评级的打法，给重玩提供更明确的冲刺目标。
         lastPerfectReward = 18 + lastRank * 4;
         coins += lastPerfectReward;
-        addProp(PROP_ROW_BLAST, 1);
+        lastPerfectRewardProp = lastRank >= 6 ? PROP_STAR_HARP : PROP_FIREWORK_CANNON;
+        lastPerfectRewardAmount = 1;
+        addReserveProp(lastPerfectRewardProp, lastPerfectRewardAmount);
     }
 
     private void saveDailyChallengeReward() {
@@ -8171,6 +8177,10 @@ public class GameView extends View {
         return lastRankUpgradeRewardProp == NONE ? "" : " " + getPropName(lastRankUpgradeRewardProp) + "+" + lastRankUpgradeRewardAmount;
     }
 
+    private String buildPerfectRewardText() {
+        return lastPerfectRewardProp == NONE ? "" : " " + getPropName(lastPerfectRewardProp) + "+" + lastPerfectRewardAmount;
+    }
+
     private List<String> buildRewardLines() {
         List<String> lines = new ArrayList<>();
         lines.add("金币 +" + lastCoinReward);
@@ -8179,7 +8189,7 @@ public class GameView extends View {
         addRewardLine(lines, "满星", lastFullStarReward, lastFullStarReward > 0 ? " 净化+1" : "");
         addRewardLine(lines, "补星", lastStarUpgradeReward, "");
         addRewardLine(lines, "评级", lastRankUpgradeReward, buildRankUpgradeRewardText());
-        addRewardLine(lines, "完美", lastPerfectReward, "");
+        addRewardLine(lines, "完美", lastPerfectReward, buildPerfectRewardText());
         addRewardLine(lines, "隐藏", lastHiddenReward, "");
         addRewardLine(lines, "精英", lastEliteReward, "");
         addRewardLine(lines, "成就", lastAchievementReward, buildAchievementPropRewardText());
