@@ -228,6 +228,7 @@ public class GameView extends View {
     private int hintColA = NONE;
     private int hintRowB = NONE;
     private int hintColB = NONE;
+    private int idleHintCount;
     private int feedbackCombo;
     private int feedbackCleared;
     private int highestUnlockedLevel;
@@ -323,6 +324,7 @@ public class GameView extends View {
     private int lastTaskRewardType;
     private long feedbackStartTime;
     private long hintUntilTime;
+    private long lastBoardActionTime;
     private long chestNoticeUntilTime;
     private long levelIntroUntilTime;
     private float boardLeft;
@@ -355,6 +357,7 @@ public class GameView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+        updateIdleHint();
         drawBackground(canvas);
         if (showingLevelMap) {
             drawLevelMap(canvas);
@@ -451,6 +454,7 @@ public class GameView extends View {
         }
 
         if (handlePropTap(event.getX(), event.getY())) {
+            refreshBoardActionTime();
             invalidate();
             return true;
         }
@@ -465,11 +469,13 @@ public class GameView extends View {
         }
 
         if (activeProp != NONE) {
+            refreshBoardActionTime();
             useActiveProp(row, col);
             invalidate();
             return true;
         }
 
+        refreshBoardActionTime();
         if (selectedRow == NONE) {
             selectedRow = row;
             selectedCol = col;
@@ -589,6 +595,7 @@ public class GameView extends View {
         activeProp = NONE;
         comboEnergy = 0;
         comboFeverMoves = 0;
+        idleHintCount = 0;
         honeyFreezeMoves = 0;
         bombShieldCount = 0;
         bestCombo = 0;
@@ -619,6 +626,7 @@ public class GameView extends View {
         lastChapterEliteReward = 0;
         lastChapterRankReward = 0;
         lastChestNoticeType = 0;
+        lastBoardActionTime = System.currentTimeMillis();
         lastGiftReward = 0;
         lastMoveChestReward = 0;
         lastCloudReward = 0;
@@ -1368,7 +1376,6 @@ public class GameView extends View {
             movesLeft--;
             movesUsed++;
             consumeComboFeverMove();
-            clearHint();
             clearCells(buildSpecialComboCells(selectedRow, selectedCol, row, col), 360);
             spreadHoneyAfterMove();
             checkLevelState();
@@ -1383,7 +1390,6 @@ public class GameView extends View {
             movesLeft--;
             movesUsed++;
             consumeComboFeverMove();
-            clearHint();
             // 特殊棋与普通棋互换时直接触发，减少误操作挫败感。
             Set<Cell> triggerCells = buildSpecialTriggerCells(selectedRow, selectedCol, row, col);
             if (specialOf(fromPiece) == SPECIAL_RAINBOW) {
@@ -1412,7 +1418,6 @@ public class GameView extends View {
             movesLeft--;
             movesUsed++;
             consumeComboFeverMove();
-            clearHint();
             createSpecialFromMatch(matches, row, col);
             resolveMatches(matches);
             spreadHoneyAfterMove();
@@ -1967,6 +1972,7 @@ public class GameView extends View {
             hintRowB = move.rowB;
             hintColB = move.colB;
             hintUntilTime = System.currentTimeMillis() + 1800;
+            idleHintCount++;
         }
     }
 
@@ -1976,6 +1982,24 @@ public class GameView extends View {
         hintRowB = NONE;
         hintColB = NONE;
         hintUntilTime = 0;
+    }
+
+    private void refreshBoardActionTime() {
+        lastBoardActionTime = System.currentTimeMillis();
+        idleHintCount = 0;
+        clearHint();
+    }
+
+    private void updateIdleHint() {
+        if (levelComplete || levelFailed || showingLevelMap || showingSettings || activeProp != NONE) {
+            return;
+        }
+        long now = System.currentTimeMillis();
+        // 长时间未操作时逐步给出轻提示，提升新手和后期复杂关卡的可玩性。
+        if (idleHintCount < 2 && now - lastBoardActionTime > 5200L + idleHintCount * 4200L
+                && now > hintUntilTime) {
+            showAvailableHint();
+        }
     }
 
     private void checkLevelState() {
