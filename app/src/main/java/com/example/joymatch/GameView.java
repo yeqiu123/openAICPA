@@ -62,7 +62,7 @@ public class GameView extends View {
     private static final int CHAPTER_SIZE = 20;
     private static final int CHAPTER_COUNT = 20;
     private static final int CHAPTER_CHEST_STARS = 45;
-    private static final int ACHIEVEMENT_COUNT = 38;
+    private static final int ACHIEVEMENT_COUNT = 40;
     private static final int NONE = -1;
     private static final int SPECIAL_NORMAL = 0;
     private static final int SPECIAL_ROW = 1;
@@ -2797,6 +2797,9 @@ public class GameView extends View {
         checkAchievement(35, getTotalStars() >= 1140, 1080);
         checkAchievement(36, getTotalRankScore() >= 2200, 1120);
         checkAchievement(37, getFullyClearedChapterCount() >= CHAPTER_COUNT, 1200);
+        // 400关版本追加终局星数与评级成就，给满级玩家继续刷SSS的目标。
+        checkAchievement(38, getTotalStars() >= 1200, 1260);
+        checkAchievement(39, getTotalRankScore() >= 2400, 1320);
     }
 
     private void checkAchievement(int index, boolean reached, int reward) {
@@ -2845,9 +2848,12 @@ public class GameView extends View {
         } else if (index == 32 || index == 34 || index == 36) {
             prop = PROP_STAR_HARP;
             amount = 2;
-        } else if (index == 35 || index == 37) {
+        } else if (index == 35 || index == 37 || index == 38) {
             prop = PROP_SNOW_GLOBE;
             amount = 2;
+        } else if (index == 39) {
+            prop = PROP_STAR_HARP;
+            amount = 3;
         }
         if (prop == NONE) {
             return;
