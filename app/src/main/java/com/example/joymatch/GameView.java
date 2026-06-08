@@ -6306,7 +6306,28 @@ public class GameView extends View {
         drawTextFit(canvas, buildRankChestLabel(), rankChestRect, 12, Color.rgb(33, 37, 56));
         drawMapChestProgressBar(canvas, starChestRect, getTotalStars(), getNextStarChestTarget(), getAvailableStarChests() > 0);
         drawMapChestProgressBar(canvas, rankChestRect, getTotalRankScore(), getNextRankChestTarget(), getAvailableRankChests() > 0);
+        if (getAvailableStarChests() > 0) {
+            drawClaimableMapChestSpark(canvas, starChestRect);
+        }
+        if (getAvailableRankChests() > 0) {
+            drawClaimableMapChestSpark(canvas, rankChestRect);
+        }
         drawStarChestNotice(canvas, top);
+    }
+
+    private void drawClaimableMapChestSpark(Canvas canvas, RectF rect) {
+        // 底部宝箱可领取时用呼吸光点提示，避免奖励入口被翻页按钮弱化。
+        float pulse = 0.5f + 0.5f * (float) Math.sin(System.currentTimeMillis() / 170.0);
+        float x = rect.right - dp(11);
+        float y = rect.top + dp(9);
+        paint.setColor(Color.argb((int) (130 + pulse * 80), 255, 255, 255));
+        canvas.drawCircle(x, y, dp(3) + pulse * dp(2), paint);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(1));
+        paint.setColor(Color.argb((int) (85 + pulse * 75), 255, 255, 255));
+        canvas.drawCircle(x, y, dp(6) + pulse * dp(2), paint);
+        paint.setStyle(Paint.Style.FILL);
+        postInvalidateOnAnimation();
     }
 
     private void drawMapChestProgressBar(Canvas canvas, RectF rect, int current, int target, boolean claimable) {
