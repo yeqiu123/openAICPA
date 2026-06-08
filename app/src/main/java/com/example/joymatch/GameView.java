@@ -44,6 +44,7 @@ public class GameView extends View {
     private final int[][] board = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[][] ice = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[][] honey = new int[BOARD_SIZE][BOARD_SIZE];
+    private final int[][] stone = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[] propInventory = new int[PROP_COUNT];
     private final RectF[] propRects = new RectF[PROP_COUNT];
     private final RectF[] levelRects = new RectF[60];
@@ -66,6 +67,7 @@ public class GameView extends View {
     private int targetRemaining;
     private int iceRemaining;
     private int honeyRemaining;
+    private int stoneRemaining;
     private int selectedRow = NONE;
     private int selectedCol = NONE;
     private int activeProp = NONE;
@@ -182,8 +184,9 @@ public class GameView extends View {
             int targetAmount = 8 + (i % 7) + i / 10;
             int iceCount = i < 4 ? i * 2 : Math.min(24, 6 + i / 2);
             int honeyCount = i < 8 ? 0 : Math.min(18, 4 + i / 4);
+            int stoneCount = i < 15 ? 0 : Math.min(12, 3 + i / 8);
             levels.add(new Level(targetScore, moves, hammer, bomb, shuffle, rowBlast, colorBlast,
-                    targetKind, targetAmount, iceCount, honeyCount));
+                    targetKind, targetAmount, iceCount, honeyCount, stoneCount));
         }
     }
 
@@ -199,6 +202,7 @@ public class GameView extends View {
         targetRemaining = level.targetAmount;
         iceRemaining = level.iceCount;
         honeyRemaining = level.honeyCount;
+        stoneRemaining = level.stoneCount;
         propInventory[PROP_HAMMER] = level.hammers;
         propInventory[PROP_BOMB] = level.bombs;
         propInventory[PROP_SHUFFLE] = level.shuffles;
@@ -210,6 +214,7 @@ public class GameView extends View {
             for (int col = 0; col < BOARD_SIZE; col++) {
                 ice[row][col] = 0;
                 honey[row][col] = 0;
+                stone[row][col] = 0;
                 do {
                     board[row][col] = makePiece(random.nextInt(TILE_KINDS), SPECIAL_NORMAL);
                 } while (createsInitialMatch(row, col));
@@ -217,6 +222,7 @@ public class GameView extends View {
         }
         placeIce(level.iceCount);
         placeHoney(level.honeyCount);
+        placeStone(level.stoneCount);
         ensurePlayableBoard();
     }
 
@@ -459,7 +465,8 @@ public class GameView extends View {
 
     private void checkLevelState() {
         Level level = levels.get(levelIndex);
-        if (score >= level.targetScore && targetRemaining <= 0 && iceRemaining <= 0 && honeyRemaining <= 0) {
+        if (score >= level.targetScore && targetRemaining <= 0
+                && iceRemaining <= 0 && honeyRemaining <= 0 && stoneRemaining <= 0) {
             levelComplete = true;
             lastBonusScore = movesLeft * 80;
             score += lastBonusScore;
@@ -527,6 +534,18 @@ public class GameView extends View {
         }
     }
 
+    private void placeStone(int count) {
+        int placed = 0;
+        while (placed < count) {
+            int row = random.nextInt(BOARD_SIZE);
+            int col = random.nextInt(BOARD_SIZE);
+            if (stone[row][col] == 0 && ice[row][col] == 0 && honey[row][col] == 0) {
+                stone[row][col] = 2;
+                placed++;
+            }
+        }
+    }
+
     private void removeCells(Set<Cell> cells) {
         for (Cell cell : cells) {
             int piece = board[cell.row][cell.col];
@@ -540,6 +559,12 @@ public class GameView extends View {
             if (honey[cell.row][cell.col] > 0) {
                 honey[cell.row][cell.col]--;
                 honeyRemaining--;
+            }
+            if (stone[cell.row][cell.col] > 0) {
+                stone[cell.row][cell.col]--;
+                if (stone[cell.row][cell.col] == 0) {
+                    stoneRemaining--;
+                }
             }
             board[cell.row][cell.col] = NONE;
         }
@@ -662,7 +687,8 @@ public class GameView extends View {
         textPaint.setTextAlign(Paint.Align.RIGHT);
         canvas.drawText("步数 " + movesLeft, getWidth() - dp(22), dp(78), textPaint);
         canvas.drawText("关卡 " + levels.size(), getWidth() - dp(22), dp(104), textPaint);
-        canvas.drawText("冰 " + iceRemaining + "  蜜 " + honeyRemaining, getWidth() - dp(22), dp(130), textPaint);
+        canvas.drawText("冰" + iceRemaining + " 蜜" + honeyRemaining + " 石" + stoneRemaining,
+                getWidth() - dp(22), dp(130), textPaint);
     }
 
     private void drawBoard(Canvas canvas) {
@@ -771,6 +797,7 @@ public class GameView extends View {
         drawSpecialMark(canvas, specialOf(piece), centerX, centerY);
         drawHoney(canvas, row, col, rect);
         drawIce(canvas, row, col, rect);
+        drawStone(canvas, row, col, rect);
     }
 
     private void drawTargetSwatch(Canvas canvas, float centerX, float centerY) {
@@ -932,6 +959,20 @@ public class GameView extends View {
         canvas.drawCircle(rect.left + rect.width() * 0.68f, rect.top + rect.height() * 0.6f, dp(6), paint);
     }
 
+    private void drawStone(Canvas canvas, int row, int col, RectF rect) {
+        if (stone[row][col] <= 0) {
+            return;
+        }
+
+        paint.setColor(Color.argb(150, 74, 80, 98));
+        canvas.drawRoundRect(rect, dp(14), dp(14), paint);
+        paint.setColor(Color.argb(140, 255, 255, 255));
+        canvas.drawLine(rect.left + dp(10), rect.top + rect.height() * 0.35f,
+                rect.right - dp(12), rect.top + rect.height() * 0.22f, paint);
+        canvas.drawLine(rect.left + dp(13), rect.top + rect.height() * 0.67f,
+                rect.right - dp(10), rect.top + rect.height() * 0.74f, paint);
+    }
+
     private void drawFeedback(Canvas canvas) {
         long age = System.currentTimeMillis() - feedbackStartTime;
         if (feedbackCleared <= 0 || age > 1100) {
@@ -1001,9 +1042,10 @@ public class GameView extends View {
         final int targetAmount;
         final int iceCount;
         final int honeyCount;
+        final int stoneCount;
 
         Level(int targetScore, int moves, int hammers, int bombs, int shuffles, int rowBlasts, int colorBlasts,
-                int targetKind, int targetAmount, int iceCount, int honeyCount) {
+                int targetKind, int targetAmount, int iceCount, int honeyCount, int stoneCount) {
             this.targetScore = targetScore;
             this.moves = moves;
             this.hammers = hammers;
@@ -1015,6 +1057,7 @@ public class GameView extends View {
             this.targetAmount = targetAmount;
             this.iceCount = iceCount;
             this.honeyCount = honeyCount;
+            this.stoneCount = stoneCount;
         }
     }
 
