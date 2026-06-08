@@ -64,6 +64,25 @@ public class GameView extends View {
             Color.rgb(153, 102, 255),
             Color.rgb(255, 159, 64)
     };
+    private final int[] chapterTopColors = {
+            Color.rgb(28, 177, 192),
+            Color.rgb(102, 166, 255),
+            Color.rgb(255, 142, 120),
+            Color.rgb(120, 203, 142),
+            Color.rgb(171, 132, 255),
+            Color.rgb(255, 186, 82)
+    };
+    private final int[] chapterBottomColors = {
+            Color.rgb(255, 151, 132),
+            Color.rgb(255, 196, 112),
+            Color.rgb(116, 219, 214),
+            Color.rgb(255, 219, 106),
+            Color.rgb(255, 139, 176),
+            Color.rgb(92, 202, 166)
+    };
+    private final String[] chapterNames = {
+            "糖果森林", "云朵海湾", "果冻火山", "薄荷花园", "星光梦境", "蜂蜜工坊"
+    };
 
     private int levelIndex = 0;
     private int movesLeft;
@@ -763,8 +782,9 @@ public class GameView extends View {
     }
 
     private void drawBackground(Canvas canvas) {
+        int chapter = getChapterIndex(levelIndex);
         paint.setShader(new LinearGradient(0, 0, 0, getHeight(),
-                Color.rgb(28, 177, 192), Color.rgb(255, 151, 132), Shader.TileMode.CLAMP));
+                chapterTopColors[chapter], chapterBottomColors[chapter], Shader.TileMode.CLAMP));
         canvas.drawRect(0, 0, getWidth(), getHeight(), paint);
         paint.setShader(null);
 
@@ -798,7 +818,7 @@ public class GameView extends View {
         canvas.drawText("第 " + (levelIndex + 1) + " 关", dp(22), dp(48), textPaint);
 
         textPaint.setTextSize(sp(15));
-        canvas.drawText("目标 " + level.targetScore, dp(22), dp(78), textPaint);
+        canvas.drawText(chapterNames[getChapterIndex(levelIndex)] + "  目标 " + level.targetScore, dp(22), dp(78), textPaint);
         canvas.drawText("分数 " + score, dp(22), dp(104), textPaint);
         canvas.drawText("收集 " + targetRemaining, dp(22), dp(130), textPaint);
         drawTargetSwatch(canvas, dp(96), dp(124));
@@ -869,7 +889,10 @@ public class GameView extends View {
             levelRects[i] = rect;
 
             boolean unlocked = level <= highestUnlockedLevel;
-            paint.setColor(unlocked ? Color.argb(170, 255, 255, 255) : Color.argb(75, 33, 37, 56));
+            int chapter = getChapterIndex(level);
+            paint.setColor(unlocked ? Color.argb(185, Color.red(chapterBottomColors[chapter]),
+                    Color.green(chapterBottomColors[chapter]), Color.blue(chapterBottomColors[chapter]))
+                    : Color.argb(75, 33, 37, 56));
             canvas.drawRoundRect(rect, dp(10), dp(10), paint);
 
             textPaint.setTextSize(sp(14));
@@ -906,6 +929,10 @@ public class GameView extends View {
 
     private int getLevelMapPageCount() {
         return (int) Math.ceil(levels.size() / (float) LEVELS_PER_PAGE);
+    }
+
+    private int getChapterIndex(int level) {
+        return Math.min(chapterNames.length - 1, level / 20);
     }
 
     private String buildStars(int count) {
