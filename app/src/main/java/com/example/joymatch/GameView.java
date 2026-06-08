@@ -23,11 +23,17 @@ public class GameView extends View {
     private static final int BOARD_SIZE = 8;
     private static final int TILE_KINDS = 6;
     private static final int NONE = -1;
+    private static final int PROP_HAMMER = 0;
+    private static final int PROP_BOMB = 1;
+    private static final int PROP_SHUFFLE = 2;
+    private static final int PROP_COUNT = 3;
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Random random = new Random(7);
     private final int[][] board = new int[BOARD_SIZE][BOARD_SIZE];
+    private final int[] propInventory = new int[PROP_COUNT];
+    private final RectF[] propRects = new RectF[PROP_COUNT];
     private final List<Level> levels = new ArrayList<>();
     private final int[] palette = {
             Color.rgb(255, 99, 132),
@@ -43,6 +49,7 @@ public class GameView extends View {
     private int score;
     private int selectedRow = NONE;
     private int selectedCol = NONE;
+    private int activeProp = NONE;
     private float boardLeft;
     private float boardTop;
     private float tileSize;
@@ -79,11 +86,22 @@ public class GameView extends View {
             return true;
         }
 
+        if (handlePropTap(event.getX(), event.getY())) {
+            invalidate();
+            return true;
+        }
+
         int col = (int) ((event.getX() - boardLeft) / tileSize);
         int row = (int) ((event.getY() - boardTop) / tileSize);
         if (!isInside(row, col)) {
             selectedRow = NONE;
             selectedCol = NONE;
+            invalidate();
+            return true;
+        }
+
+        if (activeProp != NONE) {
+            useActiveProp(row, col);
             invalidate();
             return true;
         }
@@ -105,11 +123,14 @@ public class GameView extends View {
     }
 
     private void buildLevels() {
-        levels.add(new Level(1200, 24));
-        levels.add(new Level(1800, 22));
-        levels.add(new Level(2600, 20));
-        levels.add(new Level(3600, 18));
-        levels.add(new Level(5000, 16));
+        for (int i = 0; i < 60; i++) {
+            int targetScore = 1200 + i * 260 + (i % 5) * 180;
+            int moves = Math.max(14, 25 - i / 5);
+            int hammer = 2 + (i % 3 == 0 ? 1 : 0);
+            int bomb = 1 + (i % 4 == 0 ? 1 : 0);
+            int shuffle = 1 + (i % 6 == 0 ? 1 : 0);
+            levels.add(new Level(targetScore, moves, hammer, bomb, shuffle));
+        }
     }
 
     private void startLevel(int index) {
@@ -119,6 +140,10 @@ public class GameView extends View {
         score = 0;
         levelComplete = false;
         levelFailed = false;
+        activeProp = NONE;
+        propInventory[PROP_HAMMER] = level.hammers;
+        propInventory[PROP_BOMB] = level.bombs;
+        propInventory[PROP_SHUFFLE] = level.shuffles;
 
         // 初始化时避开天然三连，让玩家第一步更清晰。
         for (int row = 0; row < BOARD_SIZE; row++) {
@@ -128,6 +153,43 @@ public class GameView extends View {
                 } while (createsInitialMatch(row, col));
             }
         }
+    }
+
+    private boolean handlePropTap(float x, float y) {
+        for (int prop = 0; prop < PROP_COUNT; prop++) {
+            RectF rect = propRects[prop];
+            if (rect != null && rect.contains(x, y)) {
+                if (propInventory[prop] <= 0) {
+                    activeProp = NONE;
+                } else if (prop == PROP_SHUFFLE) {
+                    propInventory[prop]--;
+                    shuffleBoard();
+                    activeProp = NONE;
+                    selectedRow = NONE;
+                    selectedCol = NONE;
+                } else {
+                    activeProp = activeProp == prop ? NONE : prop;
+                    selectedRow = NONE;
+                    selectedCol = NONE;
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void useActiveProp(int row, int col) {
+        if (activeProp == PROP_HAMMER) {
+            propInventory[PROP_HAMMER]--;
+            clearCells(buildSingleCell(row, col), 90);
+        } else if (activeProp == PROP_BOMB) {
+            propInventory[PROP_BOMB]--;
+            clearCells(buildBombCells(row, col), 140);
+        }
+        activeProp = NONE;
+        selectedRow = NONE;
+        selectedCol = NONE;
+        checkLevelState();
     }
 
     private void trySwap(int row, int col) {
@@ -142,6 +204,50 @@ public class GameView extends View {
         }
         selectedRow = NONE;
         selectedCol = NONE;
+    }
+
+    private void clearCells(Set<Cell> cells, int bonusScore) {
+        score += bonusScore + cells.size() * 45;
+        for (Cell cell : cells) {
+            board[cell.row][cell.col] = NONE;
+        }
+        collapseBoard();
+        resolveMatches(findMatches());
+    }
+
+    private Set<Cell> buildSingleCell(int row, int col) {
+        Set<Cell> cells = new HashSet<>();
+        cells.add(new Cell(row, col));
+        return cells;
+    }
+
+    private Set<Cell> buildBombCells(int row, int col) {
+        Set<Cell> cells = new HashSet<>();
+        for (int nearRow = row - 1; nearRow <= row + 1; nearRow++) {
+            for (int nearCol = col - 1; nearCol <= col + 1; nearCol++) {
+                if (isInside(nearRow, nearCol)) {
+                    cells.add(new Cell(nearRow, nearCol));
+                }
+            }
+        }
+        return cells;
+    }
+
+    private void shuffleBoard() {
+        List<Integer> values = new ArrayList<>();
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                values.add(board[row][col]);
+            }
+        }
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                int index = random.nextInt(values.size());
+                board[row][col] = values.remove(index);
+            }
+        }
+        resolveMatches(findMatches());
+        checkLevelState();
     }
 
     private void resolveMatches(Set<Cell> matches) {
@@ -254,7 +360,7 @@ public class GameView extends View {
 
         textPaint.setTextAlign(Paint.Align.RIGHT);
         canvas.drawText("步数 " + movesLeft, getWidth() - dp(22), dp(78), textPaint);
-        canvas.drawText("关卡 " + levels.size() + "+ 扩展中", getWidth() - dp(22), dp(104), textPaint);
+        canvas.drawText("关卡 " + levels.size(), getWidth() - dp(22), dp(104), textPaint);
     }
 
     private void drawBoard(Canvas canvas) {
@@ -273,6 +379,7 @@ public class GameView extends View {
                 drawTile(canvas, row, col);
             }
         }
+        drawPropBar(canvas);
     }
 
     private void drawTile(Canvas canvas, int row, int col) {
@@ -302,6 +409,60 @@ public class GameView extends View {
         }
 
         drawTileIcon(canvas, board[row][col], centerX, centerY);
+    }
+
+    private void drawPropBar(Canvas canvas) {
+        float top = boardTop + tileSize * BOARD_SIZE + dp(18);
+        float buttonWidth = (getWidth() - dp(48)) / PROP_COUNT;
+        for (int prop = 0; prop < PROP_COUNT; prop++) {
+            float left = dp(16) + prop * (buttonWidth + dp(8));
+            RectF rect = new RectF(left, top, left + buttonWidth, top + dp(58));
+            propRects[prop] = rect;
+
+            paint.setColor(activeProp == prop ? Color.argb(235, 255, 255, 255) : Color.argb(120, 255, 255, 255));
+            canvas.drawRoundRect(rect, dp(16), dp(16), paint);
+
+            paint.setColor(Color.argb(propInventory[prop] > 0 ? 220 : 85, 33, 37, 56));
+            drawPropIcon(canvas, prop, rect.centerX(), rect.centerY() - dp(7));
+
+            textPaint.setTextAlign(Paint.Align.CENTER);
+            textPaint.setTextSize(sp(13));
+            textPaint.setColor(Color.WHITE);
+            canvas.drawText(getPropName(prop) + " x" + propInventory[prop], rect.centerX(), rect.bottom - dp(10), textPaint);
+        }
+    }
+
+    private void drawPropIcon(Canvas canvas, int prop, float centerX, float centerY) {
+        paint.setStrokeWidth(dp(4));
+        if (prop == PROP_HAMMER) {
+            canvas.drawRoundRect(new RectF(centerX - dp(12), centerY - dp(12), centerX + dp(12), centerY - dp(4)), dp(4), dp(4), paint);
+            canvas.drawLine(centerX + dp(5), centerY, centerX + dp(16), centerY + dp(14), paint);
+        } else if (prop == PROP_BOMB) {
+            canvas.drawCircle(centerX, centerY + dp(2), dp(12), paint);
+            canvas.drawLine(centerX + dp(6), centerY - dp(10), centerX + dp(13), centerY - dp(18), paint);
+        } else {
+            Path path = new Path();
+            path.moveTo(centerX - dp(15), centerY);
+            path.lineTo(centerX - dp(2), centerY - dp(10));
+            path.lineTo(centerX - dp(2), centerY - dp(3));
+            path.lineTo(centerX + dp(15), centerY - dp(3));
+            canvas.drawPath(path, paint);
+            path.reset();
+            path.moveTo(centerX + dp(15), centerY + dp(5));
+            path.lineTo(centerX + dp(2), centerY + dp(15));
+            path.lineTo(centerX + dp(2), centerY + dp(8));
+            path.lineTo(centerX - dp(15), centerY + dp(8));
+            canvas.drawPath(path, paint);
+        }
+    }
+
+    private String getPropName(int prop) {
+        if (prop == PROP_HAMMER) {
+            return "锤子";
+        } else if (prop == PROP_BOMB) {
+            return "炸弹";
+        }
+        return "重排";
     }
 
     private void drawTileIcon(Canvas canvas, int kind, float centerX, float centerY) {
@@ -368,10 +529,16 @@ public class GameView extends View {
     private static class Level {
         final int targetScore;
         final int moves;
+        final int hammers;
+        final int bombs;
+        final int shuffles;
 
-        Level(int targetScore, int moves) {
+        Level(int targetScore, int moves, int hammers, int bombs, int shuffles) {
             this.targetScore = targetScore;
             this.moves = moves;
+            this.hammers = hammers;
+            this.bombs = bombs;
+            this.shuffles = shuffles;
         }
     }
 
