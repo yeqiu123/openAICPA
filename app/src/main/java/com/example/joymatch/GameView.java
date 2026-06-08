@@ -282,6 +282,18 @@ public class GameView extends View {
     }
 
     private void trySwap(int row, int col) {
+        int fromPiece = board[selectedRow][selectedCol];
+        int toPiece = board[row][col];
+        if (specialOf(fromPiece) != SPECIAL_NORMAL && specialOf(toPiece) != SPECIAL_NORMAL) {
+            movesLeft--;
+            clearHint();
+            clearCells(buildSpecialComboCells(selectedRow, selectedCol, row, col), 360);
+            checkLevelState();
+            selectedRow = NONE;
+            selectedCol = NONE;
+            return;
+        }
+
         swap(selectedRow, selectedCol, row, col);
         Set<Cell> matches = findMatches();
         if (matches.isEmpty()) {
@@ -342,6 +354,24 @@ public class GameView extends View {
                 }
             }
         }
+        return cells;
+    }
+
+    private Set<Cell> buildSpecialComboCells(int rowA, int colA, int rowB, int colB) {
+        int specialA = specialOf(board[rowA][colA]);
+        int specialB = specialOf(board[rowB][colB]);
+        Set<Cell> cells = new HashSet<>();
+
+        // 两个特殊棋子互换时直接触发组合技，形成更爽快的大面积消除。
+        if (specialA == SPECIAL_RAINBOW || specialB == SPECIAL_RAINBOW) {
+            cells.addAll(buildColorCells(colorOf(board[rowA][colA])));
+            cells.addAll(buildColorCells(colorOf(board[rowB][colB])));
+        } else {
+            cells.addAll(buildCrossCells(rowA, colA));
+            cells.addAll(buildCrossCells(rowB, colB));
+        }
+        cells.add(new Cell(rowA, colA));
+        cells.add(new Cell(rowB, colB));
         return cells;
     }
 
