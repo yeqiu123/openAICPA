@@ -8300,7 +8300,7 @@ public class GameView extends View {
         int alpha = (int) (210 * Math.min(1f, progress + 0.25f));
         float centerY = getHeight() * 0.32f;
         paint.setColor(Color.argb(alpha, 33, 37, 56));
-        canvas.drawRoundRect(new RectF(dp(34), centerY - dp(58), getWidth() - dp(34), centerY + dp(58)),
+        canvas.drawRoundRect(new RectF(dp(34), centerY - dp(58), getWidth() - dp(34), centerY + dp(72)),
                 dp(18), dp(18), paint);
 
         textPaint.setTextAlign(Paint.Align.CENTER);
@@ -8436,7 +8436,36 @@ public class GameView extends View {
         }
         RectF goalRect = new RectF(dp(42), centerY + dp(18), getWidth() - dp(42), centerY + dp(44));
         drawTextFit(canvas, goalText, goalRect, 15, Color.WHITE);
+        String strategyHint = buildLevelStrategyHint(level);
+        if (strategyHint.length() > 0) {
+            RectF strategyRect = new RectF(dp(42), centerY + dp(44), getWidth() - dp(42), centerY + dp(66));
+            drawTextFit(canvas, strategyHint, strategyRect, 13, Color.rgb(255, 236, 133));
+        }
         postInvalidateOnAnimation();
+    }
+
+    private String buildLevelStrategyHint(Level level) {
+        if (level.countdownBombCount > 0) {
+            return "策略 护盾/时钟稳住炸弹";
+        } else if (level.chainCount > 0) {
+            return "策略 破锁先开链";
+        } else if (level.honeyCount > 0) {
+            return "策略 冻结/雪花球控蜂蜜";
+        } else if (getLevelObstacleCount(level) >= 24) {
+            return "策略 净化/海星镐优先清障";
+        } else if (level.targetAmount >= 22) {
+            return "策略 磁铁/目标刷补收集";
+        } else if (level.comboGoal > 0) {
+            return "策略 魔棒/星弦琴铺连击";
+        } else if (level.scoreGoal > 0) {
+            return "策略 礼炮/罗盘冲高分";
+        } else if (level.moveLimitGoal > 0) {
+            return "策略 加步/时钟保步限";
+        } else if (level.elite) {
+            return "策略 留爆炸道具给尾盘";
+        }
+        // 开局策略提示只给最关键方向，避免遮住关卡目标信息。
+        return "";
     }
 
     private String buildLevelIntroReplayGoal() {
