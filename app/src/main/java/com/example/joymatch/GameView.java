@@ -262,6 +262,8 @@ public class GameView extends View {
     private int rankChestClaimed;
     private int lastChestReward;
     private int lastRankChestReward;
+    private int lastChestRewardProp = NONE;
+    private int lastChestRewardAmount;
     private int lastChapterChestReward;
     private int lastChapterMasteryReward;
     private int lastChapterEliteReward;
@@ -604,6 +606,8 @@ public class GameView extends View {
         lastDailyChallengeMilestoneAmount = 0;
         lastChestReward = 0;
         lastRankChestReward = 0;
+        lastChestRewardProp = NONE;
+        lastChestRewardAmount = 0;
         lastChapterChestReward = 0;
         lastChapterMasteryReward = 0;
         lastChapterEliteReward = 0;
@@ -2148,6 +2152,8 @@ public class GameView extends View {
         if (dailyGoalClaimed || dailyGoalProgress < 6) {
             lastChestReward = 0;
             lastRankChestReward = 0;
+            lastChestRewardProp = NONE;
+            lastChestRewardAmount = 0;
             lastChapterChestReward = 0;
             lastDailyGoalReward = 0;
             lastChestNoticeType = 4;
@@ -2158,6 +2164,8 @@ public class GameView extends View {
         lastDailyGoalReward = 35 + Math.min(15, dailyStreak * 2);
         lastChestReward = 0;
         lastRankChestReward = 0;
+        lastChestRewardProp = NONE;
+        lastChestRewardAmount = 0;
         lastChapterChestReward = 0;
         coins += lastDailyGoalReward;
         propInventory[PROP_MOON_TICKET]++;
@@ -2585,6 +2593,8 @@ public class GameView extends View {
         if (available <= 0) {
             lastChestReward = 0;
             lastRankChestReward = 0;
+            lastChestRewardProp = NONE;
+            lastChestRewardAmount = 0;
             lastChapterChestReward = 0;
             lastDailyGoalReward = 0;
             lastChestNoticeType = 1;
@@ -2596,6 +2606,7 @@ public class GameView extends View {
         starChestClaimed++;
         lastChestReward = 25 + starChestClaimed * 5;
         lastRankChestReward = 0;
+        grantStarChestPropReward();
         lastChapterChestReward = 0;
         lastDailyGoalReward = 0;
         lastChestNoticeType = 1;
@@ -2614,6 +2625,8 @@ public class GameView extends View {
         if (available <= 0) {
             lastChestReward = 0;
             lastRankChestReward = 0;
+            lastChestRewardProp = NONE;
+            lastChestRewardAmount = 0;
             lastChapterChestReward = 0;
             lastDailyGoalReward = 0;
             lastChestNoticeType = 2;
@@ -2625,6 +2638,7 @@ public class GameView extends View {
         rankChestClaimed++;
         lastRankChestReward = 40 + rankChestClaimed * 8;
         lastChestReward = 0;
+        grantRankChestPropReward();
         lastChapterChestReward = 0;
         lastDailyGoalReward = 0;
         lastChestNoticeType = 2;
@@ -2638,12 +2652,46 @@ public class GameView extends View {
         playSuccessTone();
     }
 
+    private void grantStarChestPropReward() {
+        lastChestRewardProp = NONE;
+        lastChestRewardAmount = 0;
+        if (starChestClaimed % 8 == 0) {
+            lastChestRewardProp = PROP_STAR_COMPASS;
+            lastChestRewardAmount = 1;
+        } else if (starChestClaimed % 4 == 0) {
+            lastChestRewardProp = PROP_AURORA_ORB;
+            lastChestRewardAmount = 1;
+        }
+        if (lastChestRewardProp != NONE) {
+            // 星级宝箱节点追加稀有道具，鼓励补星刷满。
+            propInventory[lastChestRewardProp] += lastChestRewardAmount;
+        }
+    }
+
+    private void grantRankChestPropReward() {
+        lastChestRewardProp = NONE;
+        lastChestRewardAmount = 0;
+        if (rankChestClaimed % 8 == 0) {
+            lastChestRewardProp = PROP_FIREWORK_CANNON;
+            lastChestRewardAmount = 1;
+        } else if (rankChestClaimed % 4 == 0) {
+            lastChestRewardProp = PROP_MOON_TICKET;
+            lastChestRewardAmount = 2;
+        }
+        if (lastChestRewardProp != NONE) {
+            // 评级宝箱节点奖励更偏向冲榜和高连击关卡。
+            propInventory[lastChestRewardProp] += lastChestRewardAmount;
+        }
+    }
+
     private void claimChapterChest() {
         int chapter = getCurrentMapChapter();
         if (!canClaimChapterChest(chapter)) {
             lastChapterChestReward = 0;
             lastChestReward = 0;
             lastRankChestReward = 0;
+            lastChestRewardProp = NONE;
+            lastChestRewardAmount = 0;
             lastDailyGoalReward = 0;
             lastChestNoticeType = 3;
             chestNoticeUntilTime = System.currentTimeMillis() + 1400;
@@ -2655,6 +2703,8 @@ public class GameView extends View {
         lastChapterChestReward = 80 + chapter * 20;
         lastChestReward = 0;
         lastRankChestReward = 0;
+        lastChestRewardProp = NONE;
+        lastChestRewardAmount = 0;
         lastDailyGoalReward = 0;
         lastChestNoticeType = 3;
         coins += lastChapterChestReward;
@@ -5010,12 +5060,12 @@ public class GameView extends View {
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setTextSize(sp(13));
         textPaint.setColor(Color.WHITE);
-        String text = lastChestReward > 0 ? "星级宝箱 金币+" + lastChestReward
+        String text = lastChestReward > 0 ? "星级宝箱 金币+" + lastChestReward + buildChestPropRewardText()
                 : buildChestNoticeFallback();
         if (lastChapterChestReward > 0) {
             text = "章节宝箱 金币+" + lastChapterChestReward;
         } else if (lastRankChestReward > 0) {
-            text = "评级宝箱 金币+" + lastRankChestReward;
+            text = "评级宝箱 金币+" + lastRankChestReward + buildChestPropRewardText();
         } else if (lastDailyGoalReward > 0) {
             text = "每日目标 金币+" + lastDailyGoalReward + " 月票+1";
         }
@@ -5033,6 +5083,10 @@ public class GameView extends View {
             return dailyGoalClaimed ? "每日目标已领取" : "还差 " + Math.max(0, 6 - dailyGoalProgress) + " 今日星";
         }
         return "还差 " + Math.max(0, getNextStarChestTarget() - getTotalStars()) + " 星";
+    }
+
+    private String buildChestPropRewardText() {
+        return lastChestRewardProp == NONE ? "" : " " + getPropName(lastChestRewardProp) + "+" + lastChestRewardAmount;
     }
 
     private int getAvailableStarChests() {
