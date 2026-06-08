@@ -49,6 +49,7 @@ public class GameView extends View {
     private final RectF[] propRects = new RectF[PROP_COUNT];
     private final RectF[] levelRects = new RectF[60];
     private final RectF mapButtonRect = new RectF();
+    private final RectF hintButtonRect = new RectF();
     private final int[] levelStars = new int[60];
     private final List<Level> levels = new ArrayList<>();
     private final int[] palette = {
@@ -71,12 +72,17 @@ public class GameView extends View {
     private int selectedRow = NONE;
     private int selectedCol = NONE;
     private int activeProp = NONE;
+    private int hintRowA = NONE;
+    private int hintColA = NONE;
+    private int hintRowB = NONE;
+    private int hintColB = NONE;
     private int feedbackCombo;
     private int feedbackCleared;
     private int highestUnlockedLevel;
     private int lastStars;
     private int lastBonusScore;
     private long feedbackStartTime;
+    private long hintUntilTime;
     private float boardLeft;
     private float boardTop;
     private float tileSize;
@@ -131,6 +137,12 @@ public class GameView extends View {
 
         if (mapButtonRect.contains(event.getX(), event.getY())) {
             showingLevelMap = true;
+            invalidate();
+            return true;
+        }
+
+        if (hintButtonRect.contains(event.getX(), event.getY())) {
+            showAvailableHint();
             invalidate();
             return true;
         }
@@ -276,6 +288,7 @@ public class GameView extends View {
             swap(selectedRow, selectedCol, row, col);
         } else {
             movesLeft--;
+            clearHint();
             createSpecialFromMatch(matches, row, col);
             resolveMatches(matches);
             checkLevelState();
@@ -347,6 +360,7 @@ public class GameView extends View {
         }
         resolveMatches(findMatches());
         ensurePlayableBoard();
+        clearHint();
         checkLevelState();
     }
 
@@ -428,17 +442,21 @@ public class GameView extends View {
     }
 
     private boolean hasAvailableMove() {
+        return findAvailableMove() != null;
+    }
+
+    private Move findAvailableMove() {
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
                 if (col + 1 < BOARD_SIZE && wouldCreateMatch(row, col, row, col + 1)) {
-                    return true;
+                    return new Move(row, col, row, col + 1);
                 }
                 if (row + 1 < BOARD_SIZE && wouldCreateMatch(row, col, row + 1, col)) {
-                    return true;
+                    return new Move(row, col, row + 1, col);
                 }
             }
         }
-        return false;
+        return null;
     }
 
     private boolean wouldCreateMatch(int rowA, int colA, int rowB, int colB) {
@@ -461,6 +479,29 @@ public class GameView extends View {
                 board[row][col] = values.remove(index);
             }
         }
+    }
+
+    private void showAvailableHint() {
+        Move move = findAvailableMove();
+        if (move == null) {
+            ensurePlayableBoard();
+            move = findAvailableMove();
+        }
+        if (move != null) {
+            hintRowA = move.rowA;
+            hintColA = move.colA;
+            hintRowB = move.rowB;
+            hintColB = move.colB;
+            hintUntilTime = System.currentTimeMillis() + 1800;
+        }
+    }
+
+    private void clearHint() {
+        hintRowA = NONE;
+        hintColA = NONE;
+        hintRowB = NONE;
+        hintColB = NONE;
+        hintUntilTime = 0;
     }
 
     private void checkLevelState() {
@@ -666,12 +707,15 @@ public class GameView extends View {
     private void drawHud(Canvas canvas) {
         Level level = levels.get(levelIndex);
         mapButtonRect.set(getWidth() - dp(90), dp(18), getWidth() - dp(22), dp(50));
+        hintButtonRect.set(getWidth() - dp(164), dp(18), getWidth() - dp(96), dp(50));
 
         paint.setColor(Color.argb(105, 255, 255, 255));
+        canvas.drawRoundRect(hintButtonRect, dp(14), dp(14), paint);
         canvas.drawRoundRect(mapButtonRect, dp(14), dp(14), paint);
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setTextSize(sp(14));
         textPaint.setColor(Color.WHITE);
+        canvas.drawText("提示", hintButtonRect.centerX(), hintButtonRect.centerY() + dp(5), textPaint);
         canvas.drawText("选关", mapButtonRect.centerX(), mapButtonRect.centerY() + dp(5), textPaint);
 
         textPaint.setTextAlign(Paint.Align.LEFT);
@@ -793,6 +837,15 @@ public class GameView extends View {
             paint.setStyle(Paint.Style.FILL);
         }
 
+        if (isHintCell(row, col)) {
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(dp(4));
+            paint.setColor(Color.rgb(255, 244, 170));
+            canvas.drawRoundRect(rect, dp(14), dp(14), paint);
+            paint.setStyle(Paint.Style.FILL);
+            postInvalidateOnAnimation();
+        }
+
         drawTileIcon(canvas, colorOf(piece), centerX, centerY);
         drawSpecialMark(canvas, specialOf(piece), centerX, centerY);
         drawHoney(canvas, row, col, rect);
@@ -805,6 +858,13 @@ public class GameView extends View {
         canvas.drawCircle(centerX, centerY, dp(8), paint);
         paint.setColor(Color.argb(170, 255, 255, 255));
         canvas.drawCircle(centerX - dp(3), centerY - dp(3), dp(3), paint);
+    }
+
+    private boolean isHintCell(int row, int col) {
+        if (System.currentTimeMillis() > hintUntilTime) {
+            return false;
+        }
+        return (row == hintRowA && col == hintColA) || (row == hintRowB && col == hintColB);
     }
 
     private void drawPropBar(Canvas canvas) {
@@ -1082,6 +1142,20 @@ public class GameView extends View {
         @Override
         public int hashCode() {
             return row * BOARD_SIZE + col;
+        }
+    }
+
+    private static class Move {
+        final int rowA;
+        final int colA;
+        final int rowB;
+        final int colB;
+
+        Move(int rowA, int colA, int rowB, int colB) {
+            this.rowA = rowA;
+            this.colA = colA;
+            this.rowB = rowB;
+            this.colB = colB;
         }
     }
 }
