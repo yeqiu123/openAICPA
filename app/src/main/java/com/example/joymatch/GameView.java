@@ -5816,6 +5816,7 @@ public class GameView extends View {
                 paint.setColor(Color.argb(230, 255, 236, 133));
                 canvas.drawRoundRect(rect, dp(10), dp(10), paint);
                 paint.setStyle(Paint.Style.FILL);
+                drawReplayTargetMapMark(canvas, level, rect);
             }
             if (levelRanks[level] >= 4) {
                 drawHighRankMapGlow(canvas, level, rect);
@@ -5849,6 +5850,17 @@ public class GameView extends View {
         }
 
         drawLevelMapPager(canvas);
+    }
+
+    private void drawReplayTargetMapMark(Canvas canvas, int level, RectF rect) {
+        // 推荐补星关在地图格上直接标出，方便玩家从章节页快速识别回访目标。
+        RectF badge = new RectF(rect.right - dp(24), rect.bottom - dp(18), rect.right - dp(4), rect.bottom - dp(4));
+        paint.setColor(Color.argb(225, 255, 236, 133));
+        canvas.drawRoundRect(badge, dp(5), dp(5), paint);
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setTextSize(sp(8));
+        textPaint.setColor(Color.rgb(33, 37, 56));
+        canvas.drawText(levelStars[level] < 3 ? "星" : "评", badge.centerX(), badge.centerY() + dp(3), textPaint);
     }
 
     private void drawHighRankMapGlow(Canvas canvas, int level, RectF rect) {
