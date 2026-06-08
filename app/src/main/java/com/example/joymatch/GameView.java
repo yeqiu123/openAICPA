@@ -2077,9 +2077,15 @@ public class GameView extends View {
         } else if (special == SPECIAL_COLUMN) {
             canvas.drawLine(centerX, centerY - tileSize * 0.28f, centerX, centerY + tileSize * 0.28f, paint);
         } else if (special == SPECIAL_RAINBOW) {
+            float pulse = 0.72f + 0.28f * (float) Math.sin(System.currentTimeMillis() / 150.0);
             paint.setStyle(Paint.Style.STROKE);
-            canvas.drawCircle(centerX, centerY, tileSize * 0.27f, paint);
+            canvas.drawCircle(centerX, centerY, tileSize * (0.23f + pulse * 0.05f), paint);
+            paint.setStrokeWidth(dp(2));
+            paint.setColor(Color.argb(170, 255, 236, 118));
+            canvas.drawLine(centerX - tileSize * 0.2f, centerY, centerX + tileSize * 0.2f, centerY, paint);
+            canvas.drawLine(centerX, centerY - tileSize * 0.2f, centerX, centerY + tileSize * 0.2f, paint);
             paint.setStyle(Paint.Style.FILL);
+            postInvalidateOnAnimation();
         } else {
             paint.setStyle(Paint.Style.STROKE);
             canvas.drawCircle(centerX, centerY, tileSize * 0.23f, paint);
