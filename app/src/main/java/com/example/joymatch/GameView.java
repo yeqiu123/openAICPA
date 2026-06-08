@@ -1496,9 +1496,20 @@ public class GameView extends View {
                     : Color.argb(75, 33, 37, 56));
             canvas.drawRoundRect(rect, dp(10), dp(10), paint);
 
+            if (level == levelIndex) {
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setStrokeWidth(dp(3));
+                paint.setColor(Color.WHITE);
+                canvas.drawRoundRect(rect, dp(10), dp(10), paint);
+                paint.setStyle(Paint.Style.FILL);
+            }
+
             textPaint.setTextSize(sp(14));
             textPaint.setColor(unlocked ? Color.rgb(33, 37, 56) : Color.argb(145, 255, 255, 255));
             canvas.drawText(String.valueOf(level + 1), rect.centerX(), rect.centerY() - dp(1), textPaint);
+            if (!unlocked) {
+                drawMapLock(canvas, rect);
+            }
 
             // 星级记录让关卡重玩有明确追求。
             if (levelStars[level] > 0) {
@@ -1513,6 +1524,19 @@ public class GameView extends View {
         }
 
         drawLevelMapPager(canvas);
+    }
+
+    private void drawMapLock(Canvas canvas, RectF rect) {
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(2));
+        paint.setColor(Color.argb(165, 255, 255, 255));
+        float centerX = rect.centerX();
+        float centerY = rect.centerY() + dp(12);
+        canvas.drawRoundRect(new RectF(centerX - dp(8), centerY - dp(2),
+                centerX + dp(8), centerY + dp(10)), dp(3), dp(3), paint);
+        canvas.drawArc(new RectF(centerX - dp(7), centerY - dp(13),
+                centerX + dp(7), centerY + dp(5)), 205, 130, false, paint);
+        paint.setStyle(Paint.Style.FILL);
     }
 
     private void drawDailyChallengeEntry(Canvas canvas) {
