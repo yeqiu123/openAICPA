@@ -5613,7 +5613,7 @@ public class GameView extends View {
             coinText += " 连" + dailyStreak;
         }
         coinText += buildNextDailyLoginRewardHint();
-        canvas.drawText(coinText, getWidth() - dp(22), dp(104), textPaint);
+        drawTextFitRight(canvas, coinText, new RectF(getWidth() * 0.48f, dp(92), getWidth() - dp(18), dp(110)), 15, Color.WHITE);
         String obstacleText = "冰" + iceRemaining + " 蜜" + honeyRemaining + " 石" + stoneRemaining
                 + " 藤" + vineRemaining + " 锁" + chainRemaining;
         if (level.shellCount > 0) {
@@ -5628,7 +5628,7 @@ public class GameView extends View {
         if (level.keyCount > 0) {
             obstacleText += " 钥" + keyRemaining;
         }
-        canvas.drawText(obstacleText, getWidth() - dp(22), dp(130), textPaint);
+        drawTextFitRight(canvas, obstacleText, new RectF(getWidth() * 0.48f, dp(118), getWidth() - dp(18), dp(136)), 15, Color.WHITE);
         textPaint.setTextSize(sp(13));
         String starText = buildStars(getPreviewStars(level));
         if (isEliteLevel()) {
@@ -6234,6 +6234,18 @@ public class GameView extends View {
             textPaint.setTextSize(sp(baseSize));
         }
         canvas.drawText(text, rect.centerX(), rect.centerY() + dp(4), textPaint);
+    }
+
+    private void drawTextFitRight(Canvas canvas, String text, RectF rect, float baseSize, int color) {
+        textPaint.setTextAlign(Paint.Align.RIGHT);
+        textPaint.setTextSize(sp(baseSize));
+        textPaint.setColor(color);
+        float maxWidth = Math.max(dp(20), rect.width() - dp(8));
+        while (baseSize > 8 && textPaint.measureText(text) > maxWidth) {
+            baseSize -= 1;
+            textPaint.setTextSize(sp(baseSize));
+        }
+        canvas.drawText(text, rect.right - dp(4), rect.centerY() + dp(4), textPaint);
     }
 
     private void drawSettings(Canvas canvas) {
