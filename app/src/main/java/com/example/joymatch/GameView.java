@@ -29,6 +29,7 @@ public class GameView extends View {
     private static final String KEY_STARS_PREFIX = "stars_";
     private static final String KEY_BEST_SCORE_PREFIX = "best_score_";
     private static final String KEY_COINS = "coins";
+    private static final String KEY_STAR_CHEST_CLAIMED = "star_chest_claimed";
     private static final String KEY_DAILY_REWARD_DAY = "daily_reward_day";
     private static final String KEY_SOUND_ENABLED = "sound_enabled";
     private static final String KEY_HAPTIC_ENABLED = "haptic_enabled";
@@ -37,6 +38,7 @@ public class GameView extends View {
     private static final int LEVEL_COUNT = 120;
     private static final int LEVELS_PER_PAGE = 60;
     private static final int CONTINUE_COST = 10;
+    private static final int STAR_CHEST_STEP = 30;
     private static final int NONE = -1;
     private static final int SPECIAL_NORMAL = 0;
     private static final int SPECIAL_ROW = 1;
@@ -67,6 +69,7 @@ public class GameView extends View {
     private final RectF hapticToggleRect = new RectF();
     private final RectF prevPageRect = new RectF();
     private final RectF nextPageRect = new RectF();
+    private final RectF starChestRect = new RectF();
     private final int[] levelStars = new int[LEVEL_COUNT];
     private final int[] levelBestScores = new int[LEVEL_COUNT];
     private final List<Particle> particles = new ArrayList<>();
@@ -124,11 +127,14 @@ public class GameView extends View {
     private int lastBonusScore;
     private int coins;
     private int lastCoinReward;
+    private int starChestClaimed;
+    private int lastChestReward;
     private int dailyRewardAmount;
     private int rewardTargetMilestone;
     private int rewardObstacleMilestone;
     private long feedbackStartTime;
     private long hintUntilTime;
+    private long chestNoticeUntilTime;
     private float boardLeft;
     private float boardTop;
     private float tileSize;
@@ -307,6 +313,7 @@ public class GameView extends View {
         activeProp = NONE;
         comboEnergy = 0;
         lastCoinReward = 0;
+        lastChestReward = 0;
         rewardTargetMilestone = 0;
         rewardObstacleMilestone = 0;
         targetKind = level.targetKind;
@@ -682,6 +689,7 @@ public class GameView extends View {
     private void loadProgress() {
         highestUnlockedLevel = Math.min(prefs.getInt(KEY_UNLOCKED_LEVEL, 0), levels.size() - 1);
         coins = prefs.getInt(KEY_COINS, 30);
+        starChestClaimed = prefs.getInt(KEY_STAR_CHEST_CLAIMED, 0);
         soundEnabled = prefs.getBoolean(KEY_SOUND_ENABLED, true);
         hapticEnabled = prefs.getBoolean(KEY_HAPTIC_ENABLED, true);
         grantDailyReward();
@@ -701,6 +709,7 @@ public class GameView extends View {
                 .putInt(KEY_STARS_PREFIX + levelIndex, levelStars[levelIndex])
                 .putInt(KEY_BEST_SCORE_PREFIX + levelIndex, levelBestScores[levelIndex])
                 .putInt(KEY_COINS, coins)
+                .putInt(KEY_STAR_CHEST_CLAIMED, starChestClaimed)
                 .apply();
     }
 
@@ -750,6 +759,11 @@ public class GameView extends View {
     }
 
     private void handleLevelMapTap(float x, float y) {
+        if (starChestRect.contains(x, y)) {
+            claimStarChest();
+            return;
+        }
+
         if (prevPageRect.contains(x, y) && levelMapPage > 0) {
             levelMapPage--;
             return;
@@ -770,6 +784,27 @@ public class GameView extends View {
             }
         }
         showingLevelMap = false;
+    }
+
+    private void claimStarChest() {
+        int available = getAvailableStarChests();
+        if (available <= 0) {
+            lastChestReward = 0;
+            chestNoticeUntilTime = System.currentTimeMillis() + 1400;
+            return;
+        }
+
+        // 星级宝箱鼓励玩家反复挑战拿满星，并补充道具购买金币。
+        starChestClaimed++;
+        lastChestReward = 25 + starChestClaimed * 5;
+        coins += lastChestReward;
+        prefs.edit()
+                .putInt(KEY_STAR_CHEST_CLAIMED, starChestClaimed)
+                .putInt(KEY_COINS, coins)
+                .apply();
+        chestNoticeUntilTime = System.currentTimeMillis() + 1800;
+        playHaptic(HapticFeedbackConstants.CONFIRM);
+        playSuccessTone();
     }
 
     private void placeIce(int count) {
@@ -1115,9 +1150,12 @@ public class GameView extends View {
         float top = getHeight() - dp(64);
         prevPageRect.set(dp(24), top, dp(114), top + dp(38));
         nextPageRect.set(getWidth() - dp(114), top, getWidth() - dp(24), top + dp(38));
+        starChestRect.set(getWidth() / 2f - dp(58), top, getWidth() / 2f + dp(58), top + dp(38));
 
         paint.setColor(levelMapPage > 0 ? Color.argb(150, 255, 255, 255) : Color.argb(55, 255, 255, 255));
         canvas.drawRoundRect(prevPageRect, dp(14), dp(14), paint);
+        paint.setColor(getAvailableStarChests() > 0 ? Color.argb(205, 255, 236, 133) : Color.argb(105, 255, 255, 255));
+        canvas.drawRoundRect(starChestRect, dp(14), dp(14), paint);
         paint.setColor((levelMapPage + 1) < getLevelMapPageCount()
                 ? Color.argb(150, 255, 255, 255) : Color.argb(55, 255, 255, 255));
         canvas.drawRoundRect(nextPageRect, dp(14), dp(14), paint);
@@ -1127,10 +1165,51 @@ public class GameView extends View {
         textPaint.setColor(Color.WHITE);
         canvas.drawText("上一页", prevPageRect.centerX(), prevPageRect.centerY() + dp(5), textPaint);
         canvas.drawText("下一页", nextPageRect.centerX(), nextPageRect.centerY() + dp(5), textPaint);
+        textPaint.setColor(Color.rgb(33, 37, 56));
+        textPaint.setTextSize(sp(12));
+        canvas.drawText(buildStarChestLabel(), starChestRect.centerX(), starChestRect.centerY() + dp(5), textPaint);
+        drawStarChestNotice(canvas, top);
     }
 
     private int getLevelMapPageCount() {
         return (int) Math.ceil(levels.size() / (float) LEVELS_PER_PAGE);
+    }
+
+    private String buildStarChestLabel() {
+        if (getAvailableStarChests() > 0) {
+            return "宝箱+" + (25 + (starChestClaimed + 1) * 5);
+        }
+        return "星 " + getTotalStars() + "/" + getNextStarChestTarget();
+    }
+
+    private void drawStarChestNotice(Canvas canvas, float pagerTop) {
+        if (System.currentTimeMillis() > chestNoticeUntilTime) {
+            return;
+        }
+
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setTextSize(sp(13));
+        textPaint.setColor(Color.WHITE);
+        String text = lastChestReward > 0 ? "星级宝箱 金币+" + lastChestReward
+                : "还差 " + Math.max(0, getNextStarChestTarget() - getTotalStars()) + " 星";
+        canvas.drawText(text, getWidth() / 2f, pagerTop - dp(10), textPaint);
+        postInvalidateOnAnimation();
+    }
+
+    private int getAvailableStarChests() {
+        return Math.max(0, getTotalStars() / STAR_CHEST_STEP - starChestClaimed);
+    }
+
+    private int getNextStarChestTarget() {
+        return Math.min(LEVEL_COUNT * 3, (starChestClaimed + 1) * STAR_CHEST_STEP);
+    }
+
+    private int getTotalStars() {
+        int total = 0;
+        for (int i = 0; i < levels.size(); i++) {
+            total += levelStars[i];
+        }
+        return total;
     }
 
     private int getChapterIndex(int level) {
