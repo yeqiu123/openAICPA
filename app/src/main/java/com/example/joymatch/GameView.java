@@ -8766,6 +8766,8 @@ public class GameView extends View {
             drawChallengeBadges(canvas, getWidth() / 2f, getHeight() * 0.515f);
             String scoreText = dailyChallengeMode ? "挑战分 " + score : "最佳分 " + levelBestScores[levelIndex];
             canvas.drawText(scoreText, getWidth() / 2f, getHeight() * 0.55f, textPaint);
+            RectF nextGoalRect = new RectF(dp(34), getHeight() * 0.565f, getWidth() - dp(34), getHeight() * 0.592f);
+            drawTextFit(canvas, buildSuccessNextGoalText(), nextGoalRect, 14, Color.rgb(255, 236, 133));
             drawRewardLines(canvas);
         } else {
             String failText;
@@ -8826,9 +8828,25 @@ public class GameView extends View {
                 + shellRemaining + coralReefRemaining + flowerRemaining + keyRemaining;
     }
 
+    private String buildSuccessNextGoalText() {
+        if (dailyChallengeMode) {
+            return "下一目标 回到主线继续推进";
+        }
+        int nextLevel = Math.min(levelIndex + 1, levels.size() - 1);
+        int replayLevel = findReplayTargetLevel();
+        if (levelIndex < levels.size() - 1 && nextLevel <= highestUnlockedLevel) {
+            return "下一目标 第" + (nextLevel + 1) + "关";
+        }
+        if (replayLevel >= 0) {
+            return "回访推荐 第" + (replayLevel + 1) + "关 " + buildReplayReason(replayLevel);
+        }
+        // 通关页给一个明确的下一步，减少玩家在主线和补星之间的选择成本。
+        return "下一目标 收集满星和高评级";
+    }
+
     private void drawRewardLines(Canvas canvas) {
         List<String> lines = buildRewardLines();
-        float startY = getHeight() * 0.6f;
+        float startY = getHeight() * (levelComplete ? 0.62f : 0.6f);
         textPaint.setTextSize(sp(14));
         for (int i = 0; i < lines.size(); i++) {
             canvas.drawText(lines.get(i), getWidth() / 2f, startY + i * dp(18), textPaint);
