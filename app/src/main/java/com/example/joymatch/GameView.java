@@ -47,12 +47,13 @@ public class GameView extends View {
     private static final String KEY_HAPTIC_ENABLED = "haptic_enabled";
     private static final int BOARD_SIZE = 8;
     private static final int TILE_KINDS = 6;
-    private static final int LEVEL_COUNT = 120;
+    private static final int LEVEL_COUNT = 160;
     private static final int LEVELS_PER_PAGE = 60;
     private static final int CONTINUE_COST = 10;
     private static final int STAR_CHEST_STEP = 30;
     private static final int RANK_CHEST_STEP = 45;
     private static final int CHAPTER_SIZE = 20;
+    private static final int CHAPTER_COUNT = 8;
     private static final int CHAPTER_CHEST_STARS = 45;
     private static final int ACHIEVEMENT_COUNT = 10;
     private static final int NONE = -1;
@@ -137,8 +138,8 @@ public class GameView extends View {
     private final int[] levelStars = new int[LEVEL_COUNT];
     private final int[] levelBestScores = new int[LEVEL_COUNT];
     private final int[] levelRanks = new int[LEVEL_COUNT];
-    private final boolean[] chapterChestClaimed = new boolean[6];
-    private final boolean[] chapterMasteryClaimed = new boolean[6];
+    private final boolean[] chapterChestClaimed = new boolean[CHAPTER_COUNT];
+    private final boolean[] chapterMasteryClaimed = new boolean[CHAPTER_COUNT];
     private final boolean[] achievementsClaimed = new boolean[ACHIEVEMENT_COUNT];
     private final List<Particle> particles = new ArrayList<>();
     private final List<Level> levels = new ArrayList<>();
@@ -157,7 +158,9 @@ public class GameView extends View {
             Color.rgb(255, 142, 120),
             Color.rgb(120, 203, 142),
             Color.rgb(171, 132, 255),
-            Color.rgb(255, 186, 82)
+            Color.rgb(255, 186, 82),
+            Color.rgb(76, 211, 194),
+            Color.rgb(238, 122, 159)
     };
     private final int[] chapterBottomColors = {
             Color.rgb(255, 151, 132),
@@ -165,10 +168,12 @@ public class GameView extends View {
             Color.rgb(116, 219, 214),
             Color.rgb(255, 219, 106),
             Color.rgb(255, 139, 176),
-            Color.rgb(92, 202, 166)
+            Color.rgb(92, 202, 166),
+            Color.rgb(255, 214, 92),
+            Color.rgb(117, 182, 255)
     };
     private final String[] chapterNames = {
-            "糖果森林", "云朵海湾", "果冻火山", "薄荷花园", "星光梦境", "蜂蜜工坊"
+            "糖果森林", "云朵海湾", "果冻火山", "薄荷花园", "星光梦境", "蜂蜜工坊", "珊瑚集市", "极光城堡"
     };
 
     private int levelIndex = 0;
@@ -3345,13 +3350,34 @@ public class GameView extends View {
                 float y = getHeight() * (0.16f + (i % 4) * 0.13f);
                 drawStar(canvas, x, y, dp(8 + i % 3));
             }
-        } else {
+        } else if (chapter == 5) {
             for (int i = 0; i < 6; i++) {
                 float x = getWidth() * (0.1f + i * 0.16f);
                 float y = getHeight() * (0.18f + (i % 2) * 0.22f);
                 canvas.drawCircle(x, y, dp(12), paint);
                 canvas.drawCircle(x + dp(10), y + dp(10), dp(12), paint);
                 canvas.drawCircle(x - dp(10), y + dp(10), dp(12), paint);
+            }
+        } else if (chapter == 6) {
+            for (int i = 0; i < 7; i++) {
+                float x = getWidth() * (0.08f + i * 0.14f);
+                float y = getHeight() * (0.2f + (i % 3) * 0.14f);
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setStrokeWidth(dp(3));
+                canvas.drawArc(new RectF(x - dp(16), y - dp(12), x + dp(16), y + dp(12)),
+                        200, 140, false, paint);
+                paint.setStyle(Paint.Style.FILL);
+                canvas.drawCircle(x - dp(13), y + dp(5), dp(4), paint);
+                canvas.drawCircle(x + dp(13), y + dp(5), dp(4), paint);
+            }
+        } else {
+            for (int i = 0; i < 8; i++) {
+                float x = getWidth() * (0.08f + i * 0.12f);
+                float y = getHeight() * (0.15f + (i % 4) * 0.12f);
+                drawStar(canvas, x, y, dp(6 + i % 2));
+                paint.setColor(Color.argb(45, 255, 255, 255));
+                canvas.drawLine(x - dp(18), y + dp(12), x + dp(18), y - dp(12), paint);
+                paint.setColor(Color.argb(55, 255, 255, 255));
             }
         }
     }
