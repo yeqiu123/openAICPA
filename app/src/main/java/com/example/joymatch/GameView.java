@@ -41,6 +41,7 @@ public class GameView extends View {
     private static final int PROP_ROW_BLAST = 3;
     private static final int PROP_COLOR_BLAST = 4;
     private static final int PROP_COUNT = 5;
+    private static final int[] PROP_COSTS = {8, 12, 10, 16, 18};
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -293,8 +294,17 @@ public class GameView extends View {
             RectF rect = propRects[prop];
             if (rect != null && rect.contains(x, y)) {
                 if (propInventory[prop] <= 0) {
-                    activeProp = NONE;
-                } else if (prop == PROP_SHUFFLE) {
+                    if (coins < PROP_COSTS[prop]) {
+                        activeProp = NONE;
+                        return true;
+                    }
+                    // 道具用完后可直接用金币补一个，减少关卡中断感。
+                    coins -= PROP_COSTS[prop];
+                    propInventory[prop]++;
+                    saveCoins();
+                }
+
+                if (prop == PROP_SHUFFLE) {
                     propInventory[prop]--;
                     shuffleBoard();
                     activeProp = NONE;
@@ -1082,7 +1092,10 @@ public class GameView extends View {
             textPaint.setTextAlign(Paint.Align.CENTER);
             textPaint.setTextSize(sp(13));
             textPaint.setColor(Color.WHITE);
-            canvas.drawText(getPropName(prop) + " x" + propInventory[prop], rect.centerX(), rect.bottom - dp(10), textPaint);
+            String label = propInventory[prop] > 0
+                    ? getPropName(prop) + " x" + propInventory[prop]
+                    : getPropName(prop) + " " + PROP_COSTS[prop] + "币";
+            canvas.drawText(label, rect.centerX(), rect.bottom - dp(10), textPaint);
         }
     }
 
