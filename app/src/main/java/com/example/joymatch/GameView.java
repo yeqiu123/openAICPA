@@ -6221,7 +6221,7 @@ public class GameView extends View {
         textPaint.setColor(Color.WHITE);
         String text = replayLevel >= 0 ? "智能推荐 第" + (replayLevel + 1) + "关  " + buildReplayReason(replayLevel)
                 : "已通关卡暂无补星目标";
-        canvas.drawText(text, replayHintRect.centerX(), replayHintRect.centerY() + dp(4), textPaint);
+        drawTextFit(canvas, text, replayHintRect, 11, Color.WHITE);
     }
 
     private void drawTextFit(Canvas canvas, String text, RectF rect, float baseSize, int color) {
