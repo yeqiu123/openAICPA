@@ -289,6 +289,8 @@ public class GameView extends View {
     private int lastPerfectRewardProp = NONE;
     private int lastPerfectRewardAmount;
     private int lastHiddenReward;
+    private int lastHiddenRewardProp = NONE;
+    private int lastHiddenRewardAmount;
     private int lastEliteReward;
     private int lastFirstClearReward;
     private int lastFullStarReward;
@@ -765,6 +767,8 @@ public class GameView extends View {
         lastPerfectRewardProp = NONE;
         lastPerfectRewardAmount = 0;
         lastHiddenReward = 0;
+        lastHiddenRewardProp = NONE;
+        lastHiddenRewardAmount = 0;
         lastEliteReward = 0;
         lastFirstClearReward = 0;
         lastFullStarReward = 0;
@@ -2905,7 +2909,9 @@ public class GameView extends View {
         if (hiddenChallengeCleared) {
             lastHiddenReward = 20;
             coins += lastHiddenReward;
-            addProp(PROP_BOMB, 1);
+            lastHiddenRewardProp = PROP_BOMB;
+            lastHiddenRewardAmount = 1;
+            addReserveProp(lastHiddenRewardProp, lastHiddenRewardAmount);
         }
         grantFirstClearReward(level, oldStars);
         grantEliteLevelReward(level);
@@ -8212,6 +8218,10 @@ public class GameView extends View {
         return lastPerfectRewardProp == NONE ? "" : " " + getPropName(lastPerfectRewardProp) + "+" + lastPerfectRewardAmount;
     }
 
+    private String buildHiddenRewardText() {
+        return lastHiddenRewardProp == NONE ? "" : " " + getPropName(lastHiddenRewardProp) + "+" + lastHiddenRewardAmount;
+    }
+
     private List<String> buildRewardLines() {
         List<String> lines = new ArrayList<>();
         lines.add("金币 +" + lastCoinReward);
@@ -8221,7 +8231,7 @@ public class GameView extends View {
         addRewardLine(lines, "补星", lastStarUpgradeReward, "");
         addRewardLine(lines, "评级", lastRankUpgradeReward, buildRankUpgradeRewardText());
         addRewardLine(lines, "完美", lastPerfectReward, buildPerfectRewardText());
-        addRewardLine(lines, "隐藏", lastHiddenReward, "");
+        addRewardLine(lines, "隐藏", lastHiddenReward, buildHiddenRewardText());
         addRewardLine(lines, "精英", lastEliteReward, "");
         addRewardLine(lines, "成就", lastAchievementReward, buildAchievementPropRewardText());
         addRewardLine(lines, "连胜", lastWinStreakReward, buildWinStreakPropRewardText());
