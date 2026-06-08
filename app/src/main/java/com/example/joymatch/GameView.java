@@ -36,6 +36,7 @@ public class GameView extends View {
     private static final String KEY_DAILY_REWARD_DAY = "daily_reward_day";
     private static final String KEY_DAILY_STREAK = "daily_streak";
     private static final String KEY_DAILY_CHALLENGE_DAY = "daily_challenge_day";
+    private static final String KEY_DAILY_CHALLENGE_STREAK = "daily_challenge_streak";
     private static final String KEY_SOUND_ENABLED = "sound_enabled";
     private static final String KEY_HAPTIC_ENABLED = "haptic_enabled";
     private static final int BOARD_SIZE = 8;
@@ -174,6 +175,7 @@ public class GameView extends View {
     private int lastEnergyRewardProp = NONE;
     private int dailyRewardAmount;
     private int dailyStreak;
+    private int dailyChallengeStreak;
     private int rewardTargetMilestone;
     private int rewardObstacleMilestone;
     private int rewardComboMilestone;
@@ -947,16 +949,19 @@ public class GameView extends View {
 
     private void saveDailyChallengeReward() {
         long today = getToday();
-        if (prefs.getLong(KEY_DAILY_CHALLENGE_DAY, -1L) == today) {
+        long lastChallengeDay = prefs.getLong(KEY_DAILY_CHALLENGE_DAY, -1L);
+        if (lastChallengeDay == today) {
             lastCoinReward = 0;
             return;
         }
 
         // 每日挑战独立奖励，不推进主线关卡进度。
-        lastCoinReward = 30 + lastStars * 10;
+        dailyChallengeStreak = lastChallengeDay == today - 1 ? dailyChallengeStreak + 1 : 1;
+        lastCoinReward = 30 + lastStars * 10 + Math.min(5, dailyChallengeStreak - 1) * 6;
         coins += lastCoinReward;
         prefs.edit()
                 .putLong(KEY_DAILY_CHALLENGE_DAY, today)
+                .putInt(KEY_DAILY_CHALLENGE_STREAK, dailyChallengeStreak)
                 .putInt(KEY_COINS, coins)
                 .apply();
     }
@@ -1011,6 +1016,7 @@ public class GameView extends View {
         coins = prefs.getInt(KEY_COINS, 30);
         starChestClaimed = prefs.getInt(KEY_STAR_CHEST_CLAIMED, 0);
         winStreak = prefs.getInt(KEY_WIN_STREAK, 0);
+        dailyChallengeStreak = prefs.getInt(KEY_DAILY_CHALLENGE_STREAK, 0);
         soundEnabled = prefs.getBoolean(KEY_SOUND_ENABLED, true);
         hapticEnabled = prefs.getBoolean(KEY_HAPTIC_ENABLED, true);
         grantDailyReward();
@@ -1806,6 +1812,9 @@ public class GameView extends View {
         textPaint.setTextSize(sp(14));
         textPaint.setColor(claimed ? Color.WHITE : Color.rgb(33, 37, 56));
         String text = claimed ? "每日挑战 已领奖  再玩" : "每日挑战 今日奖励";
+        if (dailyChallengeStreak > 1) {
+            text += " 连" + dailyChallengeStreak;
+        }
         canvas.drawText(text, dailyChallengeRect.centerX(), dailyChallengeRect.centerY() + dp(5), textPaint);
     }
 
@@ -2652,7 +2661,8 @@ public class GameView extends View {
             canvas.drawText(scoreText, getWidth() / 2f, getHeight() * 0.55f, textPaint);
             String rewardText = "金币 +" + lastCoinReward + "  点击继续";
             if (dailyChallengeMode) {
-                rewardText = lastCoinReward > 0 ? "每日金币 +" + lastCoinReward + "  返回主线" : "今日已领奖  返回主线";
+                rewardText = lastCoinReward > 0 ? "每日金币 +" + lastCoinReward + " 连" + dailyChallengeStreak + "  返回主线"
+                        : "今日已领奖  返回主线";
             } else if (lastAchievementReward > 0) {
                 rewardText = "金币 +" + lastCoinReward + "  成就奖励+" + lastAchievementReward + "  点击继续";
             } else if (lastStarUpgradeReward > 0) {
