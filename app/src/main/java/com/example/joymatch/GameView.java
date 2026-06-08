@@ -30,6 +30,7 @@ public class GameView extends View {
     private static final String KEY_BEST_SCORE_PREFIX = "best_score_";
     private static final String KEY_COINS = "coins";
     private static final String KEY_STAR_CHEST_CLAIMED = "star_chest_claimed";
+    private static final String KEY_CHAPTER_CHEST_PREFIX = "chapter_chest_";
     private static final String KEY_DAILY_REWARD_DAY = "daily_reward_day";
     private static final String KEY_DAILY_CHALLENGE_DAY = "daily_challenge_day";
     private static final String KEY_SOUND_ENABLED = "sound_enabled";
@@ -40,6 +41,8 @@ public class GameView extends View {
     private static final int LEVELS_PER_PAGE = 60;
     private static final int CONTINUE_COST = 10;
     private static final int STAR_CHEST_STEP = 30;
+    private static final int CHAPTER_SIZE = 20;
+    private static final int CHAPTER_CHEST_STARS = 45;
     private static final int NONE = -1;
     private static final int SPECIAL_NORMAL = 0;
     private static final int SPECIAL_ROW = 1;
@@ -74,8 +77,10 @@ public class GameView extends View {
     private final RectF nextPageRect = new RectF();
     private final RectF starChestRect = new RectF();
     private final RectF dailyChallengeRect = new RectF();
+    private final RectF chapterChestRect = new RectF();
     private final int[] levelStars = new int[LEVEL_COUNT];
     private final int[] levelBestScores = new int[LEVEL_COUNT];
+    private final boolean[] chapterChestClaimed = new boolean[6];
     private final List<Particle> particles = new ArrayList<>();
     private final List<Level> levels = new ArrayList<>();
     private final ToneGenerator toneGenerator = new ToneGenerator(AudioManager.STREAM_MUSIC, 45);
@@ -134,6 +139,7 @@ public class GameView extends View {
     private int lastCoinReward;
     private int starChestClaimed;
     private int lastChestReward;
+    private int lastChapterChestReward;
     private int dailyRewardAmount;
     private int rewardTargetMilestone;
     private int rewardObstacleMilestone;
@@ -328,6 +334,7 @@ public class GameView extends View {
         comboEnergy = 0;
         lastCoinReward = 0;
         lastChestReward = 0;
+        lastChapterChestReward = 0;
         rewardTargetMilestone = 0;
         rewardObstacleMilestone = 0;
         targetKind = level.targetKind;
@@ -756,6 +763,9 @@ public class GameView extends View {
             levelStars[i] = prefs.getInt(KEY_STARS_PREFIX + i, 0);
             levelBestScores[i] = prefs.getInt(KEY_BEST_SCORE_PREFIX + i, 0);
         }
+        for (int i = 0; i < chapterChestClaimed.length; i++) {
+            chapterChestClaimed[i] = prefs.getBoolean(KEY_CHAPTER_CHEST_PREFIX + i, false);
+        }
     }
 
     private void saveLevelProgress() {
@@ -828,6 +838,11 @@ public class GameView extends View {
             return;
         }
 
+        if (chapterChestRect.contains(x, y)) {
+            claimChapterChest();
+            return;
+        }
+
         if (starChestRect.contains(x, y)) {
             claimStarChest();
             return;
@@ -859,6 +874,7 @@ public class GameView extends View {
         int available = getAvailableStarChests();
         if (available <= 0) {
             lastChestReward = 0;
+            lastChapterChestReward = 0;
             chestNoticeUntilTime = System.currentTimeMillis() + 1400;
             return;
         }
@@ -866,9 +882,33 @@ public class GameView extends View {
         // 星级宝箱鼓励玩家反复挑战拿满星，并补充道具购买金币。
         starChestClaimed++;
         lastChestReward = 25 + starChestClaimed * 5;
+        lastChapterChestReward = 0;
         coins += lastChestReward;
         prefs.edit()
                 .putInt(KEY_STAR_CHEST_CLAIMED, starChestClaimed)
+                .putInt(KEY_COINS, coins)
+                .apply();
+        chestNoticeUntilTime = System.currentTimeMillis() + 1800;
+        playHaptic(HapticFeedbackConstants.CONFIRM);
+        playSuccessTone();
+    }
+
+    private void claimChapterChest() {
+        int chapter = getCurrentMapChapter();
+        if (!canClaimChapterChest(chapter)) {
+            lastChapterChestReward = 0;
+            lastChestReward = 0;
+            chestNoticeUntilTime = System.currentTimeMillis() + 1400;
+            return;
+        }
+
+        // 章节宝箱奖励玩家把整章刷到高星，形成中期追求。
+        chapterChestClaimed[chapter] = true;
+        lastChapterChestReward = 80 + chapter * 20;
+        lastChestReward = 0;
+        coins += lastChapterChestReward;
+        prefs.edit()
+                .putBoolean(KEY_CHAPTER_CHEST_PREFIX + chapter, true)
                 .putInt(KEY_COINS, coins)
                 .apply();
         chestNoticeUntilTime = System.currentTimeMillis() + 1800;
@@ -1152,13 +1192,14 @@ public class GameView extends View {
         textPaint.setTextSize(sp(24));
         canvas.drawText("关卡地图 " + (levelMapPage + 1) + "/" + getLevelMapPageCount(), getWidth() / 2f, dp(54), textPaint);
         drawDailyChallengeEntry(canvas);
+        drawChapterChestEntry(canvas);
 
         int columns = 6;
         int pageStart = levelMapPage * LEVELS_PER_PAGE;
         int pageCount = Math.min(LEVELS_PER_PAGE, levels.size() - pageStart);
         int rows = (int) Math.ceil(pageCount / (float) columns);
         float gap = dp(6);
-        float startY = dp(118);
+        float startY = dp(158);
         float pagerTop = getHeight() - dp(64);
         float sizeByWidth = (getWidth() - dp(32) - gap * (columns - 1)) / columns;
         float sizeByHeight = (pagerTop - startY - dp(10) - gap * (rows - 1)) / rows;
@@ -1215,6 +1256,21 @@ public class GameView extends View {
         textPaint.setColor(claimed ? Color.WHITE : Color.rgb(33, 37, 56));
         String text = claimed ? "每日挑战 已领奖  再玩" : "每日挑战 今日奖励";
         canvas.drawText(text, dailyChallengeRect.centerX(), dailyChallengeRect.centerY() + dp(5), textPaint);
+    }
+
+    private void drawChapterChestEntry(Canvas canvas) {
+        int chapter = getCurrentMapChapter();
+        chapterChestRect.set(dp(28), dp(112), getWidth() - dp(28), dp(146));
+        boolean claimable = canClaimChapterChest(chapter);
+        paint.setColor(claimable ? Color.argb(205, 255, 236, 133) : Color.argb(105, 255, 255, 255));
+        canvas.drawRoundRect(chapterChestRect, dp(14), dp(14), paint);
+
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setTextSize(sp(14));
+        textPaint.setColor(claimable ? Color.rgb(33, 37, 56) : Color.WHITE);
+        String text = chapterChestClaimed[chapter] ? chapterNames[chapter] + " 已领"
+                : chapterNames[chapter] + " 宝箱 " + getChapterStars(chapter) + "/" + CHAPTER_CHEST_STARS;
+        canvas.drawText(text, chapterChestRect.centerX(), chapterChestRect.centerY() + dp(5), textPaint);
     }
 
     private void drawSettings(Canvas canvas) {
@@ -1293,6 +1349,9 @@ public class GameView extends View {
         textPaint.setColor(Color.WHITE);
         String text = lastChestReward > 0 ? "星级宝箱 金币+" + lastChestReward
                 : "还差 " + Math.max(0, getNextStarChestTarget() - getTotalStars()) + " 星";
+        if (lastChapterChestReward > 0) {
+            text = "章节宝箱 金币+" + lastChapterChestReward;
+        }
         canvas.drawText(text, getWidth() / 2f, pagerTop - dp(10), textPaint);
         postInvalidateOnAnimation();
     }
@@ -1313,8 +1372,39 @@ public class GameView extends View {
         return total;
     }
 
+    private boolean canClaimChapterChest(int chapter) {
+        return !chapterChestClaimed[chapter] && getChapterStars(chapter) >= CHAPTER_CHEST_STARS;
+    }
+
+    private int getChapterStars(int chapter) {
+        int total = 0;
+        int start = chapter * CHAPTER_SIZE;
+        int end = Math.min(start + CHAPTER_SIZE, levels.size());
+        for (int level = start; level < end; level++) {
+            total += levelStars[level];
+        }
+        return total;
+    }
+
+    private int getCurrentMapChapter() {
+        int firstChapter = levelMapPage * LEVELS_PER_PAGE / CHAPTER_SIZE;
+        int lastChapter = Math.min(chapterNames.length - 1,
+                (levelMapPage * LEVELS_PER_PAGE + LEVELS_PER_PAGE - 1) / CHAPTER_SIZE);
+        for (int chapter = firstChapter; chapter <= lastChapter; chapter++) {
+            if (canClaimChapterChest(chapter)) {
+                return chapter;
+            }
+        }
+        for (int chapter = firstChapter; chapter <= lastChapter; chapter++) {
+            if (!chapterChestClaimed[chapter]) {
+                return chapter;
+            }
+        }
+        return Math.min(chapterNames.length - 1, firstChapter);
+    }
+
     private int getChapterIndex(int level) {
-        return Math.min(chapterNames.length - 1, level / 20);
+        return Math.min(chapterNames.length - 1, level / CHAPTER_SIZE);
     }
 
     private String buildStars(int count) {
