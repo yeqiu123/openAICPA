@@ -13,13 +13,6 @@
 
 直接打开 `index.html` 即可使用。
 
-开发模式：
-
-```bash
-npm install
-npm run dev
-```
-
 构建静态文件：
 
 ```bash
