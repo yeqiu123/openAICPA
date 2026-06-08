@@ -2339,9 +2339,11 @@ public class GameView extends View {
         }
 
         paint.setColor(Color.argb(125, 255, 255, 255));
-        canvas.drawCircle(rect.left + rect.width() * 0.32f, rect.bottom - dp(12), dp(7), paint);
-        canvas.drawCircle(rect.left + rect.width() * 0.48f, rect.bottom - dp(16), dp(8), paint);
-        canvas.drawCircle(rect.left + rect.width() * 0.65f, rect.bottom - dp(12), dp(7), paint);
+        float drift = (float) Math.sin(System.currentTimeMillis() / 260.0 + row + col) * dp(2);
+        canvas.drawCircle(rect.left + rect.width() * 0.32f + drift, rect.bottom - dp(12), dp(7), paint);
+        canvas.drawCircle(rect.left + rect.width() * 0.48f + drift, rect.bottom - dp(16), dp(8), paint);
+        canvas.drawCircle(rect.left + rect.width() * 0.65f + drift, rect.bottom - dp(12), dp(7), paint);
+        postInvalidateOnAnimation();
     }
 
     private void drawKey(Canvas canvas, int row, int col, RectF rect) {
