@@ -8751,7 +8751,7 @@ public class GameView extends View {
                 || lastEliteReward > 0 || lastFirstClearReward > 0 || lastFullStarReward > 0
                 || lastReplayReward > 0
                 || lastChapterMasteryReward > 0 || lastChapterEliteReward > 0 || lastChapterRankReward > 0
-                || lastSeasonReward > 0)) {
+                || lastSeasonReward > 0 || lastDailyChallengeMilestoneProp != NONE)) {
             drawRewardSparkles(canvas, getWidth() / 2f, getHeight() * 0.42f - dp(12));
         }
 
