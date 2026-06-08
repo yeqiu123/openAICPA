@@ -51,7 +51,7 @@ public class GameView extends View {
     private static final int RANK_CHEST_STEP = 45;
     private static final int CHAPTER_SIZE = 20;
     private static final int CHAPTER_CHEST_STARS = 45;
-    private static final int ACHIEVEMENT_COUNT = 6;
+    private static final int ACHIEVEMENT_COUNT = 10;
     private static final int NONE = -1;
     private static final int SPECIAL_NORMAL = 0;
     private static final int SPECIAL_ROW = 1;
@@ -1126,6 +1126,10 @@ public class GameView extends View {
         checkAchievement(3, getTotalStars() >= 120, 140);
         checkAchievement(4, winStreak >= 5, 120);
         checkAchievement(5, getFullyClearedChapterCount() >= 1, 160);
+        checkAchievement(6, getTotalRankScore() >= 180, 150);
+        checkAchievement(7, lastRank >= 6, 120);
+        checkAchievement(8, hiddenChallengeCleared, 100);
+        checkAchievement(9, lastGemReward > 0 || lastPortalReward > 0, 90);
     }
 
     private void checkAchievement(int index, boolean reached, int reward) {
