@@ -2739,6 +2739,7 @@ public class GameView extends View {
         textPaint.setColor(Color.WHITE);
         textPaint.setTextSize(sp(24));
         canvas.drawText("关卡地图 " + (levelMapPage + 1) + "/" + getLevelMapPageCount(), getWidth() / 2f, dp(54), textPaint);
+        drawMapChapterBanner(canvas);
         drawDailyChallengeEntry(canvas);
         drawChapterChestEntry(canvas);
         drawChapterProgress(canvas);
@@ -2833,6 +2834,29 @@ public class GameView extends View {
         textPaint.setTextSize(sp(8));
         textPaint.setColor(Color.WHITE);
         canvas.drawText(mark, badge.centerX(), badge.centerY() + dp(3), textPaint);
+    }
+
+    private void drawMapChapterBanner(Canvas canvas) {
+        int firstChapter = getFirstChapterOnMapPage();
+        int lastChapter = getLastChapterOnMapPage();
+        int count = lastChapter - firstChapter + 1;
+        float gap = dp(6);
+        float width = (getWidth() - dp(56) - gap * (count - 1)) / count;
+        float top = dp(58);
+
+        for (int chapter = firstChapter; chapter <= lastChapter; chapter++) {
+            float left = dp(28) + (chapter - firstChapter) * (width + gap);
+            RectF rect = new RectF(left, top, left + width, top + dp(24));
+            int color = chapterBottomColors[chapter];
+            paint.setColor(Color.argb(chapter == getCurrentMapChapter() ? 175 : 95,
+                    Color.red(color), Color.green(color), Color.blue(color)));
+            canvas.drawRoundRect(rect, dp(10), dp(10), paint);
+            textPaint.setTextAlign(Paint.Align.CENTER);
+            textPaint.setTextSize(sp(10));
+            textPaint.setColor(Color.WHITE);
+            canvas.drawText(chapterNames[chapter] + " " + getChapterStars(chapter),
+                    rect.centerX(), rect.centerY() + dp(4), textPaint);
+        }
     }
 
     private String buildLevelTypeMark(int levelIndex) {
@@ -3225,9 +3249,8 @@ public class GameView extends View {
     }
 
     private int getCurrentMapChapter() {
-        int firstChapter = levelMapPage * LEVELS_PER_PAGE / CHAPTER_SIZE;
-        int lastChapter = Math.min(chapterNames.length - 1,
-                (levelMapPage * LEVELS_PER_PAGE + LEVELS_PER_PAGE - 1) / CHAPTER_SIZE);
+        int firstChapter = getFirstChapterOnMapPage();
+        int lastChapter = getLastChapterOnMapPage();
         for (int chapter = firstChapter; chapter <= lastChapter; chapter++) {
             if (canClaimChapterChest(chapter)) {
                 return chapter;
@@ -3239,6 +3262,15 @@ public class GameView extends View {
             }
         }
         return Math.min(chapterNames.length - 1, firstChapter);
+    }
+
+    private int getFirstChapterOnMapPage() {
+        return levelMapPage * LEVELS_PER_PAGE / CHAPTER_SIZE;
+    }
+
+    private int getLastChapterOnMapPage() {
+        return Math.min(chapterNames.length - 1,
+                (levelMapPage * LEVELS_PER_PAGE + LEVELS_PER_PAGE - 1) / CHAPTER_SIZE);
     }
 
     private int getChapterIndex(int level) {
