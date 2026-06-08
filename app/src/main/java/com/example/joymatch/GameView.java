@@ -103,6 +103,7 @@ public class GameView extends View {
     private final int[][] keys = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[][] moveChest = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[][] shell = new int[BOARD_SIZE][BOARD_SIZE];
+    private final int[][] coralReef = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[][] cloud = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[][] flower = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[][] gem = new int[BOARD_SIZE][BOARD_SIZE];
@@ -196,6 +197,7 @@ public class GameView extends View {
     private int vineRemaining;
     private int chainRemaining;
     private int shellRemaining;
+    private int coralReefRemaining;
     private int flowerRemaining;
     private int keyRemaining;
     private int honeySpreadCount;
@@ -483,6 +485,7 @@ public class GameView extends View {
             int chainCount = i < 35 ? 0 : Math.min(14, 3 + i / 9);
             int shellCount = i < 45 ? 0 : Math.min(10, 2 + i / 12);
             int flowerCount = i < 52 ? 0 : Math.min(9, 2 + i / 14);
+            int coralReefCount = i < 120 || i % 7 != 1 ? 0 : Math.min(7, 2 + (i - 120) / 14);
             int keyCount = i < 28 ? 0 : Math.min(6, 1 + i / 24 + (i % 9 == 0 ? 1 : 0));
             int moveChestCount = i >= 16 && i % 6 == 0 ? 1 + (i % 18 == 0 ? 1 : 0) : 0;
             int cloudCount = i < 18 ? 0 : Math.min(10, 2 + i / 18);
@@ -518,7 +521,7 @@ public class GameView extends View {
             }
             levels.add(new Level(targetScore, moves, hammer, bomb, shuffle, rowBlast, colorBlast, extraMoves,
                     magicWand, brush, portalProp, cleanse, freeze, magnet, clock, starHammer, rocket, targetBrush, shield, energyCore, chainBreaker, lightning, meteor, tide, auroraOrb, targetKind, targetAmount, iceCount, honeyCount, stoneCount, vineCount, giftCount,
-                    chainCount, shellCount, flowerCount, keyCount, moveChestCount, cloudCount, gemCount, goldenEggCount, coinPouchCount, paintBucketCount, windmillCount, jewelBowCount, stardustJarCount, wishLampCount, resonanceDrumCount, auroraPrismCount, rainbowBottleCount, energyPotionCount, butterflyCount, portalCount, hourglassCount, luckyStarCount, luckyCloverCount, mysteryBoxCount, countdownBombCount,
+                    chainCount, shellCount, flowerCount, coralReefCount, keyCount, moveChestCount, cloudCount, gemCount, goldenEggCount, coinPouchCount, paintBucketCount, windmillCount, jewelBowCount, stardustJarCount, wishLampCount, resonanceDrumCount, auroraPrismCount, rainbowBottleCount, energyPotionCount, butterflyCount, portalCount, hourglassCount, luckyStarCount, luckyCloverCount, mysteryBoxCount, countdownBombCount,
                     moveLimitGoal, comboGoal, scoreGoal, elite));
         }
     }
@@ -606,6 +609,7 @@ public class GameView extends View {
         vineRemaining = level.vineCount;
         chainRemaining = level.chainCount;
         shellRemaining = level.shellCount;
+        coralReefRemaining = level.coralReefCount;
         flowerRemaining = level.flowerCount;
         keyRemaining = level.keyCount;
         honeySpreadCount = 0;
@@ -646,6 +650,7 @@ public class GameView extends View {
                 keys[row][col] = 0;
                 moveChest[row][col] = 0;
                 shell[row][col] = 0;
+                coralReef[row][col] = 0;
                 cloud[row][col] = 0;
                 flower[row][col] = 0;
                 gem[row][col] = 0;
@@ -680,6 +685,7 @@ public class GameView extends View {
         placeChain(level.chainCount);
         placeShell(level.shellCount);
         placeFlower(level.flowerCount);
+        placeCoralReef(level.coralReefCount);
         placeKeys(level.keyCount);
         placeMoveChest(level.moveChestCount);
         placeCloud(level.cloudCount);
@@ -1261,6 +1267,11 @@ public class GameView extends View {
             shell[row][col] = 0;
             shellRemaining--;
         }
+        if (coralReef[row][col] > 0) {
+            cleaned += coralReef[row][col];
+            coralReef[row][col] = 0;
+            coralReefRemaining--;
+        }
         if (flower[row][col] > 0) {
             cleaned += flower[row][col];
             flower[row][col] = 0;
@@ -1605,7 +1616,7 @@ public class GameView extends View {
         Level level = levels.get(levelIndex);
         if (score >= level.targetScore && targetRemaining <= 0
                 && iceRemaining <= 0 && honeyRemaining <= 0 && stoneRemaining <= 0 && vineRemaining <= 0
-                && chainRemaining <= 0 && shellRemaining <= 0 && flowerRemaining <= 0 && keyRemaining <= 0
+                && chainRemaining <= 0 && shellRemaining <= 0 && coralReefRemaining <= 0 && flowerRemaining <= 0 && keyRemaining <= 0
                 && isMoveLimitGoalCleared(level) && isComboGoalCleared(level) && isScoreGoalCleared(level)) {
             levelComplete = true;
             lastBonusScore = movesLeft * 80;
@@ -2323,6 +2334,21 @@ public class GameView extends View {
         }
     }
 
+    private void placeCoralReef(int count) {
+        int placed = 0;
+        while (placed < count) {
+            int row = random.nextInt(BOARD_SIZE);
+            int col = random.nextInt(BOARD_SIZE);
+            if (coralReef[row][col] == 0 && flower[row][col] == 0 && shell[row][col] == 0
+                    && ice[row][col] == 0 && honey[row][col] == 0 && stone[row][col] == 0
+                    && vine[row][col] == 0 && gift[row][col] == 0 && chain[row][col] == 0) {
+                // 珊瑚礁需要两次打击，作为珊瑚集市后的主题障碍。
+                coralReef[row][col] = 2;
+                placed++;
+            }
+        }
+    }
+
     private void placeKeys(int count) {
         int placed = 0;
         while (placed < count) {
@@ -2716,6 +2742,13 @@ public class GameView extends View {
                     shellRemaining--;
                 }
             }
+            if (coralReef[cell.row][cell.col] > 0) {
+                coralReef[cell.row][cell.col]--;
+                if (coralReef[cell.row][cell.col] == 0) {
+                    coralReefRemaining--;
+                    score += 140;
+                }
+            }
             if (flower[cell.row][cell.col] > 0) {
                 flower[cell.row][cell.col]--;
                 if (flower[cell.row][cell.col] == 0) {
@@ -2923,7 +2956,7 @@ public class GameView extends View {
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
                 if (ice[row][col] > 0 || honey[row][col] > 0 || stone[row][col] > 0 || vine[row][col] > 0
-                        || chain[row][col] > 0 || shell[row][col] > 0 || flower[row][col] > 0) {
+                        || chain[row][col] > 0 || shell[row][col] > 0 || coralReef[row][col] > 0 || flower[row][col] > 0) {
                     candidates.add(new Cell(row, col));
                 }
             }
@@ -3250,8 +3283,8 @@ public class GameView extends View {
         }
 
         int clearedObstacles = level.iceCount + level.honeyCount + level.stoneCount + level.vineCount + level.chainCount
-                + level.shellCount + level.flowerCount - iceRemaining - honeyRemaining - stoneRemaining - vineRemaining
-                - chainRemaining - shellRemaining - flowerRemaining;
+                + level.shellCount + level.coralReefCount + level.flowerCount - iceRemaining - honeyRemaining - stoneRemaining - vineRemaining
+                - chainRemaining - shellRemaining - coralReefRemaining - flowerRemaining;
         int obstacleMilestone = clearedObstacles / 6;
         if (obstacleMilestone > rewardObstacleMilestone) {
             // 清障越积极，道具补给越快。
@@ -3591,6 +3624,9 @@ public class GameView extends View {
         if (level.shellCount > 0) {
             obstacleText += " 贝" + shellRemaining;
         }
+        if (level.coralReefCount > 0) {
+            obstacleText += " 礁" + coralReefRemaining;
+        }
         if (level.flowerCount > 0) {
             obstacleText += " 花" + flowerRemaining;
         }
@@ -3812,6 +3848,8 @@ public class GameView extends View {
             return "能";
         } else if (level.butterflyCount > 0) {
             return "蝶";
+        } else if (level.coralReefCount > 0) {
+            return "礁";
         } else if (level.auroraPrismCount > 0) {
             return "棱";
         } else if (level.resonanceDrumCount > 0) {
@@ -4319,6 +4357,7 @@ public class GameView extends View {
         drawGift(canvas, row, col, rect);
         drawChain(canvas, row, col, rect);
         drawShell(canvas, row, col, rect);
+        drawCoralReef(canvas, row, col, rect);
         drawFlower(canvas, row, col, rect);
         drawCloud(canvas, row, col, rect);
         drawGem(canvas, row, col, rect);
@@ -4863,6 +4902,33 @@ public class GameView extends View {
             canvas.drawLine(shellRect.left + dp(9), shellRect.centerY(), shellRect.centerX(), shellRect.centerY() - dp(6), paint);
             canvas.drawLine(shellRect.centerX(), shellRect.centerY() - dp(6), shellRect.right - dp(10), shellRect.centerY() + dp(4), paint);
         }
+        paint.setStyle(Paint.Style.FILL);
+    }
+
+    private void drawCoralReef(Canvas canvas, int row, int col, RectF rect) {
+        if (coralReef[row][col] <= 0) {
+            return;
+        }
+
+        float centerX = rect.centerX();
+        float baseY = rect.bottom - dp(9);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(4));
+        paint.setStrokeCap(Paint.Cap.ROUND);
+        paint.setColor(coralReef[row][col] > 1 ? Color.argb(210, 255, 126, 133) : Color.argb(175, 255, 184, 96));
+        for (int i = -2; i <= 2; i++) {
+            float startX = centerX + i * dp(6);
+            float height = dp(16 + (i % 2 == 0 ? 4 : 0));
+            canvas.drawLine(startX, baseY, startX + i * dp(2), baseY - height, paint);
+            canvas.drawLine(startX + i * dp(2), baseY - height + dp(4),
+                    startX + i * dp(2) + (i <= 0 ? -dp(5) : dp(5)), baseY - height - dp(2), paint);
+        }
+        if (coralReef[row][col] == 1) {
+            paint.setStrokeWidth(dp(2));
+            paint.setColor(Color.argb(220, 120, 86, 118));
+            canvas.drawLine(rect.left + dp(13), rect.centerY(), rect.right - dp(12), rect.centerY() + dp(7), paint);
+        }
+        paint.setStrokeCap(Paint.Cap.ROUND);
         paint.setStyle(Paint.Style.FILL);
     }
 
@@ -5478,6 +5544,9 @@ public class GameView extends View {
         if (level.flowerCount > 0) {
             goalText += "  花苞 " + level.flowerCount;
         }
+        if (level.coralReefCount > 0) {
+            goalText += "  珊瑚礁 " + level.coralReefCount;
+        }
         if (level.gemCount > 0) {
             goalText += "  钻石 " + level.gemCount;
         }
@@ -5551,7 +5620,7 @@ public class GameView extends View {
 
     private int getLevelObstacleCount(Level level) {
         return level.iceCount + level.honeyCount + level.stoneCount + level.vineCount + level.chainCount
-                + level.shellCount + level.flowerCount;
+                + level.shellCount + level.coralReefCount + level.flowerCount;
     }
 
     private void showFeedback(int combo, int cleared) {
@@ -5787,6 +5856,7 @@ public class GameView extends View {
         final int chainCount;
         final int shellCount;
         final int flowerCount;
+        final int coralReefCount;
         final int keyCount;
         final int moveChestCount;
         final int cloudCount;
@@ -5817,7 +5887,7 @@ public class GameView extends View {
         Level(int targetScore, int moves, int hammers, int bombs, int shuffles, int rowBlasts, int colorBlasts,
                 int extraMoves, int magicWands, int brushes, int portalProps, int cleanses, int freezes,
                 int magnets, int clocks, int starHammers, int rockets, int targetBrushes, int shields, int energyCores, int chainBreakers, int lightnings, int meteors, int tides, int auroraOrbs, int targetKind, int targetAmount, int iceCount, int honeyCount, int stoneCount, int vineCount,
-                int giftCount, int chainCount, int shellCount, int flowerCount, int keyCount, int moveChestCount,
+                int giftCount, int chainCount, int shellCount, int flowerCount, int coralReefCount, int keyCount, int moveChestCount,
                 int cloudCount, int gemCount, int goldenEggCount, int coinPouchCount, int paintBucketCount, int windmillCount, int jewelBowCount, int stardustJarCount, int wishLampCount, int resonanceDrumCount, int auroraPrismCount, int rainbowBottleCount, int energyPotionCount, int butterflyCount,
                 int portalCount, int hourglassCount, int luckyStarCount, int luckyCloverCount,
                 int mysteryBoxCount, int countdownBombCount, int moveLimitGoal, int comboGoal, int scoreGoal, boolean elite) {
@@ -5856,6 +5926,7 @@ public class GameView extends View {
             this.chainCount = chainCount;
             this.shellCount = shellCount;
             this.flowerCount = flowerCount;
+            this.coralReefCount = coralReefCount;
             this.keyCount = keyCount;
             this.moveChestCount = moveChestCount;
             this.cloudCount = cloudCount;
