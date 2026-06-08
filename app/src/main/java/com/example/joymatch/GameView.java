@@ -8702,9 +8702,13 @@ public class GameView extends View {
     }
 
     private void trimRewardLines(List<String> lines) {
+        int hiddenCount = Math.max(0, lines.size() - 4);
         while (lines.size() > 4) {
             // 奖励过多时优先保留金币和后续高价值稀有奖励，避免章节/完美奖励被挤掉。
             lines.remove(lines.size() > 5 ? 1 : 2);
+        }
+        if (hiddenCount > 0 && lines.size() >= 4) {
+            lines.set(3, lines.get(3) + "  更多+" + hiddenCount);
         }
     }
 
