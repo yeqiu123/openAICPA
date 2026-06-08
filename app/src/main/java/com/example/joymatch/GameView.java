@@ -79,6 +79,7 @@ public class GameView extends View {
     private final int[][] moveChest = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[][] shell = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[][] cloud = new int[BOARD_SIZE][BOARD_SIZE];
+    private final int[][] flower = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[] propInventory = new int[PROP_COUNT];
     private final RectF[] propRects = new RectF[PROP_COUNT];
     private final RectF[] levelRects = new RectF[LEVELS_PER_PAGE];
@@ -140,6 +141,7 @@ public class GameView extends View {
     private int vineRemaining;
     private int chainRemaining;
     private int shellRemaining;
+    private int flowerRemaining;
     private int keyRemaining;
     private int honeySpreadCount;
     private int selectedRow = NONE;
@@ -172,6 +174,7 @@ public class GameView extends View {
     private int lastGiftReward;
     private int lastMoveChestReward;
     private int lastCloudReward;
+    private int lastFlowerReward;
     private int lastEnergyRewardProp = NONE;
     private int dailyRewardAmount;
     private int dailyStreak;
@@ -363,6 +366,7 @@ public class GameView extends View {
             int giftCount = i < 12 ? 0 : Math.min(8, 2 + i / 18);
             int chainCount = i < 35 ? 0 : Math.min(14, 3 + i / 9);
             int shellCount = i < 45 ? 0 : Math.min(10, 2 + i / 12);
+            int flowerCount = i < 52 ? 0 : Math.min(9, 2 + i / 14);
             int keyCount = i < 28 ? 0 : Math.min(6, 1 + i / 24 + (i % 9 == 0 ? 1 : 0));
             int moveChestCount = i >= 16 && i % 6 == 0 ? 1 + (i % 18 == 0 ? 1 : 0) : 0;
             int cloudCount = i < 18 ? 0 : Math.min(10, 2 + i / 18);
@@ -371,7 +375,7 @@ public class GameView extends View {
             int scoreGoal = i >= 30 && i % 6 == 0 ? targetScore + 800 + i * 40 : 0;
             levels.add(new Level(targetScore, moves, hammer, bomb, shuffle, rowBlast, colorBlast, extraMoves,
                     magicWand, brush, targetKind, targetAmount, iceCount, honeyCount, stoneCount, vineCount, giftCount,
-                    chainCount, shellCount, keyCount, moveChestCount, cloudCount, moveLimitGoal, comboGoal,
+                    chainCount, shellCount, flowerCount, keyCount, moveChestCount, cloudCount, moveLimitGoal, comboGoal,
                     scoreGoal));
         }
     }
@@ -398,6 +402,7 @@ public class GameView extends View {
         lastGiftReward = 0;
         lastMoveChestReward = 0;
         lastCloudReward = 0;
+        lastFlowerReward = 0;
         lastEnergyRewardProp = NONE;
         honeySpreadCount = 0;
         challengeCleared = false;
@@ -416,6 +421,7 @@ public class GameView extends View {
         vineRemaining = level.vineCount;
         chainRemaining = level.chainCount;
         shellRemaining = level.shellCount;
+        flowerRemaining = level.flowerCount;
         keyRemaining = level.keyCount;
         honeySpreadCount = 0;
         propInventory[PROP_HAMMER] = level.hammers;
@@ -440,6 +446,7 @@ public class GameView extends View {
                 moveChest[row][col] = 0;
                 shell[row][col] = 0;
                 cloud[row][col] = 0;
+                flower[row][col] = 0;
                 do {
                     board[row][col] = makePiece(random.nextInt(TILE_KINDS), SPECIAL_NORMAL);
                 } while (createsInitialMatch(row, col));
@@ -452,6 +459,7 @@ public class GameView extends View {
         placeGift(level.giftCount);
         placeChain(level.chainCount);
         placeShell(level.shellCount);
+        placeFlower(level.flowerCount);
         placeKeys(level.keyCount);
         placeMoveChest(level.moveChestCount);
         placeCloud(level.cloudCount);
@@ -535,6 +543,7 @@ public class GameView extends View {
             honeySpreadCount = 0;
             lastMoveChestReward = 0;
             lastCloudReward = 0;
+            lastFlowerReward = 0;
             lastEnergyRewardProp = NONE;
             showFeedback(1, 1);
         } else if (activeProp == PROP_BRUSH) {
@@ -548,6 +557,7 @@ public class GameView extends View {
             honeySpreadCount = 0;
             lastMoveChestReward = 0;
             lastCloudReward = 0;
+            lastFlowerReward = 0;
             lastEnergyRewardProp = NONE;
             showFeedback(1, 1);
         }
@@ -620,6 +630,7 @@ public class GameView extends View {
     private void clearCells(Set<Cell> cells, int bonusScore) {
         lastMoveChestReward = 0;
         lastCloudReward = 0;
+        lastFlowerReward = 0;
         cells = expandSpecialCells(cells);
         score += bonusScore + cells.size() * 45;
         spawnParticles(cells);
@@ -747,6 +758,7 @@ public class GameView extends View {
         int totalCleared = 0;
         lastMoveChestReward = 0;
         lastCloudReward = 0;
+        lastFlowerReward = 0;
         while (!matches.isEmpty()) {
             combo++;
             matches = expandSpecialCells(matches);
@@ -907,7 +919,7 @@ public class GameView extends View {
         Level level = levels.get(levelIndex);
         if (score >= level.targetScore && targetRemaining <= 0
                 && iceRemaining <= 0 && honeyRemaining <= 0 && stoneRemaining <= 0 && vineRemaining <= 0
-                && chainRemaining <= 0 && shellRemaining <= 0 && keyRemaining <= 0
+                && chainRemaining <= 0 && shellRemaining <= 0 && flowerRemaining <= 0 && keyRemaining <= 0
                 && isMoveLimitGoalCleared(level) && isComboGoalCleared(level) && isScoreGoalCleared(level)) {
             levelComplete = true;
             lastBonusScore = movesLeft * 80;
@@ -1279,6 +1291,21 @@ public class GameView extends View {
         }
     }
 
+    private void placeFlower(int count) {
+        int placed = 0;
+        while (placed < count) {
+            int row = random.nextInt(BOARD_SIZE);
+            int col = random.nextInt(BOARD_SIZE);
+            if (flower[row][col] == 0 && shell[row][col] == 0 && ice[row][col] == 0
+                    && honey[row][col] == 0 && stone[row][col] == 0 && vine[row][col] == 0
+                    && gift[row][col] == 0 && chain[row][col] == 0) {
+                // 花苞要先打裂再绽放，作为后期的双击清障目标。
+                flower[row][col] = 2;
+                placed++;
+            }
+        }
+    }
+
     private void placeKeys(int count) {
         int placed = 0;
         while (placed < count) {
@@ -1296,7 +1323,8 @@ public class GameView extends View {
         while (placed < count) {
             int row = random.nextInt(BOARD_SIZE);
             int col = random.nextInt(BOARD_SIZE);
-            if (moveChest[row][col] == 0 && gift[row][col] == 0 && stone[row][col] == 0 && vine[row][col] == 0) {
+            if (moveChest[row][col] == 0 && gift[row][col] == 0 && stone[row][col] == 0
+                    && vine[row][col] == 0 && flower[row][col] == 0) {
                 moveChest[row][col] = 1;
                 placed++;
             }
@@ -1308,7 +1336,8 @@ public class GameView extends View {
         while (placed < count) {
             int row = random.nextInt(BOARD_SIZE);
             int col = random.nextInt(BOARD_SIZE);
-            if (cloud[row][col] == 0 && gift[row][col] == 0 && moveChest[row][col] == 0) {
+            if (cloud[row][col] == 0 && gift[row][col] == 0 && moveChest[row][col] == 0
+                    && flower[row][col] == 0) {
                 cloud[row][col] = 1;
                 placed++;
             }
@@ -1354,6 +1383,14 @@ public class GameView extends View {
                     shellRemaining--;
                 }
             }
+            if (flower[cell.row][cell.col] > 0) {
+                flower[cell.row][cell.col]--;
+                if (flower[cell.row][cell.col] == 0) {
+                    flowerRemaining--;
+                    score += 160;
+                    lastFlowerReward += 160;
+                }
+            }
             if (keys[cell.row][cell.col] > 0) {
                 // 钥匙是中后期收集目标，必须清到所在格才算拿到。
                 keys[cell.row][cell.col] = 0;
@@ -1385,6 +1422,7 @@ public class GameView extends View {
             honeySpreadCount = 0;
             lastMoveChestReward = 0;
             lastCloudReward = 0;
+            lastFlowerReward = 0;
             lastEnergyRewardProp = NONE;
             saveCoins();
         } else {
@@ -1393,6 +1431,7 @@ public class GameView extends View {
             honeySpreadCount = 0;
             lastMoveChestReward = 0;
             lastCloudReward = 0;
+            lastFlowerReward = 0;
             lastEnergyRewardProp = NONE;
         }
     }
@@ -1424,6 +1463,7 @@ public class GameView extends View {
         lastGiftReward = 0;
         lastMoveChestReward = 0;
         lastCloudReward = 0;
+        lastFlowerReward = 0;
         lastEnergyRewardProp = NONE;
         showFeedback(1, honeySpreadCount);
     }
@@ -1455,13 +1495,14 @@ public class GameView extends View {
             honeySpreadCount = 0;
             lastMoveChestReward = 0;
             lastCloudReward = 0;
+            lastFlowerReward = 0;
             lastEnergyRewardProp = NONE;
             showFeedback(1, 5);
         }
 
         int clearedObstacles = level.iceCount + level.honeyCount + level.stoneCount + level.vineCount + level.chainCount
-                + level.shellCount - iceRemaining - honeyRemaining - stoneRemaining - vineRemaining - chainRemaining
-                - shellRemaining;
+                + level.shellCount + level.flowerCount - iceRemaining - honeyRemaining - stoneRemaining - vineRemaining
+                - chainRemaining - shellRemaining - flowerRemaining;
         int obstacleMilestone = clearedObstacles / 6;
         if (obstacleMilestone > rewardObstacleMilestone) {
             // 清障越积极，道具补给越快。
@@ -1472,6 +1513,7 @@ public class GameView extends View {
             honeySpreadCount = 0;
             lastMoveChestReward = 0;
             lastCloudReward = 0;
+            lastFlowerReward = 0;
             lastEnergyRewardProp = NONE;
             showFeedback(1, 6);
         }
@@ -1486,6 +1528,7 @@ public class GameView extends View {
             honeySpreadCount = 0;
             lastMoveChestReward = 0;
             lastCloudReward = 0;
+            lastFlowerReward = 0;
             lastEnergyRewardProp = NONE;
             showFeedback(Math.max(2, bestCombo), 3);
         }
@@ -1499,6 +1542,7 @@ public class GameView extends View {
             honeySpreadCount = 0;
             lastMoveChestReward = 0;
             lastCloudReward = 0;
+            lastFlowerReward = 0;
             lastEnergyRewardProp = NONE;
             showFeedback(1, level.keyCount);
         }
@@ -1659,6 +1703,9 @@ public class GameView extends View {
                 + " 藤" + vineRemaining + " 锁" + chainRemaining;
         if (level.shellCount > 0) {
             obstacleText += " 贝" + shellRemaining;
+        }
+        if (level.flowerCount > 0) {
+            obstacleText += " 花" + flowerRemaining;
         }
         if (level.keyCount > 0) {
             obstacleText += " 钥" + keyRemaining;
@@ -2076,6 +2123,7 @@ public class GameView extends View {
         drawGift(canvas, row, col, rect);
         drawChain(canvas, row, col, rect);
         drawShell(canvas, row, col, rect);
+        drawFlower(canvas, row, col, rect);
         drawCloud(canvas, row, col, rect);
         drawKey(canvas, row, col, rect);
         drawMoveChest(canvas, row, col, rect);
@@ -2406,6 +2454,32 @@ public class GameView extends View {
         paint.setStyle(Paint.Style.FILL);
     }
 
+    private void drawFlower(Canvas canvas, int row, int col, RectF rect) {
+        if (flower[row][col] <= 0) {
+            return;
+        }
+
+        float centerX = rect.centerX();
+        float centerY = rect.centerY();
+        paint.setColor(flower[row][col] > 1 ? Color.argb(185, 255, 139, 176) : Color.argb(165, 255, 186, 82));
+        for (int i = 0; i < 5; i++) {
+            double angle = -Math.PI / 2 + i * Math.PI * 2 / 5;
+            float petalX = centerX + (float) Math.cos(angle) * dp(12);
+            float petalY = centerY + (float) Math.sin(angle) * dp(12);
+            canvas.drawOval(new RectF(petalX - dp(6), petalY - dp(8), petalX + dp(6), petalY + dp(8)), paint);
+        }
+        paint.setColor(Color.argb(220, 255, 236, 118));
+        canvas.drawCircle(centerX, centerY, flower[row][col] > 1 ? dp(7) : dp(9), paint);
+        if (flower[row][col] == 1) {
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(dp(2));
+            paint.setColor(Color.argb(215, 120, 92, 120));
+            canvas.drawLine(centerX - dp(14), centerY, centerX + dp(12), centerY - dp(7), paint);
+            canvas.drawLine(centerX - dp(8), centerY - dp(12), centerX + dp(9), centerY + dp(12), paint);
+            paint.setStyle(Paint.Style.FILL);
+        }
+    }
+
     private void drawCloud(Canvas canvas, int row, int col, RectF rect) {
         if (cloud[row][col] <= 0) {
             return;
@@ -2525,6 +2599,8 @@ public class GameView extends View {
             text = "步数 +" + lastMoveChestReward;
         } else if (lastCloudReward > 0 && age < 900) {
             text = "彩云 +" + lastCloudReward;
+        } else if (lastFlowerReward > 0 && age < 900) {
+            text = "花苞 +" + lastFlowerReward;
         } else if (honeySpreadCount > 0 && age < 900) {
             text = "蜂蜜蔓延";
         } else if (lastTaskRewardType == 1 && age < 900) {
@@ -2584,6 +2660,9 @@ public class GameView extends View {
         if (level.cloudCount > 0) {
             goalText += "  彩云 " + level.cloudCount;
         }
+        if (level.flowerCount > 0) {
+            goalText += "  花苞 " + level.flowerCount;
+        }
         if (level.scoreGoal > 0) {
             goalText += "  高分 " + level.scoreGoal;
         }
@@ -2594,7 +2673,7 @@ public class GameView extends View {
 
     private int getLevelObstacleCount(Level level) {
         return level.iceCount + level.honeyCount + level.stoneCount + level.vineCount + level.chainCount
-                + level.shellCount;
+                + level.shellCount + level.flowerCount;
     }
 
     private void showFeedback(int combo, int cleared) {
@@ -2747,6 +2826,7 @@ public class GameView extends View {
         final int giftCount;
         final int chainCount;
         final int shellCount;
+        final int flowerCount;
         final int keyCount;
         final int moveChestCount;
         final int cloudCount;
@@ -2757,8 +2837,8 @@ public class GameView extends View {
         Level(int targetScore, int moves, int hammers, int bombs, int shuffles, int rowBlasts, int colorBlasts,
                 int extraMoves, int magicWands, int brushes,
                 int targetKind, int targetAmount, int iceCount, int honeyCount, int stoneCount, int vineCount,
-                int giftCount, int chainCount, int shellCount, int keyCount, int moveChestCount, int cloudCount,
-                int moveLimitGoal, int comboGoal, int scoreGoal) {
+                int giftCount, int chainCount, int shellCount, int flowerCount, int keyCount, int moveChestCount,
+                int cloudCount, int moveLimitGoal, int comboGoal, int scoreGoal) {
             this.targetScore = targetScore;
             this.moves = moves;
             this.hammers = hammers;
@@ -2778,6 +2858,7 @@ public class GameView extends View {
             this.giftCount = giftCount;
             this.chainCount = chainCount;
             this.shellCount = shellCount;
+            this.flowerCount = flowerCount;
             this.keyCount = keyCount;
             this.moveChestCount = moveChestCount;
             this.cloudCount = cloudCount;
