@@ -114,6 +114,8 @@ public class GameView extends View {
 
     private int levelIndex = 0;
     private int movesLeft;
+    private int movesUsed;
+    private int moveLimitBonus;
     private int score;
     private int targetKind;
     private int targetRemaining;
@@ -135,6 +137,7 @@ public class GameView extends View {
     private int comboEnergy;
     private int lastStars;
     private int lastBonusScore;
+    private boolean challengeCleared;
     private int coins;
     private int lastCoinReward;
     private int starChestClaimed;
@@ -227,6 +230,7 @@ public class GameView extends View {
                 // 金币续步给玩家一次翻盘机会。
                 coins -= CONTINUE_COST;
                 movesLeft = 5;
+                moveLimitBonus += 5;
                 levelFailed = false;
                 saveCoins();
                 playHaptic(HapticFeedbackConstants.CONFIRM);
@@ -317,8 +321,9 @@ public class GameView extends View {
             int honeyCount = i < 8 ? 0 : Math.min(18, 4 + i / 4);
             int stoneCount = i < 15 ? 0 : Math.min(12, 3 + i / 8);
             int vineCount = i < 25 ? 0 : Math.min(16, 4 + i / 7);
+            int moveLimitGoal = i >= 18 && i % 4 == 0 ? Math.max(8, moves - 5) : 0;
             levels.add(new Level(targetScore, moves, hammer, bomb, shuffle, rowBlast, colorBlast, extraMoves,
-                    targetKind, targetAmount, iceCount, honeyCount, stoneCount, vineCount));
+                    targetKind, targetAmount, iceCount, honeyCount, stoneCount, vineCount, moveLimitGoal));
         }
     }
 
@@ -327,6 +332,8 @@ public class GameView extends View {
         levelIndex = index;
         Level level = levels.get(levelIndex);
         movesLeft = level.moves;
+        movesUsed = 0;
+        moveLimitBonus = 0;
         score = 0;
         levelComplete = false;
         levelFailed = false;
@@ -335,6 +342,7 @@ public class GameView extends View {
         lastCoinReward = 0;
         lastChestReward = 0;
         lastChapterChestReward = 0;
+        challengeCleared = false;
         rewardTargetMilestone = 0;
         rewardObstacleMilestone = 0;
         targetKind = level.targetKind;
@@ -376,6 +384,7 @@ public class GameView extends View {
         // 每日挑战复用关卡池，但奖励和通关不推进主线。
         dailyChallengeMode = true;
         movesLeft = Math.max(12, movesLeft - 3);
+        movesUsed = 0;
         score = 0;
     }
 
@@ -404,6 +413,7 @@ public class GameView extends View {
                     // 加步道具即时生效，适合低步数时救场。
                     propInventory[prop]--;
                     movesLeft += 5;
+                    moveLimitBonus += 5;
                     activeProp = NONE;
                     selectedRow = NONE;
                     selectedCol = NONE;
@@ -447,6 +457,7 @@ public class GameView extends View {
         int toPiece = board[row][col];
         if (specialOf(fromPiece) != SPECIAL_NORMAL && specialOf(toPiece) != SPECIAL_NORMAL) {
             movesLeft--;
+            movesUsed++;
             clearHint();
             clearCells(buildSpecialComboCells(selectedRow, selectedCol, row, col), 360);
             checkLevelState();
@@ -465,6 +476,7 @@ public class GameView extends View {
             playRejectTone();
         } else {
             movesLeft--;
+            movesUsed++;
             clearHint();
             createSpecialFromMatch(matches, row, col);
             resolveMatches(matches);
@@ -719,11 +731,13 @@ public class GameView extends View {
 
         Level level = levels.get(levelIndex);
         if (score >= level.targetScore && targetRemaining <= 0
-                && iceRemaining <= 0 && honeyRemaining <= 0 && stoneRemaining <= 0 && vineRemaining <= 0) {
+                && iceRemaining <= 0 && honeyRemaining <= 0 && stoneRemaining <= 0 && vineRemaining <= 0
+                && isMoveLimitGoalCleared(level)) {
             levelComplete = true;
             lastBonusScore = movesLeft * 80;
             score += lastBonusScore;
             lastStars = movesLeft > level.moves / 2 ? 3 : (movesLeft > level.moves / 5 ? 2 : 1);
+            challengeCleared = level.moveLimitGoal > 0;
             if (dailyChallengeMode) {
                 saveDailyChallengeReward();
             } else {
@@ -734,6 +748,14 @@ public class GameView extends View {
         } else if (movesLeft <= 0) {
             levelFailed = true;
         }
+    }
+
+    private boolean isMoveLimitGoalCleared(Level level) {
+        return level.moveLimitGoal <= 0 || movesUsed <= getMoveLimitGoal(level);
+    }
+
+    private int getMoveLimitGoal(Level level) {
+        return level.moveLimitGoal <= 0 ? 0 : level.moveLimitGoal + moveLimitBonus;
     }
 
     private void saveDailyChallengeReward() {
@@ -1149,7 +1171,11 @@ public class GameView extends View {
         canvas.drawText("冰" + iceRemaining + " 蜜" + honeyRemaining + " 石" + stoneRemaining + " 藤" + vineRemaining,
                 getWidth() - dp(22), dp(130), textPaint);
         textPaint.setTextSize(sp(13));
-        canvas.drawText(buildStars(getPreviewStars(level)), getWidth() - dp(22), dp(154), textPaint);
+        String starText = buildStars(getPreviewStars(level));
+        if (level.moveLimitGoal > 0) {
+            starText += " 挑" + movesUsed + "/" + getMoveLimitGoal(level);
+        }
+        canvas.drawText(starText, getWidth() - dp(22), dp(154), textPaint);
         drawComboEnergy(canvas);
     }
 
@@ -1821,7 +1847,11 @@ public class GameView extends View {
         canvas.drawText(levelComplete ? "闯关成功" : "再试一次", getWidth() / 2f, getHeight() * 0.42f, textPaint);
         textPaint.setTextSize(sp(16));
         if (levelComplete) {
-            canvas.drawText(buildStars(lastStars) + "  步数奖励 +" + lastBonusScore, getWidth() / 2f, getHeight() * 0.49f, textPaint);
+            String bonusText = buildStars(lastStars) + "  步数奖励 +" + lastBonusScore;
+            if (challengeCleared) {
+                bonusText += "  挑战达成";
+            }
+            canvas.drawText(bonusText, getWidth() / 2f, getHeight() * 0.49f, textPaint);
             String scoreText = dailyChallengeMode ? "挑战分 " + score : "最佳分 " + levelBestScores[levelIndex];
             canvas.drawText(scoreText, getWidth() / 2f, getHeight() * 0.55f, textPaint);
             String rewardText = "金币 +" + lastCoinReward + "  点击继续";
@@ -1861,10 +1891,12 @@ public class GameView extends View {
         final int honeyCount;
         final int stoneCount;
         final int vineCount;
+        final int moveLimitGoal;
 
         Level(int targetScore, int moves, int hammers, int bombs, int shuffles, int rowBlasts, int colorBlasts,
                 int extraMoves,
-                int targetKind, int targetAmount, int iceCount, int honeyCount, int stoneCount, int vineCount) {
+                int targetKind, int targetAmount, int iceCount, int honeyCount, int stoneCount, int vineCount,
+                int moveLimitGoal) {
             this.targetScore = targetScore;
             this.moves = moves;
             this.hammers = hammers;
@@ -1879,6 +1911,7 @@ public class GameView extends View {
             this.honeyCount = honeyCount;
             this.stoneCount = stoneCount;
             this.vineCount = vineCount;
+            this.moveLimitGoal = moveLimitGoal;
         }
     }
 
