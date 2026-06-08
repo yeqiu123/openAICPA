@@ -288,6 +288,8 @@ public class GameView extends View {
     private int dailyStreak;
     private int dailyChallengeStreak;
     private int dailyGoalProgress;
+    private int lastDailyChallengeMilestoneProp = NONE;
+    private int lastDailyChallengeMilestoneAmount;
     private int lastDailyGoalReward;
     private int rewardTargetMilestone;
     private int rewardObstacleMilestone;
@@ -572,6 +574,8 @@ public class GameView extends View {
         lastFirstClearReward = 0;
         lastFullStarReward = 0;
         lastDailyGoalReward = 0;
+        lastDailyChallengeMilestoneProp = NONE;
+        lastDailyChallengeMilestoneAmount = 0;
         lastChestReward = 0;
         lastRankChestReward = 0;
         lastChapterChestReward = 0;
@@ -1906,6 +1910,8 @@ public class GameView extends View {
         long lastChallengeDay = prefs.getLong(KEY_DAILY_CHALLENGE_DAY, -1L);
         if (lastChallengeDay == today) {
             lastCoinReward = 0;
+            lastDailyChallengeMilestoneProp = NONE;
+            lastDailyChallengeMilestoneAmount = 0;
             return;
         }
 
@@ -1913,11 +1919,34 @@ public class GameView extends View {
         dailyChallengeStreak = lastChallengeDay == today - 1 ? dailyChallengeStreak + 1 : 1;
         lastCoinReward = 30 + lastStars * 10 + Math.min(5, dailyChallengeStreak - 1) * 6;
         coins += lastCoinReward;
+        grantDailyChallengeMilestoneReward();
         prefs.edit()
                 .putLong(KEY_DAILY_CHALLENGE_DAY, today)
                 .putInt(KEY_DAILY_CHALLENGE_STREAK, dailyChallengeStreak)
                 .putInt(KEY_COINS, coins)
                 .apply();
+    }
+
+    private void grantDailyChallengeMilestoneReward() {
+        lastDailyChallengeMilestoneProp = NONE;
+        lastDailyChallengeMilestoneAmount = 0;
+        if (dailyChallengeStreak == 3) {
+            lastDailyChallengeMilestoneProp = PROP_ROCKET;
+            lastDailyChallengeMilestoneAmount = 1;
+        } else if (dailyChallengeStreak == 7) {
+            lastDailyChallengeMilestoneProp = PROP_AURORA_ORB;
+            lastDailyChallengeMilestoneAmount = 1;
+        } else if (dailyChallengeStreak == 14) {
+            lastDailyChallengeMilestoneProp = PROP_MOON_TICKET;
+            lastDailyChallengeMilestoneAmount = 2;
+        } else if (dailyChallengeStreak > 0 && dailyChallengeStreak % 30 == 0) {
+            lastDailyChallengeMilestoneProp = PROP_METEOR;
+            lastDailyChallengeMilestoneAmount = 2;
+        }
+        if (lastDailyChallengeMilestoneProp != NONE) {
+            // 每日挑战连胜节点给稀有道具，强化持续回访动力。
+            propInventory[lastDailyChallengeMilestoneProp] += lastDailyChallengeMilestoneAmount;
+        }
     }
 
     private void updateDailyGoalProgress() {
@@ -6313,6 +6342,10 @@ public class GameView extends View {
             if (dailyChallengeMode) {
                 rewardText = lastCoinReward > 0 ? "每日金币 +" + lastCoinReward + " 连" + dailyChallengeStreak + "  返回主线"
                         : "今日已领奖  返回主线";
+                if (lastDailyChallengeMilestoneProp != NONE) {
+                    rewardText = "每日金币 +" + lastCoinReward + " 连" + dailyChallengeStreak + " "
+                            + getPropName(lastDailyChallengeMilestoneProp) + "+" + lastDailyChallengeMilestoneAmount + "  返回主线";
+                }
             } else if (lastChapterMasteryReward > 0) {
                 rewardText = "金币 +" + lastCoinReward + " 满星大师+" + lastChapterMasteryReward + "  点击继续";
             } else if (lastChapterEliteReward > 0) {
