@@ -23,6 +23,10 @@ public class GameView extends View {
     private static final int BOARD_SIZE = 8;
     private static final int TILE_KINDS = 6;
     private static final int NONE = -1;
+    private static final int SPECIAL_NORMAL = 0;
+    private static final int SPECIAL_ROW = 1;
+    private static final int SPECIAL_COLUMN = 2;
+    private static final int SPECIAL_RAINBOW = 3;
     private static final int PROP_HAMMER = 0;
     private static final int PROP_BOMB = 1;
     private static final int PROP_SHUFFLE = 2;
@@ -149,7 +153,7 @@ public class GameView extends View {
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
                 do {
-                    board[row][col] = random.nextInt(TILE_KINDS);
+                    board[row][col] = makePiece(random.nextInt(TILE_KINDS), SPECIAL_NORMAL);
                 } while (createsInitialMatch(row, col));
             }
         }
@@ -199,6 +203,7 @@ public class GameView extends View {
             swap(selectedRow, selectedCol, row, col);
         } else {
             movesLeft--;
+            createSpecialFromMatch(matches, row, col);
             resolveMatches(matches);
             checkLevelState();
         }
@@ -207,6 +212,7 @@ public class GameView extends View {
     }
 
     private void clearCells(Set<Cell> cells, int bonusScore) {
+        cells = expandSpecialCells(cells);
         score += bonusScore + cells.size() * 45;
         for (Cell cell : cells) {
             board[cell.row][cell.col] = NONE;
@@ -252,6 +258,7 @@ public class GameView extends View {
 
     private void resolveMatches(Set<Cell> matches) {
         while (!matches.isEmpty()) {
+            matches = expandSpecialCells(matches);
             score += matches.size() * 60;
             for (Cell cell : matches) {
                 board[cell.row][cell.col] = NONE;
@@ -266,7 +273,7 @@ public class GameView extends View {
         for (int row = 0; row < BOARD_SIZE; row++) {
             int runStart = 0;
             for (int col = 1; col <= BOARD_SIZE; col++) {
-                if (col < BOARD_SIZE && board[row][col] == board[row][runStart]) {
+                if (col < BOARD_SIZE && sameColorPiece(board[row][col], board[row][runStart])) {
                     continue;
                 }
                 if (board[row][runStart] != NONE && col - runStart >= 3) {
@@ -281,7 +288,7 @@ public class GameView extends View {
         for (int col = 0; col < BOARD_SIZE; col++) {
             int runStart = 0;
             for (int row = 1; row <= BOARD_SIZE; row++) {
-                if (row < BOARD_SIZE && board[row][col] == board[runStart][col]) {
+                if (row < BOARD_SIZE && sameColorPiece(board[row][col], board[runStart][col])) {
                     continue;
                 }
                 if (board[runStart][col] != NONE && row - runStart >= 3) {
@@ -305,7 +312,7 @@ public class GameView extends View {
                 }
             }
             while (writeRow >= 0) {
-                board[writeRow][col] = random.nextInt(TILE_KINDS);
+                board[writeRow][col] = makePiece(random.nextInt(TILE_KINDS), SPECIAL_NORMAL);
                 writeRow--;
             }
         }
@@ -321,10 +328,69 @@ public class GameView extends View {
     }
 
     private boolean createsInitialMatch(int row, int col) {
-        int value = board[row][col];
-        boolean horizontal = col >= 2 && board[row][col - 1] == value && board[row][col - 2] == value;
-        boolean vertical = row >= 2 && board[row - 1][col] == value && board[row - 2][col] == value;
+        int value = colorOf(board[row][col]);
+        boolean horizontal = col >= 2 && colorOf(board[row][col - 1]) == value && colorOf(board[row][col - 2]) == value;
+        boolean vertical = row >= 2 && colorOf(board[row - 1][col]) == value && colorOf(board[row - 2][col]) == value;
         return horizontal || vertical;
+    }
+
+    private void createSpecialFromMatch(Set<Cell> matches, int row, int col) {
+        if (matches.size() < 4) {
+            return;
+        }
+
+        Cell specialCell = matches.contains(new Cell(row, col)) ? new Cell(row, col) : matches.iterator().next();
+        int special = matches.size() >= 5 ? SPECIAL_RAINBOW : (selectedRow == row ? SPECIAL_ROW : SPECIAL_COLUMN);
+        board[specialCell.row][specialCell.col] = makePiece(colorOf(board[specialCell.row][specialCell.col]), special);
+        matches.remove(specialCell);
+    }
+
+    private Set<Cell> expandSpecialCells(Set<Cell> origin) {
+        Set<Cell> expanded = new HashSet<>(origin);
+        boolean changed = true;
+        while (changed) {
+            changed = false;
+            List<Cell> snapshot = new ArrayList<>(expanded);
+            for (Cell cell : snapshot) {
+                int piece = board[cell.row][cell.col];
+                int special = specialOf(piece);
+                if (special == SPECIAL_ROW) {
+                    for (int col = 0; col < BOARD_SIZE; col++) {
+                        changed |= expanded.add(new Cell(cell.row, col));
+                    }
+                } else if (special == SPECIAL_COLUMN) {
+                    for (int row = 0; row < BOARD_SIZE; row++) {
+                        changed |= expanded.add(new Cell(row, cell.col));
+                    }
+                } else if (special == SPECIAL_RAINBOW) {
+                    int color = colorOf(piece);
+                    for (int row = 0; row < BOARD_SIZE; row++) {
+                        for (int col = 0; col < BOARD_SIZE; col++) {
+                            if (colorOf(board[row][col]) == color) {
+                                changed |= expanded.add(new Cell(row, col));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return expanded;
+    }
+
+    private int makePiece(int color, int special) {
+        return color + special * TILE_KINDS;
+    }
+
+    private int colorOf(int piece) {
+        return piece == NONE ? NONE : piece % TILE_KINDS;
+    }
+
+    private int specialOf(int piece) {
+        return piece == NONE ? SPECIAL_NORMAL : piece / TILE_KINDS;
+    }
+
+    private boolean sameColorPiece(int first, int second) {
+        return first != NONE && second != NONE && colorOf(first) == colorOf(second);
     }
 
     private void swap(int rowA, int colA, int rowB, int colB) {
@@ -389,7 +455,8 @@ public class GameView extends View {
         float bottom = top + tileSize - dp(8);
         float centerX = (left + right) / 2f;
         float centerY = (top + bottom) / 2f;
-        int color = palette[board[row][col]];
+        int piece = board[row][col];
+        int color = palette[colorOf(piece)];
 
         paint.setShader(new RadialGradient(centerX - tileSize * 0.18f, centerY - tileSize * 0.18f,
                 tileSize * 0.58f, Color.WHITE, color, Shader.TileMode.CLAMP));
@@ -408,7 +475,8 @@ public class GameView extends View {
             paint.setStyle(Paint.Style.FILL);
         }
 
-        drawTileIcon(canvas, board[row][col], centerX, centerY);
+        drawTileIcon(canvas, colorOf(piece), centerX, centerY);
+        drawSpecialMark(canvas, specialOf(piece), centerX, centerY);
     }
 
     private void drawPropBar(Canvas canvas) {
@@ -500,6 +568,24 @@ public class GameView extends View {
             }
             path.close();
             canvas.drawPath(path, paint);
+        }
+    }
+
+    private void drawSpecialMark(Canvas canvas, int special, float centerX, float centerY) {
+        if (special == SPECIAL_NORMAL) {
+            return;
+        }
+
+        paint.setColor(Color.argb(210, 255, 255, 255));
+        paint.setStrokeWidth(dp(4));
+        if (special == SPECIAL_ROW) {
+            canvas.drawLine(centerX - tileSize * 0.28f, centerY, centerX + tileSize * 0.28f, centerY, paint);
+        } else if (special == SPECIAL_COLUMN) {
+            canvas.drawLine(centerX, centerY - tileSize * 0.28f, centerX, centerY + tileSize * 0.28f, paint);
+        } else {
+            paint.setStyle(Paint.Style.STROKE);
+            canvas.drawCircle(centerX, centerY, tileSize * 0.27f, paint);
+            paint.setStyle(Paint.Style.FILL);
         }
     }
 
