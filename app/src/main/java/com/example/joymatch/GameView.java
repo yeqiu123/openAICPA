@@ -2463,6 +2463,9 @@ public class GameView extends View {
         canvas.drawRect(0, 0, getWidth(), getHeight(), paint);
         paint.setColor(levelComplete ? Color.argb(110, 255, 213, 92) : Color.argb(95, 255, 107, 154));
         canvas.drawCircle(getWidth() / 2f, getHeight() * 0.42f - dp(12), dp(92), paint);
+        if (levelComplete && (lastAchievementReward > 0 || lastStarUpgradeReward > 0 || lastWinStreakReward > 0)) {
+            drawRewardSparkles(canvas, getWidth() / 2f, getHeight() * 0.42f - dp(12));
+        }
 
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setTextSize(sp(28));
@@ -2501,6 +2504,17 @@ public class GameView extends View {
 
     private float dp(float value) {
         return value * getResources().getDisplayMetrics().density;
+    }
+
+    private void drawRewardSparkles(Canvas canvas, float centerX, float centerY) {
+        paint.setColor(Color.argb(210, 255, 236, 118));
+        for (int i = 0; i < 8; i++) {
+            double angle = i * Math.PI * 2 / 8 + System.currentTimeMillis() / 900.0;
+            float x = centerX + (float) Math.cos(angle) * dp(76);
+            float y = centerY + (float) Math.sin(angle) * dp(76);
+            canvas.drawCircle(x, y, dp(i % 2 == 0 ? 4 : 3), paint);
+        }
+        postInvalidateOnAnimation();
     }
 
     private float sp(float value) {
