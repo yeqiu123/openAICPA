@@ -114,6 +114,28 @@ function quotaPercent(account) {
   return Math.min(100, Math.round((Number(account.quotaUsed || 0) / account.quotaLimit) * 100));
 }
 
+function quotaBarClass(percent) {
+  if (percent >= 95) return "quota-fill danger";
+  if (percent >= 80) return "quota-fill warn";
+  return "quota-fill ok";
+}
+
+function quotaHealth(account) {
+  if (!account.quotaLimit) return "不限额度";
+  const percent = quotaPercent(account);
+  if (percent >= 95) return "额度耗尽";
+  if (percent >= 80) return "接近上限";
+  return "额度正常";
+}
+
+function deriveQuotaStatus(account) {
+  if (!account.quotaLimit) return account.status === "disabled" ? "disabled" : "active";
+  const percent = quotaPercent(account);
+  if (percent >= 100) return "disabled";
+  if (percent >= 80) return "warning";
+  return "active";
+}
+
 function statusClass(status) {
   if (status === "active") return "ok";
   if (status === "disabled") return "danger";
@@ -137,7 +159,8 @@ function calcStats() {
   const quotaUsed = state.accounts.reduce((sum, item) => sum + Number(item.quotaUsed || 0), 0);
   const quotaLimit = state.accounts.reduce((sum, item) => sum + Number(item.quotaLimit || 0), 0);
   const tokens = state.accounts.reduce((sum, item) => sum + Number(item.tokenUsed || 0), 0);
-  return { total, active, quotaUsed, quotaLimit, tokens };
+  const risky = state.accounts.filter((item) => item.quotaLimit && quotaPercent(item) >= 80).length;
+  return { total, active, quotaUsed, quotaLimit, tokens, risky };
 }
 
 function filteredAccounts() {
@@ -212,7 +235,7 @@ function renderView() {
       <div class="card stat"><div class="stat-label">Token</div><div class="stat-value">${formatNumber(stats.tokens)}</div></div>
     </div>
     ${renderToolbar()}
-    ${state.view === "quota" ? renderQuotaTable() : renderAccountTable()}
+    ${state.view === "quota" ? renderQuotaTable() : state.view === "usage" ? renderUsageView() : renderAccountTable()}
   `;
   bindViewEvents();
 }
@@ -331,8 +354,8 @@ function renderQuotaTable() {
               <th>额度进度</th>
               <th>已用额度</th>
               <th>额度上限</th>
+              <th>剩余额度</th>
               <th>请求数</th>
-              <th>Token</th>
               <th>状态</th>
               <th>操作</th>
             </tr>
@@ -348,16 +371,105 @@ function renderQuotaTable() {
 
 function renderQuotaRow(account) {
   const percent = quotaPercent(account);
+  const remain = account.quotaLimit ? Math.max(account.quotaLimit - account.quotaUsed, 0) : 0;
   return `
     <tr>
       <td><strong>${escapeHtml(account.name)}</strong><div class="muted">${escapeHtml(account.provider)}</div></td>
-      <td>${percent}%<div class="muted">${account.quotaLimit ? "有限额度" : "不限额度"}</div></td>
+      <td>
+        <div class="quota-track"><span class="${quotaBarClass(percent)}" style="width:${account.quotaLimit ? percent : 100}%"></span></div>
+        <div class="muted">${account.quotaLimit ? `${percent}%` : "不限额度"}</div>
+      </td>
       <td>${formatNumber(account.quotaUsed)}</td>
       <td>${account.quotaLimit ? formatNumber(account.quotaLimit) : "不限"}</td>
+      <td>${account.quotaLimit ? formatNumber(remain) : "不限"}</td>
+      <td>${formatNumber(account.requestCount)}</td>
+      <td><span class="pill ${statusClass(account.status)}">${statusText(account.status)}</span><div class="muted">${quotaHealth(account)}</div></td>
+      <td>
+        <div class="row-actions">
+          <button class="small" data-usage="${account.id}">录入</button>
+          <button class="small" data-edit="${account.id}">编辑</button>
+          <button class="small" data-auto-status="${account.id}">同步状态</button>
+          <button class="small danger" data-reset-usage="${account.id}">重置</button>
+        </div>
+      </td>
+    </tr>
+  `;
+}
+
+function renderUsageView() {
+  const rows = filteredAccounts();
+  const providers = providerUsage(rows);
+  return `
+    <div class="usage-grid">
+      ${providers.map(renderProviderUsage).join("") || `<div class="card stat"><div class="stat-label">暂无用量</div><div class="stat-value">0</div></div>`}
+    </div>
+    <section class="card section" style="margin-top:14px">
+      <div class="section-head">
+        <div class="section-title">用量流水</div>
+        <div class="muted">录入请求数、Token 与额度消耗</div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>账号</th>
+              <th>提供商</th>
+              <th>请求数</th>
+              <th>Token</th>
+              <th>额度消耗</th>
+              <th>最近记录</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(renderUsageRow).join("") || `<tr><td colspan="7"><div class="empty">暂无用量数据</div></td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  `;
+}
+
+function providerUsage(rows) {
+  const map = new Map();
+  rows.forEach((account) => {
+    const item = map.get(account.provider) || { provider: account.provider, accounts: 0, requests: 0, tokens: 0, quota: 0 };
+    item.accounts += 1;
+    item.requests += Number(account.requestCount || 0);
+    item.tokens += Number(account.tokenUsed || 0);
+    item.quota += Number(account.quotaUsed || 0);
+    map.set(account.provider, item);
+  });
+  return [...map.values()].sort((a, b) => b.quota - a.quota).slice(0, 6);
+}
+
+function renderProviderUsage(item) {
+  return `
+    <div class="card stat">
+      <div class="stat-label">${escapeHtml(item.provider)} · ${item.accounts} 账号</div>
+      <div class="stat-value">${formatNumber(item.quota)}</div>
+      <div class="muted">${formatNumber(item.requests)} 请求 · ${formatNumber(item.tokens)} Token</div>
+    </div>
+  `;
+}
+
+function renderUsageRow(account) {
+  const logs = Array.isArray(account.extra?.usage_logs) ? account.extra.usage_logs : [];
+  const latest = logs[0];
+  return `
+    <tr>
+      <td><strong>${escapeHtml(account.name)}</strong><div class="muted">${escapeHtml(account.baseUrl)}</div></td>
+      <td><span class="pill">${escapeHtml(account.provider)}</span></td>
       <td>${formatNumber(account.requestCount)}</td>
       <td>${formatNumber(account.tokenUsed)}</td>
-      <td><span class="pill ${statusClass(account.status)}">${statusText(account.status)}</span></td>
-      <td><button data-edit="${account.id}">编辑额度</button></td>
+      <td>${formatNumber(account.quotaUsed)}</td>
+      <td>${latest ? `${escapeHtml(latest.time)}<div class="muted">${escapeHtml(latest.note || "")}</div>` : "-"}</td>
+      <td>
+        <div class="row-actions">
+          <button class="small" data-usage="${account.id}">录入用量</button>
+          <button class="small danger" data-reset-usage="${account.id}">重置用量</button>
+        </div>
+      </td>
     </tr>
   `;
 }
@@ -476,6 +588,15 @@ function bindViewEvents() {
   document.querySelectorAll("[data-delete]").forEach((button) => {
     button.addEventListener("click", () => deleteAccount(button.dataset.delete));
   });
+  document.querySelectorAll("[data-usage]").forEach((button) => {
+    button.addEventListener("click", () => openUsageModal(button.dataset.usage));
+  });
+  document.querySelectorAll("[data-reset-usage]").forEach((button) => {
+    button.addEventListener("click", () => resetUsage(button.dataset.resetUsage));
+  });
+  document.querySelectorAll("[data-auto-status]").forEach((button) => {
+    button.addEventListener("click", () => syncQuotaStatus(button.dataset.autoStatus));
+  });
   const batchEnable = document.querySelector("#batchEnableBtn");
   const batchDisable = document.querySelector("#batchDisableBtn");
   const batchExport = document.querySelector("#batchExportBtn");
@@ -582,6 +703,45 @@ function closeModal() {
   modal.innerHTML = "";
 }
 
+function openUsageModal(id) {
+  const account = state.accounts.find((item) => item.id === id);
+  if (!account) return;
+  const modal = document.querySelector("#modalRoot");
+  modal.className = "modal-backdrop open";
+  modal.innerHTML = `
+    <div class="modal">
+      <div class="modal-head">
+        <div>
+          <div class="section-title">录入用量</div>
+          <div class="muted">${escapeHtml(account.name)}</div>
+        </div>
+        <button id="closeModalBtn">关闭</button>
+      </div>
+      <form id="usageForm">
+        <div class="modal-body">
+          <div class="form-grid">
+            ${formInput("requestDelta", "新增请求数", 1, "number")}
+            ${formInput("tokenDelta", "新增 Token", 0, "number")}
+            ${formInput("quotaDelta", "新增额度消耗", 0, "number")}
+            ${formInput("quotaLimit", "额度上限", account.quotaLimit, "number")}
+            ${formTextarea("note", "备注", "")}
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button type="button" id="cancelModalBtn">取消</button>
+          <button class="primary" type="submit">保存用量</button>
+        </div>
+      </form>
+    </div>
+  `;
+  document.querySelector("#closeModalBtn").addEventListener("click", closeModal);
+  document.querySelector("#cancelModalBtn").addEventListener("click", closeModal);
+  document.querySelector("#usageForm").addEventListener("submit", (event) => {
+    event.preventDefault();
+    saveUsage(id, new FormData(event.currentTarget));
+  });
+}
+
 function saveAccount(form, id) {
   const existing = state.accounts.find((item) => item.id === id);
   let headers = {};
@@ -627,6 +787,73 @@ function saveAccount(form, id) {
   closeModal();
   renderView();
   showToast("账号已保存");
+}
+
+function formNumber(form, name) {
+  const value = Number(form.get(name) || 0);
+  return Number.isFinite(value) ? value : 0;
+}
+
+function saveUsage(id, form) {
+  const note = String(form.get("note") || "").trim();
+  state.accounts = state.accounts.map((account) => {
+    if (account.id !== id) return account;
+    const extra = { ...(account.extra || {}) };
+    const logs = Array.isArray(extra.usage_logs) ? extra.usage_logs : [];
+    const next = normalizeAccount({
+      ...account,
+      requestCount: Number(account.requestCount || 0) + formNumber(form, "requestDelta"),
+      tokenUsed: Number(account.tokenUsed || 0) + formNumber(form, "tokenDelta"),
+      quotaUsed: Number(account.quotaUsed || 0) + formNumber(form, "quotaDelta"),
+      quotaLimit: formNumber(form, "quotaLimit"),
+      extra: {
+        ...extra,
+        // 保留最近的手工录入记录，便于回看额度变化来源。
+        usage_logs: [
+          {
+            time: nowISO(),
+            requests: formNumber(form, "requestDelta"),
+            tokens: formNumber(form, "tokenDelta"),
+            quota: formNumber(form, "quotaDelta"),
+            note,
+          },
+          ...logs,
+        ].slice(0, 20),
+      },
+    });
+    return normalizeAccount({ ...next, status: deriveQuotaStatus(next) });
+  });
+  writeStore();
+  closeModal();
+  renderView();
+  showToast("用量已更新");
+}
+
+function resetUsage(id) {
+  state.accounts = state.accounts.map((account) => {
+    if (account.id !== id) return account;
+    return normalizeAccount({
+      ...account,
+      quotaUsed: 0,
+      requestCount: 0,
+      tokenUsed: 0,
+      status: "active",
+      extra: { ...(account.extra || {}), usage_logs: [] },
+    });
+  });
+  writeStore();
+  renderView();
+  showToast("用量已重置");
+}
+
+function syncQuotaStatus(id) {
+  state.accounts = state.accounts.map((account) => {
+    if (account.id !== id) return account;
+    return normalizeAccount({ ...account, status: deriveQuotaStatus(account) });
+  });
+  writeStore();
+  renderView();
+  showToast("状态已按额度同步");
 }
 
 function deleteAccount(id) {

@@ -328,6 +328,40 @@ th {
   line-height: 1.5;
 }
 
+.quota-track {
+  width: 120px;
+  height: 8px;
+  overflow: hidden;
+  background: #e8edf0;
+  border-radius: 999px;
+  margin: 2px 0 7px;
+}
+
+.quota-fill {
+  display: block;
+  height: 100%;
+  min-width: 4px;
+  border-radius: inherit;
+}
+
+.quota-fill.ok {
+  background: var(--ok);
+}
+
+.quota-fill.warn {
+  background: var(--warn);
+}
+
+.quota-fill.danger {
+  background: var(--danger);
+}
+
+.usage-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
 .format-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -486,6 +520,7 @@ th {
 
   .nav,
   .stats,
+  .usage-grid,
   .toolbar,
   .format-grid,
   .form-grid {
