@@ -136,6 +136,7 @@ public class GameView extends View {
     private final int[][] starportBeacon = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[][] meteorTrail = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[][] rainbowArc = new int[BOARD_SIZE][BOARD_SIZE];
+    private final int[][] crystalCore = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[] propInventory = new int[PROP_COUNT];
     private final RectF[] propRects = new RectF[PROP_COUNT];
     private final RectF[] levelRects = new RectF[LEVELS_PER_PAGE];
@@ -296,6 +297,7 @@ public class GameView extends View {
     private int lastStarportBeaconReward;
     private int lastMeteorTrailReward;
     private int lastRainbowArcReward;
+    private int lastCrystalCoreReward;
     private int lastEnergyRewardProp = NONE;
     private int lastChestNoticeType;
     private int dailyRewardAmount;
@@ -546,6 +548,7 @@ public class GameView extends View {
             int starportBeaconCount = i < 182 || i % 12 != 2 ? 0 : 1;
             int meteorTrailCount = i < 186 || i % 14 != 5 ? 0 : 1;
             int rainbowArcCount = i < 204 || i % 12 != 7 ? 0 : 1;
+            int crystalCoreCount = i < 222 || i % 11 != 2 ? 0 : 1;
             int countdownBombCount = i < 58 || i % 10 != 7 ? 0 : 1 + (i % 30 == 7 ? 1 : 0);
             int moveLimitGoal = i >= 18 && i % 4 == 0 ? Math.max(8, moves - 5) : 0;
             int comboGoal = i >= 22 && i % 5 == 0 ? 3 + (i / 25) : 0;
@@ -560,7 +563,7 @@ public class GameView extends View {
             }
             levels.add(new Level(targetScore, moves, hammer, bomb, shuffle, rowBlast, colorBlast, extraMoves,
                     magicWand, brush, portalProp, cleanse, freeze, magnet, clock, starHammer, rocket, targetBrush, shield, energyCore, chainBreaker, lightning, meteor, tide, auroraOrb, starfishPick, moonTicket, fireworkCannon, starCompass, targetKind, targetAmount, iceCount, honeyCount, stoneCount, vineCount, giftCount,
-                    chainCount, shellCount, flowerCount, coralReefCount, keyCount, moveChestCount, cloudCount, gemCount, goldenEggCount, coinPouchCount, paintBucketCount, windmillCount, jewelBowCount, stardustJarCount, wishLampCount, resonanceDrumCount, auroraPrismCount, rainbowBottleCount, energyPotionCount, butterflyCount, portalCount, hourglassCount, luckyStarCount, luckyCloverCount, mysteryBoxCount, pearlCount, carouselCount, ferrisTicketCount, fireworksBarrelCount, starportBeaconCount, meteorTrailCount, rainbowArcCount, countdownBombCount,
+                    chainCount, shellCount, flowerCount, coralReefCount, keyCount, moveChestCount, cloudCount, gemCount, goldenEggCount, coinPouchCount, paintBucketCount, windmillCount, jewelBowCount, stardustJarCount, wishLampCount, resonanceDrumCount, auroraPrismCount, rainbowBottleCount, energyPotionCount, butterflyCount, portalCount, hourglassCount, luckyStarCount, luckyCloverCount, mysteryBoxCount, pearlCount, carouselCount, ferrisTicketCount, fireworksBarrelCount, starportBeaconCount, meteorTrailCount, rainbowArcCount, crystalCoreCount, countdownBombCount,
                     moveLimitGoal, comboGoal, scoreGoal, elite));
         }
     }
@@ -635,6 +638,7 @@ public class GameView extends View {
         lastStarportBeaconReward = 0;
         lastMeteorTrailReward = 0;
         lastRainbowArcReward = 0;
+        lastCrystalCoreReward = 0;
         lastEnergyRewardProp = NONE;
         honeySpreadCount = 0;
         challengeCleared = false;
@@ -730,6 +734,7 @@ public class GameView extends View {
                 starportBeacon[row][col] = 0;
                 meteorTrail[row][col] = 0;
                 rainbowArc[row][col] = 0;
+                crystalCore[row][col] = 0;
                 countdownBomb[row][col] = 0;
                 do {
                     board[row][col] = makePiece(random.nextInt(TILE_KINDS), SPECIAL_NORMAL);
@@ -773,6 +778,7 @@ public class GameView extends View {
         placeStarportBeacon(level.starportBeaconCount);
         placeMeteorTrail(level.meteorTrailCount);
         placeRainbowArc(level.rainbowArcCount);
+        placeCrystalCore(level.crystalCoreCount);
         placeCountdownBomb(level.countdownBombCount, Math.max(5, level.moves / 2));
         ensurePlayableBoard();
         levelIntroUntilTime = System.currentTimeMillis() + 1400;
@@ -863,6 +869,7 @@ public class GameView extends View {
                     lastStarportBeaconReward = 0;
                     lastMeteorTrailReward = 0;
                     lastRainbowArcReward = 0;
+                    lastCrystalCoreReward = 0;
                     showFeedback(1, bombShieldCount);
                     activeProp = NONE;
                     selectedRow = NONE;
@@ -879,6 +886,7 @@ public class GameView extends View {
                     lastStarportBeaconReward = 0;
                     lastMeteorTrailReward = 0;
                     lastRainbowArcReward = 0;
+                    lastCrystalCoreReward = 0;
                     showFeedback(1, 100);
                     activeProp = NONE;
                     selectedRow = NONE;
@@ -910,6 +918,7 @@ public class GameView extends View {
                     lastStarportBeaconReward = 0;
                     lastMeteorTrailReward = 0;
                     lastRainbowArcReward = 0;
+                    lastCrystalCoreReward = 0;
                     showFeedback(1, 100);
                     activeProp = NONE;
                     selectedRow = NONE;
@@ -930,6 +939,7 @@ public class GameView extends View {
                     lastStarportBeaconReward = 0;
                     lastMeteorTrailReward = 0;
                     lastRainbowArcReward = 0;
+                    lastCrystalCoreReward = 0;
                     showFeedback(1, Math.max(1, chipped));
                     checkLevelState();
                     activeProp = NONE;
@@ -971,6 +981,7 @@ public class GameView extends View {
                     lastStarportBeaconReward = 0;
                     lastMeteorTrailReward = 0;
                     lastRainbowArcReward = 0;
+                    lastCrystalCoreReward = 0;
                     showFeedback(1, 2);
                     checkLevelState();
                     activeProp = NONE;
@@ -1012,6 +1023,7 @@ public class GameView extends View {
                     lastStarportBeaconReward = 0;
                     lastMeteorTrailReward = 0;
                     lastRainbowArcReward = 0;
+                    lastCrystalCoreReward = 0;
                     showFeedback(1, 30);
                     checkLevelState();
                     activeProp = NONE;
@@ -1086,6 +1098,7 @@ public class GameView extends View {
             lastStarportBeaconReward = 0;
             lastMeteorTrailReward = 0;
             lastRainbowArcReward = 0;
+            lastCrystalCoreReward = 0;
             lastEnergyRewardProp = NONE;
             showFeedback(1, 1);
         } else if (activeProp == PROP_TARGET_BRUSH) {
@@ -1123,6 +1136,7 @@ public class GameView extends View {
             lastStarportBeaconReward = 0;
             lastMeteorTrailReward = 0;
             lastRainbowArcReward = 0;
+            lastCrystalCoreReward = 0;
             lastEnergyRewardProp = NONE;
             showFeedback(1, Math.max(1, painted));
         } else if (activeProp == PROP_MAGIC_WAND) {
@@ -1160,6 +1174,7 @@ public class GameView extends View {
             lastStarportBeaconReward = 0;
             lastMeteorTrailReward = 0;
             lastRainbowArcReward = 0;
+            lastCrystalCoreReward = 0;
             lastEnergyRewardProp = NONE;
             showFeedback(1, 1);
         } else if (activeProp == PROP_BRUSH) {
@@ -1198,6 +1213,7 @@ public class GameView extends View {
             lastStarportBeaconReward = 0;
             lastMeteorTrailReward = 0;
             lastRainbowArcReward = 0;
+            lastCrystalCoreReward = 0;
             lastEnergyRewardProp = NONE;
             showFeedback(1, 1);
         } else if (activeProp == PROP_STAR_HAMMER) {
@@ -1235,6 +1251,7 @@ public class GameView extends View {
             lastStarportBeaconReward = 0;
             lastMeteorTrailReward = 0;
             lastRainbowArcReward = 0;
+            lastCrystalCoreReward = 0;
             lastEnergyRewardProp = NONE;
             showFeedback(1, 1);
         } else if (activeProp == PROP_CLEANSE) {
@@ -1274,6 +1291,7 @@ public class GameView extends View {
             lastStarportBeaconReward = 0;
             lastMeteorTrailReward = 0;
             lastRainbowArcReward = 0;
+            lastCrystalCoreReward = 0;
             lastEnergyRewardProp = NONE;
             showFeedback(1, Math.max(1, cleaned));
         } else if (activeProp == PROP_CHAIN_BREAKER) {
@@ -1317,6 +1335,7 @@ public class GameView extends View {
             lastStarportBeaconReward = 0;
             lastMeteorTrailReward = 0;
             lastRainbowArcReward = 0;
+            lastCrystalCoreReward = 0;
             lastEnergyRewardProp = NONE;
             showFeedback(1, Math.max(1, broken));
         }
@@ -1425,6 +1444,7 @@ public class GameView extends View {
         lastStarportBeaconReward = 0;
         lastMeteorTrailReward = 0;
         lastRainbowArcReward = 0;
+        lastCrystalCoreReward = 0;
         cells = expandSpecialCells(cells);
         score += applyComboFeverScore(bonusScore + cells.size() * 45);
         spawnParticles(cells);
@@ -1768,6 +1788,7 @@ public class GameView extends View {
         lastStarportBeaconReward = 0;
         lastMeteorTrailReward = 0;
         lastRainbowArcReward = 0;
+        lastCrystalCoreReward = 0;
         while (!matches.isEmpty()) {
             combo++;
             matches = expandSpecialCells(matches);
@@ -1802,6 +1823,7 @@ public class GameView extends View {
                 lastStarportBeaconReward = 0;
                 lastMeteorTrailReward = 0;
                 lastRainbowArcReward = 0;
+                lastCrystalCoreReward = 0;
                 showFeedback(combo + 1, totalCleared);
             } else if (lastTaskRewardType == 0) {
                 showNormalFeedback(combo, totalCleared);
@@ -3210,6 +3232,28 @@ public class GameView extends View {
         }
     }
 
+    private void placeCrystalCore(int count) {
+        int placed = 0;
+        while (placed < count) {
+            int row = random.nextInt(BOARD_SIZE);
+            int col = random.nextInt(BOARD_SIZE);
+            if (crystalCore[row][col] == 0 && gift[row][col] == 0 && moveChest[row][col] == 0
+                    && cloud[row][col] == 0 && gem[row][col] == 0 && goldenEgg[row][col] == 0 && portal[row][col] == 0
+                    && hourglass[row][col] == 0 && luckyStar[row][col] == 0 && luckyClover[row][col] == 0 && mysteryBox[row][col] == 0
+                    && pearl[row][col] == 0 && carousel[row][col] == 0 && ferrisTicket[row][col] == 0
+                    && fireworksBarrel[row][col] == 0 && starportBeacon[row][col] == 0 && meteorTrail[row][col] == 0
+                    && rainbowArc[row][col] == 0 && coinPouch[row][col] == 0 && paintBucket[row][col] == 0
+                    && windmill[row][col] == 0 && jewelBow[row][col] == 0 && stardustJar[row][col] == 0
+                    && wishLamp[row][col] == 0 && resonanceDrum[row][col] == 0 && auroraPrism[row][col] == 0
+                    && rainbowBottle[row][col] == 0 && energyPotion[row][col] == 0 && butterfly[row][col] == 0
+                    && flower[row][col] == 0 && countdownBomb[row][col] == 0) {
+                // 糖晶塔芯会把终章清除转成爆炸棋，强化奇迹糖晶塔的连锁爆发。
+                crystalCore[row][col] = 1;
+                placed++;
+            }
+        }
+    }
+
     private void placeCountdownBomb(int count, int timer) {
         int placed = 0;
         while (placed < count) {
@@ -3223,7 +3267,7 @@ public class GameView extends View {
                     && resonanceDrum[row][col] == 0 && auroraPrism[row][col] == 0 && rainbowBottle[row][col] == 0 && energyPotion[row][col] == 0
                     && butterfly[row][col] == 0 && flower[row][col] == 0 && pearl[row][col] == 0 && carousel[row][col] == 0
                     && ferrisTicket[row][col] == 0 && fireworksBarrel[row][col] == 0 && starportBeacon[row][col] == 0
-                    && meteorTrail[row][col] == 0 && rainbowArc[row][col] == 0) {
+                    && meteorTrail[row][col] == 0 && rainbowArc[row][col] == 0 && crystalCore[row][col] == 0) {
                 // 倒计时炸弹必须在归零前清掉，给后期关卡制造明确压力。
                 countdownBomb[row][col] = timer + random.nextInt(3);
                 placed++;
@@ -3463,6 +3507,14 @@ public class GameView extends View {
                 comboEnergy = Math.min(100, comboEnergy + 28);
                 score += 260;
                 lastRainbowArcReward += 28;
+            }
+            if (crystalCore[cell.row][cell.col] > 0) {
+                crystalCore[cell.row][cell.col] = 0;
+                upgradeRandomBombPiece();
+                upgradeRandomBombPiece();
+                comboEnergy = Math.min(100, comboEnergy + 18);
+                score += 320;
+                lastCrystalCoreReward += 2;
             }
             if (countdownBomb[cell.row][cell.col] > 0) {
                 countdownBomb[cell.row][cell.col] = 0;
@@ -3750,6 +3802,7 @@ public class GameView extends View {
             lastStarportBeaconReward = 0;
             lastMeteorTrailReward = 0;
             lastRainbowArcReward = 0;
+            lastCrystalCoreReward = 0;
             lastEnergyRewardProp = NONE;
             saveCoins();
         } else {
@@ -3777,6 +3830,7 @@ public class GameView extends View {
             lastStarportBeaconReward = 0;
             lastMeteorTrailReward = 0;
             lastRainbowArcReward = 0;
+            lastCrystalCoreReward = 0;
             lastEnergyRewardProp = NONE;
         }
     }
@@ -3795,6 +3849,7 @@ public class GameView extends View {
         lastStarportBeaconReward = 0;
         lastMeteorTrailReward = 0;
         lastRainbowArcReward = 0;
+        lastCrystalCoreReward = 0;
         lastEnergyRewardProp = NONE;
         if (reward == 0) {
             lastLuckyCloverRewardAmount = 10;
@@ -3848,6 +3903,7 @@ public class GameView extends View {
         lastStarportBeaconReward = 0;
         lastMeteorTrailReward = 0;
         lastRainbowArcReward = 0;
+        lastCrystalCoreReward = 0;
         lastEnergyRewardProp = NONE;
         if (reward == 0) {
             lastMysteryRewardAmount = 220;
@@ -3917,6 +3973,7 @@ public class GameView extends View {
         lastStarportBeaconReward = 0;
         lastMeteorTrailReward = 0;
         lastRainbowArcReward = 0;
+        lastCrystalCoreReward = 0;
         lastEnergyRewardProp = NONE;
         showFeedback(1, honeySpreadCount);
     }
@@ -3970,6 +4027,7 @@ public class GameView extends View {
             lastStarportBeaconReward = 0;
             lastMeteorTrailReward = 0;
             lastRainbowArcReward = 0;
+            lastCrystalCoreReward = 0;
             lastEnergyRewardProp = NONE;
             showFeedback(1, 5);
         }
@@ -4009,6 +4067,7 @@ public class GameView extends View {
             lastStarportBeaconReward = 0;
             lastMeteorTrailReward = 0;
             lastRainbowArcReward = 0;
+            lastCrystalCoreReward = 0;
             lastEnergyRewardProp = NONE;
             showFeedback(1, 6);
         }
@@ -4045,6 +4104,7 @@ public class GameView extends View {
             lastStarportBeaconReward = 0;
             lastMeteorTrailReward = 0;
             lastRainbowArcReward = 0;
+            lastCrystalCoreReward = 0;
             lastEnergyRewardProp = NONE;
             showFeedback(Math.max(2, bestCombo), 3);
         }
@@ -4071,6 +4131,7 @@ public class GameView extends View {
             lastStarportBeaconReward = 0;
             lastMeteorTrailReward = 0;
             lastRainbowArcReward = 0;
+            lastCrystalCoreReward = 0;
             lastEnergyRewardProp = NONE;
             showFeedback(1, level.keyCount);
         }
@@ -4633,6 +4694,8 @@ public class GameView extends View {
             return "步";
         } else if (level.rainbowArcCount > 0) {
             return "拱";
+        } else if (level.crystalCoreCount > 0) {
+            return "晶";
         } else if (level.meteorTrailCount > 0) {
             return "航";
         } else if (level.countdownBombCount > 0) {
@@ -5201,6 +5264,7 @@ public class GameView extends View {
         drawStarportBeacon(canvas, row, col, rect);
         drawMeteorTrail(canvas, row, col, rect);
         drawRainbowArc(canvas, row, col, rect);
+        drawCrystalCore(canvas, row, col, rect);
         drawCountdownBomb(canvas, row, col, rect);
         drawKey(canvas, row, col, rect);
         drawMoveChest(canvas, row, col, rect);
@@ -6293,6 +6357,26 @@ public class GameView extends View {
         drawPropStar(canvas, centerX + dp(18), centerY - dp(6), dp(5));
     }
 
+    private void drawCrystalCore(Canvas canvas, int row, int col, RectF rect) {
+        if (crystalCore[row][col] <= 0) {
+            return;
+        }
+
+        float centerX = rect.right - dp(18);
+        float centerY = rect.bottom - dp(18);
+        Path crystal = new Path();
+        crystal.moveTo(centerX, centerY - dp(15));
+        crystal.lineTo(centerX + dp(11), centerY - dp(2));
+        crystal.lineTo(centerX + dp(6), centerY + dp(14));
+        crystal.lineTo(centerX - dp(8), centerY + dp(12));
+        crystal.lineTo(centerX - dp(12), centerY - dp(2));
+        crystal.close();
+        paint.setColor(Color.argb(225, 106, 225, 255));
+        canvas.drawPath(crystal, paint);
+        paint.setColor(Color.argb(230, 255, 236, 118));
+        drawPropStar(canvas, centerX + dp(4), centerY - dp(5), dp(5));
+    }
+
     private void drawCountdownBomb(Canvas canvas, int row, int col, RectF rect) {
         if (countdownBomb[row][col] <= 0) {
             return;
@@ -6473,6 +6557,8 @@ public class GameView extends View {
             text = "流星航线 金币+" + lastMeteorTrailReward;
         } else if (lastRainbowArcReward > 0 && age < 900) {
             text = "彩虹拱桥 能量+" + lastRainbowArcReward;
+        } else if (lastCrystalCoreReward > 0 && age < 900) {
+            text = "糖晶塔芯 爆炸+" + lastCrystalCoreReward;
         } else if (honeySpreadCount > 0 && age < 900) {
             text = "蜂蜜蔓延";
         } else if (lastTaskRewardType == 1 && age < 900) {
@@ -6634,6 +6720,9 @@ public class GameView extends View {
         }
         if (level.rainbowArcCount > 0) {
             goalText += "  彩虹拱桥 " + level.rainbowArcCount;
+        }
+        if (level.crystalCoreCount > 0) {
+            goalText += "  糖晶塔芯 " + level.crystalCoreCount;
         }
         if (level.countdownBombCount > 0) {
             goalText += "  炸弹 " + level.countdownBombCount;
@@ -6938,6 +7027,7 @@ public class GameView extends View {
         final int starportBeaconCount;
         final int meteorTrailCount;
         final int rainbowArcCount;
+        final int crystalCoreCount;
         final int countdownBombCount;
         final int moveLimitGoal;
         final int comboGoal;
@@ -6950,7 +7040,7 @@ public class GameView extends View {
                 int giftCount, int chainCount, int shellCount, int flowerCount, int coralReefCount, int keyCount, int moveChestCount,
                 int cloudCount, int gemCount, int goldenEggCount, int coinPouchCount, int paintBucketCount, int windmillCount, int jewelBowCount, int stardustJarCount, int wishLampCount, int resonanceDrumCount, int auroraPrismCount, int rainbowBottleCount, int energyPotionCount, int butterflyCount,
                 int portalCount, int hourglassCount, int luckyStarCount, int luckyCloverCount,
-                int mysteryBoxCount, int pearlCount, int carouselCount, int ferrisTicketCount, int fireworksBarrelCount, int starportBeaconCount, int meteorTrailCount, int rainbowArcCount, int countdownBombCount, int moveLimitGoal, int comboGoal, int scoreGoal, boolean elite) {
+                int mysteryBoxCount, int pearlCount, int carouselCount, int ferrisTicketCount, int fireworksBarrelCount, int starportBeaconCount, int meteorTrailCount, int rainbowArcCount, int crystalCoreCount, int countdownBombCount, int moveLimitGoal, int comboGoal, int scoreGoal, boolean elite) {
             this.targetScore = targetScore;
             this.moves = moves;
             this.hammers = hammers;
@@ -7019,6 +7109,7 @@ public class GameView extends View {
             this.starportBeaconCount = starportBeaconCount;
             this.meteorTrailCount = meteorTrailCount;
             this.rainbowArcCount = rainbowArcCount;
+            this.crystalCoreCount = crystalCoreCount;
             this.countdownBombCount = countdownBombCount;
             this.moveLimitGoal = moveLimitGoal;
             this.comboGoal = comboGoal;
