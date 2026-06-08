@@ -1,0 +1,17 @@
+{
+  "name": "openai-account-panel",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OpenAI 与第三方 API 账号、用量、额度管理面板。",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^5.0.0",
+    "vite": "^7.0.0",
+    "typescript": "^5.8.3"
+  },
+  "devDependencies": {}
+}
