@@ -57,7 +57,7 @@ public class GameView extends View {
     private static final int CHAPTER_SIZE = 20;
     private static final int CHAPTER_COUNT = 12;
     private static final int CHAPTER_CHEST_STARS = 45;
-    private static final int ACHIEVEMENT_COUNT = 18;
+    private static final int ACHIEVEMENT_COUNT = 24;
     private static final int NONE = -1;
     private static final int SPECIAL_NORMAL = 0;
     private static final int SPECIAL_ROW = 1;
@@ -2212,6 +2212,13 @@ public class GameView extends View {
         checkAchievement(15, getTotalStars() >= 420, 320);
         checkAchievement(16, getTotalRankScore() >= 700, 360);
         checkAchievement(17, getFullyClearedChapterCount() >= CHAPTER_COUNT, 420);
+        // 扩展到 240 关后补充更长线的星数、评级和新章节追求。
+        checkAchievement(18, highestUnlockedLevel >= 220, 360);
+        checkAchievement(19, getTotalStars() >= 600, 460);
+        checkAchievement(20, getTotalRankScore() >= 1000, 520);
+        checkAchievement(21, getChapterStars(CHAPTER_COUNT - 2) >= 54, 420);
+        checkAchievement(22, getChapterStars(CHAPTER_COUNT - 1) >= 54, 520);
+        checkAchievement(23, getTotalClearedEliteCount() >= 16, 560);
     }
 
     private void checkAchievement(int index, boolean reached, int reward) {
