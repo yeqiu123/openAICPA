@@ -6101,6 +6101,13 @@ public class GameView extends View {
         boolean claimable = canClaimChapterChest(chapter);
         paint.setColor(claimable ? Color.argb(205, 255, 236, 133) : Color.argb(105, 255, 255, 255));
         canvas.drawRoundRect(chapterChestRect, dp(14), dp(14), paint);
+        if (claimable) {
+            // 章节宝箱可领取时给轻量亮点，提示玩家及时领取。
+            paint.setColor(Color.argb(210, 255, 255, 255));
+            canvas.drawCircle(chapterChestRect.right - dp(20), chapterChestRect.centerY(),
+                    dp(4 + (System.currentTimeMillis() / 240) % 3), paint);
+            postInvalidateOnAnimation();
+        }
 
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setTextSize(sp(14));
