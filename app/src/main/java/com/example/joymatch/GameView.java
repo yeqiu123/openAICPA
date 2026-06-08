@@ -6225,8 +6225,8 @@ public class GameView extends View {
         canvas.drawText("下一页", nextPageRect.centerX(), nextPageRect.centerY() + dp(5), textPaint);
         textPaint.setColor(Color.rgb(33, 37, 56));
         textPaint.setTextSize(sp(12));
-        canvas.drawText(buildStarChestLabel(), starChestRect.centerX(), starChestRect.centerY() + dp(5), textPaint);
-        canvas.drawText(buildRankChestLabel(), rankChestRect.centerX(), rankChestRect.centerY() + dp(5), textPaint);
+        drawTextFit(canvas, buildStarChestLabel(), starChestRect, 12, Color.rgb(33, 37, 56));
+        drawTextFit(canvas, buildRankChestLabel(), rankChestRect, 12, Color.rgb(33, 37, 56));
         drawStarChestNotice(canvas, top);
     }
 
