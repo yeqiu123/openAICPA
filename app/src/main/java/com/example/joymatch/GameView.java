@@ -1,6 +1,7 @@
 package com.example.joymatch;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.LinearGradient;
@@ -20,6 +21,9 @@ import java.util.Random;
 import java.util.Set;
 
 public class GameView extends View {
+    private static final String PREFS_NAME = "joy_match_progress";
+    private static final String KEY_UNLOCKED_LEVEL = "unlocked_level";
+    private static final String KEY_STARS_PREFIX = "stars_";
     private static final int BOARD_SIZE = 8;
     private static final int TILE_KINDS = 6;
     private static final int NONE = -1;
@@ -39,6 +43,9 @@ public class GameView extends View {
     private final int[][] ice = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[] propInventory = new int[PROP_COUNT];
     private final RectF[] propRects = new RectF[PROP_COUNT];
+    private final RectF[] levelRects = new RectF[60];
+    private final RectF mapButtonRect = new RectF();
+    private final int[] levelStars = new int[60];
     private final List<Level> levels = new ArrayList<>();
     private final int[] palette = {
             Color.rgb(255, 99, 132),
@@ -60,26 +67,35 @@ public class GameView extends View {
     private int activeProp = NONE;
     private int feedbackCombo;
     private int feedbackCleared;
+    private int highestUnlockedLevel;
     private long feedbackStartTime;
     private float boardLeft;
     private float boardTop;
     private float tileSize;
     private boolean levelComplete;
     private boolean levelFailed;
+    private boolean showingLevelMap;
+    private SharedPreferences prefs;
 
     public GameView(Context context) {
         super(context);
+        prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         textPaint.setColor(Color.WHITE);
         textPaint.setTypeface(Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD));
         setFocusable(true);
         buildLevels();
-        startLevel(0);
+        loadProgress();
+        startLevel(highestUnlockedLevel);
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         drawBackground(canvas);
+        if (showingLevelMap) {
+            drawLevelMap(canvas);
+            return;
+        }
         drawHud(canvas);
         drawBoard(canvas);
         drawFeedback(canvas);
@@ -92,8 +108,20 @@ public class GameView extends View {
             return true;
         }
 
+        if (showingLevelMap) {
+            handleLevelMapTap(event.getX(), event.getY());
+            invalidate();
+            return true;
+        }
+
         if (levelComplete || levelFailed) {
             startLevel(levelComplete ? (levelIndex + 1) % levels.size() : levelIndex);
+            invalidate();
+            return true;
+        }
+
+        if (mapButtonRect.contains(event.getX(), event.getY())) {
+            showingLevelMap = true;
             invalidate();
             return true;
         }
@@ -342,9 +370,44 @@ public class GameView extends View {
         Level level = levels.get(levelIndex);
         if (score >= level.targetScore && targetRemaining <= 0 && iceRemaining <= 0) {
             levelComplete = true;
+            saveLevelProgress();
         } else if (movesLeft <= 0) {
             levelFailed = true;
         }
+    }
+
+    private void loadProgress() {
+        highestUnlockedLevel = Math.min(prefs.getInt(KEY_UNLOCKED_LEVEL, 0), levels.size() - 1);
+        for (int i = 0; i < levels.size(); i++) {
+            levelStars[i] = prefs.getInt(KEY_STARS_PREFIX + i, 0);
+        }
+    }
+
+    private void saveLevelProgress() {
+        Level level = levels.get(levelIndex);
+        int stars = movesLeft > level.moves / 2 ? 3 : (movesLeft > level.moves / 5 ? 2 : 1);
+        if (stars <= levelStars[levelIndex] && highestUnlockedLevel >= Math.min(levelIndex + 1, levels.size() - 1)) {
+            return;
+        }
+
+        levelStars[levelIndex] = Math.max(levelStars[levelIndex], stars);
+        highestUnlockedLevel = Math.max(highestUnlockedLevel, Math.min(levelIndex + 1, levels.size() - 1));
+        prefs.edit()
+                .putInt(KEY_UNLOCKED_LEVEL, highestUnlockedLevel)
+                .putInt(KEY_STARS_PREFIX + levelIndex, levelStars[levelIndex])
+                .apply();
+    }
+
+    private void handleLevelMapTap(float x, float y) {
+        for (int i = 0; i < levels.size(); i++) {
+            RectF rect = levelRects[i];
+            if (rect != null && rect.contains(x, y) && i <= highestUnlockedLevel) {
+                showingLevelMap = false;
+                startLevel(i);
+                return;
+            }
+        }
+        showingLevelMap = false;
     }
 
     private void placeIce(int count) {
@@ -462,6 +525,15 @@ public class GameView extends View {
 
     private void drawHud(Canvas canvas) {
         Level level = levels.get(levelIndex);
+        mapButtonRect.set(getWidth() - dp(90), dp(18), getWidth() - dp(22), dp(50));
+
+        paint.setColor(Color.argb(105, 255, 255, 255));
+        canvas.drawRoundRect(mapButtonRect, dp(14), dp(14), paint);
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setTextSize(sp(14));
+        textPaint.setColor(Color.WHITE);
+        canvas.drawText("选关", mapButtonRect.centerX(), mapButtonRect.centerY() + dp(5), textPaint);
+
         textPaint.setTextAlign(Paint.Align.LEFT);
         textPaint.setTextSize(sp(22));
         canvas.drawText("第 " + (levelIndex + 1) + " 关", dp(22), dp(48), textPaint);
@@ -495,6 +567,53 @@ public class GameView extends View {
             }
         }
         drawPropBar(canvas);
+    }
+
+    private void drawLevelMap(Canvas canvas) {
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setColor(Color.WHITE);
+        textPaint.setTextSize(sp(24));
+        canvas.drawText("关卡地图", getWidth() / 2f, dp(54), textPaint);
+
+        int columns = 6;
+        int rows = (int) Math.ceil(levels.size() / (float) columns);
+        float gap = dp(6);
+        float sizeByWidth = (getWidth() - dp(32) - gap * (columns - 1)) / columns;
+        float sizeByHeight = (getHeight() - dp(130) - gap * (rows - 1)) / rows;
+        float size = Math.min(sizeByWidth, sizeByHeight);
+        float startX = (getWidth() - columns * size - (columns - 1) * gap) / 2f;
+        float startY = dp(82);
+
+        for (int i = 0; i < levels.size(); i++) {
+            int row = i / columns;
+            int col = i % columns;
+            float left = startX + col * (size + gap);
+            float top = startY + row * (size + gap);
+            RectF rect = new RectF(left, top, left + size, top + size);
+            levelRects[i] = rect;
+
+            boolean unlocked = i <= highestUnlockedLevel;
+            paint.setColor(unlocked ? Color.argb(170, 255, 255, 255) : Color.argb(75, 33, 37, 56));
+            canvas.drawRoundRect(rect, dp(10), dp(10), paint);
+
+            textPaint.setTextSize(sp(14));
+            textPaint.setColor(unlocked ? Color.rgb(33, 37, 56) : Color.argb(145, 255, 255, 255));
+            canvas.drawText(String.valueOf(i + 1), rect.centerX(), rect.centerY() - dp(1), textPaint);
+
+            // 星级记录让关卡重玩有明确追求。
+            if (levelStars[i] > 0) {
+                textPaint.setTextSize(sp(10));
+                canvas.drawText(buildStars(levelStars[i]), rect.centerX(), rect.bottom - dp(6), textPaint);
+            }
+        }
+    }
+
+    private String buildStars(int count) {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < count; i++) {
+            builder.append("*");
+        }
+        return builder.toString();
     }
 
     private void drawTile(Canvas canvas, int row, int col) {
