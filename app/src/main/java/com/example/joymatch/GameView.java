@@ -6938,7 +6938,7 @@ public class GameView extends View {
     }
 
     private boolean isRecommendedPropForLevel(int prop) {
-        if (levelComplete || levelFailed) {
+        if (levelComplete) {
             return false;
         }
         if (propInventory[prop] <= 0 && coins < PROP_COSTS[prop]) {
@@ -6981,6 +6981,16 @@ public class GameView extends View {
         }
         return level.moveLimitGoal > 0 && movesUsed + 2 >= getMoveLimitGoal(level)
                 && (prop == PROP_EXTRA_MOVES || prop == PROP_CLOCK || prop == PROP_MOON_TICKET);
+    }
+
+    private String buildFailurePropAdviceText() {
+        for (int prop = 0; prop < PROP_COUNT; prop++) {
+            if (isRecommendedPropForLevel(prop)) {
+                // 失败页复用局内推荐逻辑，提示下局优先使用的道具。
+                return "建议下局优先 " + getPropName(prop);
+            }
+        }
+        return "";
     }
 
     private void drawRecommendedPropGlow(Canvas canvas, RectF rect) {
@@ -8826,6 +8836,12 @@ public class GameView extends View {
             RectF failProgressRect = new RectF(dp(34), getHeight() * (assistText.length() > 0 ? 0.565f : 0.532f),
                     getWidth() - dp(34), getHeight() * (assistText.length() > 0 ? 0.598f : 0.565f));
             drawTextFit(canvas, buildFailureProgressText(), failProgressRect, 14, Color.WHITE);
+            String propAdviceText = buildFailurePropAdviceText();
+            if (propAdviceText.length() > 0) {
+                RectF propAdviceRect = new RectF(dp(34), getHeight() * (assistText.length() > 0 ? 0.6f : 0.568f),
+                        getWidth() - dp(34), getHeight() * (assistText.length() > 0 ? 0.63f : 0.598f));
+                drawTextFit(canvas, propAdviceText, propAdviceRect, 13, Color.rgb(255, 236, 133));
+            }
         }
     }
 
