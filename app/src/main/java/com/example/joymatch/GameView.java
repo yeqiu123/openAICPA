@@ -72,6 +72,8 @@ public class GameView extends View {
     private int feedbackCombo;
     private int feedbackCleared;
     private int highestUnlockedLevel;
+    private int lastStars;
+    private int lastBonusScore;
     private long feedbackStartTime;
     private float boardLeft;
     private float boardTop;
@@ -458,6 +460,8 @@ public class GameView extends View {
         Level level = levels.get(levelIndex);
         if (score >= level.targetScore && targetRemaining <= 0 && iceRemaining <= 0 && honeyRemaining <= 0) {
             levelComplete = true;
+            lastBonusScore = movesLeft * 80;
+            score += lastBonusScore;
             saveLevelProgress();
         } else if (movesLeft <= 0) {
             levelFailed = true;
@@ -473,12 +477,12 @@ public class GameView extends View {
 
     private void saveLevelProgress() {
         Level level = levels.get(levelIndex);
-        int stars = movesLeft > level.moves / 2 ? 3 : (movesLeft > level.moves / 5 ? 2 : 1);
-        if (stars <= levelStars[levelIndex] && highestUnlockedLevel >= Math.min(levelIndex + 1, levels.size() - 1)) {
+        lastStars = movesLeft > level.moves / 2 ? 3 : (movesLeft > level.moves / 5 ? 2 : 1);
+        if (lastStars <= levelStars[levelIndex] && highestUnlockedLevel >= Math.min(levelIndex + 1, levels.size() - 1)) {
             return;
         }
 
-        levelStars[levelIndex] = Math.max(levelStars[levelIndex], stars);
+        levelStars[levelIndex] = Math.max(levelStars[levelIndex], lastStars);
         highestUnlockedLevel = Math.max(highestUnlockedLevel, Math.min(levelIndex + 1, levels.size() - 1));
         prefs.edit()
                 .putInt(KEY_UNLOCKED_LEVEL, highestUnlockedLevel)
@@ -949,7 +953,12 @@ public class GameView extends View {
         textPaint.setTextSize(sp(28));
         canvas.drawText(levelComplete ? "闯关成功" : "再试一次", getWidth() / 2f, getHeight() * 0.42f, textPaint);
         textPaint.setTextSize(sp(16));
-        canvas.drawText("点击继续", getWidth() / 2f, getHeight() * 0.49f, textPaint);
+        if (levelComplete) {
+            canvas.drawText(buildStars(lastStars) + "  步数奖励 +" + lastBonusScore, getWidth() / 2f, getHeight() * 0.49f, textPaint);
+            canvas.drawText("点击继续", getWidth() / 2f, getHeight() * 0.55f, textPaint);
+        } else {
+            canvas.drawText("点击继续", getWidth() / 2f, getHeight() * 0.49f, textPaint);
+        }
     }
 
     private float dp(float value) {
