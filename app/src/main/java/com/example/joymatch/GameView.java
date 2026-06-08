@@ -1909,6 +1909,7 @@ public class GameView extends View {
         lastRankChestReward = 0;
         lastChapterChestReward = 0;
         coins += lastDailyGoalReward;
+        propInventory[PROP_MOON_TICKET]++;
         dailyGoalClaimed = true;
         prefs.edit()
                 .putLong(KEY_DAILY_GOAL_DAY, getToday())
@@ -4217,6 +4218,9 @@ public class GameView extends View {
         textPaint.setColor(claimable ? Color.rgb(33, 37, 56) : Color.WHITE);
         String text = dailyGoalClaimed ? "每日目标 已领"
                 : "每日目标 " + Math.min(6, dailyGoalProgress) + "/6星";
+        if (claimable) {
+            text += " 月票";
+        }
         canvas.drawText(text, dailyGoalRect.centerX(), dailyGoalRect.centerY() + dp(5), textPaint);
     }
 
@@ -4394,7 +4398,7 @@ public class GameView extends View {
         } else if (lastRankChestReward > 0) {
             text = "评级宝箱 金币+" + lastRankChestReward;
         } else if (lastDailyGoalReward > 0) {
-            text = "每日目标 金币+" + lastDailyGoalReward;
+            text = "每日目标 金币+" + lastDailyGoalReward + " 月票+1";
         }
         canvas.drawText(text, getWidth() / 2f, pagerTop - dp(10), textPaint);
         postInvalidateOnAnimation();
