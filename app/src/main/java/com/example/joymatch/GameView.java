@@ -6108,6 +6108,23 @@ public class GameView extends View {
         String text = chapterChestClaimed[chapter] ? chapterNames[chapter] + " 已领"
                 : chapterNames[chapter] + " 宝箱 " + getChapterStars(chapter) + "/" + CHAPTER_CHEST_STARS;
         canvas.drawText(text, chapterChestRect.centerX(), chapterChestRect.centerY() + dp(5), textPaint);
+        drawChapterChestProgressBar(canvas, chapter, chapterChestRect, claimable);
+    }
+
+    private void drawChapterChestProgressBar(Canvas canvas, int chapter, RectF rect, boolean claimable) {
+        if (chapterChestClaimed[chapter]) {
+            return;
+        }
+
+        // 章节宝箱进度条让整章刷星目标更明确。
+        float progress = Math.min(1f, getChapterStars(chapter) / (float) CHAPTER_CHEST_STARS);
+        float left = rect.left + dp(12);
+        float right = rect.right - dp(12);
+        float top = rect.bottom - dp(7);
+        paint.setColor(Color.argb(70, 33, 37, 56));
+        canvas.drawRoundRect(new RectF(left, top, right, top + dp(4)), dp(2), dp(2), paint);
+        paint.setColor(claimable ? Color.argb(220, 33, 37, 56) : Color.argb(210, 255, 236, 133));
+        canvas.drawRoundRect(new RectF(left, top, left + (right - left) * progress, top + dp(4)), dp(2), dp(2), paint);
     }
 
     private void drawChapterProgress(Canvas canvas) {
