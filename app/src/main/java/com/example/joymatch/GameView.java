@@ -247,6 +247,8 @@ public class GameView extends View {
     private int coins;
     private int lastCoinReward;
     private int lastAchievementReward;
+    private int lastAchievementRewardProp = NONE;
+    private int lastAchievementRewardAmount;
     private int winStreak;
     private int lastWinStreakReward;
     private int lastWinStreakRewardProp = NONE;
@@ -591,6 +593,8 @@ public class GameView extends View {
         lastRank = 0;
         lastCoinReward = 0;
         lastAchievementReward = 0;
+        lastAchievementRewardProp = NONE;
+        lastAchievementRewardAmount = 0;
         lastWinStreakReward = 0;
         lastWinStreakRewardProp = NONE;
         lastWinStreakRewardAmount = 0;
@@ -2262,10 +2266,37 @@ public class GameView extends View {
         achievementsClaimed[index] = true;
         lastAchievementReward += reward;
         coins += reward;
+        grantAchievementPropReward(index);
         prefs.edit()
                 .putBoolean(KEY_ACHIEVEMENT_PREFIX + index, true)
                 .putInt(KEY_COINS, coins)
                 .apply();
+    }
+
+    private void grantAchievementPropReward(int index) {
+        int prop = NONE;
+        int amount = 0;
+        if (index == 7 || index == 13) {
+            prop = PROP_MOON_TICKET;
+            amount = 1;
+        } else if (index == 16 || index == 20) {
+            prop = PROP_AURORA_ORB;
+            amount = 1;
+        } else if (index == 17 || index == 21 || index == 22) {
+            prop = PROP_STAR_COMPASS;
+            amount = 1;
+        } else if (index == 23) {
+            prop = PROP_FIREWORK_CANNON;
+            amount = 2;
+        }
+        if (prop == NONE) {
+            return;
+        }
+
+        // 高阶成就除金币外给稀有道具，延长满星和评级后的追求。
+        propInventory[prop] += amount;
+        lastAchievementRewardProp = prop;
+        lastAchievementRewardAmount += amount;
     }
 
     private void loadProgress() {
@@ -6929,6 +6960,10 @@ public class GameView extends View {
         return lastWinStreakRewardProp == NONE ? "" : " " + getPropName(lastWinStreakRewardProp) + "+" + lastWinStreakRewardAmount;
     }
 
+    private String buildAchievementPropRewardText() {
+        return lastAchievementRewardProp == NONE ? "" : " " + getPropName(lastAchievementRewardProp) + "+" + lastAchievementRewardAmount;
+    }
+
     private void playClickTone() {
         if (!soundEnabled) {
             return;
@@ -7036,7 +7071,8 @@ public class GameView extends View {
                 rewardText = "金币 +" + lastCoinReward + " 章节评级+" + lastChapterRankReward + " 潮汐+1"
                         + buildChapterRankPropRewardText() + "  点击继续";
             } else if (lastAchievementReward > 0) {
-                rewardText = "金币 +" + lastCoinReward + "  成就奖励+" + lastAchievementReward + "  点击继续";
+                rewardText = "金币 +" + lastCoinReward + "  成就奖励+" + lastAchievementReward
+                        + buildAchievementPropRewardText() + "  点击继续";
             } else if (lastFirstClearReward > 0) {
                 rewardText = "金币 +" + lastCoinReward + "  首通+" + lastFirstClearReward + "  点击继续";
             } else if (lastFullStarReward > 0) {
