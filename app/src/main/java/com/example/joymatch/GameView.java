@@ -286,6 +286,9 @@ public class GameView extends View {
     private int lastEliteReward;
     private int lastFirstClearReward;
     private int lastFullStarReward;
+    private int lastReplayReward;
+    private int lastReplayRewardProp = NONE;
+    private int lastReplayRewardAmount;
     private int starChestClaimed;
     private int rankChestClaimed;
     private int lastChestReward;
@@ -748,6 +751,9 @@ public class GameView extends View {
         lastEliteReward = 0;
         lastFirstClearReward = 0;
         lastFullStarReward = 0;
+        lastReplayReward = 0;
+        lastReplayRewardProp = NONE;
+        lastReplayRewardAmount = 0;
         lastDailyGoalReward = 0;
         lastSeasonReward = 0;
         lastSeasonRewardProp = NONE;
@@ -2860,6 +2866,7 @@ public class GameView extends View {
             lastRankUpgradeReward = (levelRanks[levelIndex] - oldRank) * 8;
             coins += lastRankUpgradeReward;
         }
+        grantReplayImprovementReward(oldStars, oldRank);
         if (hiddenChallengeCleared) {
             lastHiddenReward = 20;
             coins += lastHiddenReward;
@@ -2900,6 +2907,28 @@ public class GameView extends View {
         // 首次通关奖励强化主线推进感，和重玩补星奖励区分开。
         lastFirstClearReward = 18 + Math.min(60, levelIndex / 2) + (level.elite ? 18 : 0);
         coins += lastFirstClearReward;
+    }
+
+    private void grantReplayImprovementReward(int oldStars, int oldRank) {
+        if (oldStars <= 0 || (levelStars[levelIndex] <= oldStars && levelRanks[levelIndex] <= oldRank)) {
+            return;
+        }
+
+        // 老关卡补星或冲评级额外给一次回访奖励，让推荐重玩有更明确的收益。
+        int starGain = Math.max(0, levelStars[levelIndex] - oldStars);
+        int rankGain = Math.max(0, levelRanks[levelIndex] - oldRank);
+        lastReplayReward = 12 + starGain * 18 + rankGain * 10;
+        coins += lastReplayReward;
+        if (levelStars[levelIndex] >= 3 && oldStars < 3) {
+            lastReplayRewardProp = PROP_STAR_HARP;
+            lastReplayRewardAmount = 1;
+        } else if (levelRanks[levelIndex] >= 4 && oldRank < 4) {
+            lastReplayRewardProp = PROP_STAR_COMPASS;
+            lastReplayRewardAmount = 1;
+        }
+        if (lastReplayRewardProp != NONE) {
+            addReserveProp(lastReplayRewardProp, lastReplayRewardAmount);
+        }
     }
 
     private void updateSeasonQuestProgress() {
@@ -8061,10 +8090,15 @@ public class GameView extends View {
         return lastSeasonRewardProp == NONE ? "" : " " + getPropName(lastSeasonRewardProp) + "+" + lastSeasonRewardAmount;
     }
 
+    private String buildReplayRewardText() {
+        return lastReplayRewardProp == NONE ? "" : " " + getPropName(lastReplayRewardProp) + "+" + lastReplayRewardAmount;
+    }
+
     private List<String> buildRewardLines() {
         List<String> lines = new ArrayList<>();
         lines.add("金币 +" + lastCoinReward);
         addRewardLine(lines, "首通", lastFirstClearReward, "");
+        addRewardLine(lines, "回访", lastReplayReward, buildReplayRewardText());
         addRewardLine(lines, "满星", lastFullStarReward, lastFullStarReward > 0 ? " 净化+1" : "");
         addRewardLine(lines, "补星", lastStarUpgradeReward, "");
         addRewardLine(lines, "评级", lastRankUpgradeReward, "");
@@ -8140,6 +8174,7 @@ public class GameView extends View {
         if (levelComplete && (lastAchievementReward > 0 || lastStarUpgradeReward > 0 || lastRankUpgradeReward > 0
                 || lastPerfectReward > 0 || lastHiddenReward > 0 || lastWinStreakReward > 0
                 || lastEliteReward > 0 || lastFirstClearReward > 0 || lastFullStarReward > 0
+                || lastReplayReward > 0
                 || lastChapterMasteryReward > 0 || lastChapterEliteReward > 0 || lastChapterRankReward > 0
                 || lastSeasonReward > 0)) {
             drawRewardSparkles(canvas, getWidth() / 2f, getHeight() * 0.42f - dp(12));
@@ -8168,6 +8203,9 @@ public class GameView extends View {
             }
             if (lastFirstClearReward > 0) {
                 bonusText += "  首次通关";
+            }
+            if (lastReplayReward > 0) {
+                bonusText += "  回访提升";
             }
             if (lastFullStarReward > 0) {
                 bonusText += "  满星达成";
