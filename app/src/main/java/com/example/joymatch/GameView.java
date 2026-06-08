@@ -6156,13 +6156,9 @@ public class GameView extends View {
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setTextSize(sp(12));
         textPaint.setColor(Color.WHITE);
-        String status = getChapterStars(chapter) >= CHAPTER_SIZE * 3
-                ? (chapterMasteryClaimed[chapter] ? "  大师已领" : "  大师奖励") : "";
-        String eliteStatus = getChapterEliteCount(chapter) > 0
-                && getChapterClearedEliteCount(chapter) >= getChapterEliteCount(chapter)
-                ? (chapterEliteClaimed[chapter] ? " 已领" : " 奖励") : "";
-        String rankStatus = getChapterRankScore(chapter) >= getChapterRankRewardTarget()
-                ? (chapterRankClaimed[chapter] ? " 已领" : " 奖励") : "";
+        String status = buildChapterStarGoalHint(chapter);
+        String eliteStatus = buildChapterEliteGoalHint(chapter);
+        String rankStatus = buildChapterRankGoalHint(chapter);
         RectF progressTextRect = new RectF(left, top + dp(14), right, top + dp(34));
         RectF rankTextRect = new RectF(left, top + dp(28), right, top + dp(50));
         drawTextFit(canvas, "章节进度 " + getChapterUnlockedCount(chapter) + "/" + CHAPTER_SIZE
@@ -6170,6 +6166,76 @@ public class GameView extends View {
         drawTextFit(canvas, "章节评级 " + getChapterRankScore(chapter) + "/" + getChapterRankRewardTarget() + rankStatus
                         + "  精英 " + getChapterClearedEliteCount(chapter) + "/" + getChapterEliteCount(chapter) + eliteStatus,
                 rankTextRect, 12, Color.WHITE);
+        if (shouldPulseChapterProgressGoal(chapter)) {
+            drawChapterProgressGoalSpark(canvas, right - dp(8), top + dp(5));
+        }
+    }
+
+    private String buildChapterStarGoalHint(int chapter) {
+        int stars = getChapterStars(chapter);
+        int fullStarTarget = CHAPTER_SIZE * 3;
+        if (stars >= fullStarTarget) {
+            return chapterMasteryClaimed[chapter] ? "  大师已领" : "  大师奖励";
+        }
+        if (stars >= CHAPTER_CHEST_STARS || getChapterUnlockedCount(chapter) >= CHAPTER_SIZE) {
+            return "  满星差" + (fullStarTarget - stars);
+        }
+        return "";
+    }
+
+    private String buildChapterRankGoalHint(int chapter) {
+        int rankScore = getChapterRankScore(chapter);
+        int rankTarget = getChapterRankRewardTarget();
+        if (rankScore >= rankTarget) {
+            return chapterRankClaimed[chapter] ? " 已领" : " 奖励";
+        }
+        if (getChapterUnlockedCount(chapter) >= CHAPTER_SIZE / 2) {
+            return " 差" + (rankTarget - rankScore);
+        }
+        return "";
+    }
+
+    private String buildChapterEliteGoalHint(int chapter) {
+        int eliteCount = getChapterEliteCount(chapter);
+        int clearedElite = getChapterClearedEliteCount(chapter);
+        if (eliteCount <= 0) {
+            return "";
+        }
+        if (clearedElite >= eliteCount) {
+            return chapterEliteClaimed[chapter] ? " 已领" : " 奖励";
+        }
+        if (clearedElite > 0 || getChapterUnlockedCount(chapter) >= CHAPTER_SIZE) {
+            return " 差" + (eliteCount - clearedElite);
+        }
+        return "";
+    }
+
+    private boolean shouldPulseChapterProgressGoal(int chapter) {
+        int stars = getChapterStars(chapter);
+        int fullStarMissing = CHAPTER_SIZE * 3 - stars;
+        int rankMissing = getChapterRankRewardTarget() - getChapterRankScore(chapter);
+        int eliteCount = getChapterEliteCount(chapter);
+        int clearedElite = getChapterClearedEliteCount(chapter);
+        int eliteMissing = eliteCount - clearedElite;
+        return (!chapterMasteryClaimed[chapter] && stars >= CHAPTER_CHEST_STARS && fullStarMissing >= 0 && fullStarMissing <= 6)
+                || (!chapterRankClaimed[chapter] && getChapterUnlockedCount(chapter) >= CHAPTER_SIZE / 2
+                && rankMissing >= 0 && rankMissing <= 8)
+                || (!chapterEliteClaimed[chapter] && eliteCount > 0
+                && (clearedElite > 0 || getChapterUnlockedCount(chapter) >= CHAPTER_SIZE)
+                && eliteMissing >= 0 && eliteMissing <= 1);
+    }
+
+    private void drawChapterProgressGoalSpark(Canvas canvas, float x, float y) {
+        // 章节奖励临近时给进度条加一点闪光，提醒玩家回头补星和冲评级。
+        float pulse = 0.5f + 0.5f * (float) Math.sin(System.currentTimeMillis() / 180.0);
+        paint.setColor(Color.argb((int) (120 + pulse * 85), 255, 255, 255));
+        canvas.drawCircle(x, y, dp(3) + pulse * dp(2), paint);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(1));
+        paint.setColor(Color.argb((int) (80 + pulse * 70), 255, 236, 133));
+        canvas.drawCircle(x, y, dp(6) + pulse * dp(2), paint);
+        paint.setStyle(Paint.Style.FILL);
+        postInvalidateOnAnimation();
     }
 
     private void drawAchievementProgress(Canvas canvas) {
