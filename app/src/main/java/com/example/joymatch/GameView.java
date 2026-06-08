@@ -2059,7 +2059,7 @@ public class GameView extends View {
         int pageCount = Math.min(LEVELS_PER_PAGE, levels.size() - pageStart);
         int rows = (int) Math.ceil(pageCount / (float) columns);
         float gap = dp(6);
-        float startY = dp(204);
+        float startY = dp(212);
         float pagerTop = getHeight() - dp(64);
         float sizeByWidth = (getWidth() - dp(32) - gap * (columns - 1)) / columns;
         float sizeByHeight = (pagerTop - startY - dp(10) - gap * (rows - 1)) / rows;
@@ -2198,11 +2198,13 @@ public class GameView extends View {
                 ? (chapterMasteryClaimed[chapter] ? "  大师已领" : "  大师奖励") : "";
         canvas.drawText("章节进度 " + getChapterUnlockedCount(chapter) + "/" + CHAPTER_SIZE
                 + "  星 " + getChapterStars(chapter) + status, getWidth() / 2f, top + dp(26), textPaint);
+        canvas.drawText("章节评级 " + getChapterRankScore(chapter) + "/" + (CHAPTER_SIZE * 6),
+                getWidth() / 2f, top + dp(40), textPaint);
     }
 
     private void drawAchievementProgress(Canvas canvas) {
         float left = dp(34);
-        float top = dp(188);
+        float top = dp(194);
         float right = getWidth() - dp(34);
         float progress = getClaimedAchievementCount() / (float) ACHIEVEMENT_COUNT;
 
@@ -2376,6 +2378,16 @@ public class GameView extends View {
         int end = Math.min(start + CHAPTER_SIZE, levels.size());
         for (int level = start; level < end; level++) {
             total += levelStars[level];
+        }
+        return total;
+    }
+
+    private int getChapterRankScore(int chapter) {
+        int total = 0;
+        int start = chapter * CHAPTER_SIZE;
+        int end = Math.min(start + CHAPTER_SIZE, levels.size());
+        for (int level = start; level < end; level++) {
+            total += levelRanks[level];
         }
         return total;
     }
