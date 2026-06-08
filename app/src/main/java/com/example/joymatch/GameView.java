@@ -29,6 +29,8 @@ public class GameView extends View {
     private static final String KEY_STARS_PREFIX = "stars_";
     private static final String KEY_COINS = "coins";
     private static final String KEY_DAILY_REWARD_DAY = "daily_reward_day";
+    private static final String KEY_SOUND_ENABLED = "sound_enabled";
+    private static final String KEY_HAPTIC_ENABLED = "haptic_enabled";
     private static final int BOARD_SIZE = 8;
     private static final int TILE_KINDS = 6;
     private static final int LEVEL_COUNT = 120;
@@ -59,6 +61,9 @@ public class GameView extends View {
     private final RectF[] levelRects = new RectF[LEVELS_PER_PAGE];
     private final RectF mapButtonRect = new RectF();
     private final RectF hintButtonRect = new RectF();
+    private final RectF settingsButtonRect = new RectF();
+    private final RectF soundToggleRect = new RectF();
+    private final RectF hapticToggleRect = new RectF();
     private final RectF prevPageRect = new RectF();
     private final RectF nextPageRect = new RectF();
     private final int[] levelStars = new int[LEVEL_COUNT];
@@ -128,6 +133,9 @@ public class GameView extends View {
     private boolean levelComplete;
     private boolean levelFailed;
     private boolean showingLevelMap;
+    private boolean showingSettings;
+    private boolean soundEnabled = true;
+    private boolean hapticEnabled = true;
     private SharedPreferences prefs;
 
     public GameView(Context context) {
@@ -150,6 +158,10 @@ public class GameView extends View {
             drawLevelMap(canvas);
             return;
         }
+        if (showingSettings) {
+            drawSettings(canvas);
+            return;
+        }
         drawHud(canvas);
         drawBoard(canvas);
         drawParticles(canvas);
@@ -165,14 +177,20 @@ public class GameView extends View {
 
         if (showingLevelMap) {
             handleLevelMapTap(event.getX(), event.getY());
-            performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
+            playHaptic(HapticFeedbackConstants.CLOCK_TICK);
             playClickTone();
             invalidate();
             return true;
         }
 
+        if (showingSettings) {
+            handleSettingsTap(event.getX(), event.getY());
+            invalidate();
+            return true;
+        }
+
         if (levelComplete) {
-            performHapticFeedback(HapticFeedbackConstants.CONFIRM);
+            playHaptic(HapticFeedbackConstants.CONFIRM);
             playSuccessTone();
             startLevel((levelIndex + 1) % levels.size());
             invalidate();
@@ -186,11 +204,11 @@ public class GameView extends View {
                 movesLeft = 5;
                 levelFailed = false;
                 saveCoins();
-                performHapticFeedback(HapticFeedbackConstants.CONFIRM);
+                playHaptic(HapticFeedbackConstants.CONFIRM);
                 playSuccessTone();
             } else {
                 startLevel(levelIndex);
-                performHapticFeedback(HapticFeedbackConstants.REJECT);
+                playHaptic(HapticFeedbackConstants.REJECT);
                 playRejectTone();
             }
             invalidate();
@@ -200,7 +218,7 @@ public class GameView extends View {
         if (mapButtonRect.contains(event.getX(), event.getY())) {
             levelMapPage = levelIndex / LEVELS_PER_PAGE;
             showingLevelMap = true;
-            performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
+            playHaptic(HapticFeedbackConstants.CLOCK_TICK);
             playClickTone();
             invalidate();
             return true;
@@ -208,7 +226,15 @@ public class GameView extends View {
 
         if (hintButtonRect.contains(event.getX(), event.getY())) {
             showAvailableHint();
-            performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
+            playHaptic(HapticFeedbackConstants.CLOCK_TICK);
+            playClickTone();
+            invalidate();
+            return true;
+        }
+
+        if (settingsButtonRect.contains(event.getX(), event.getY())) {
+            showingSettings = true;
+            playHaptic(HapticFeedbackConstants.CLOCK_TICK);
             playClickTone();
             invalidate();
             return true;
@@ -335,7 +361,7 @@ public class GameView extends View {
                     selectedRow = NONE;
                     selectedCol = NONE;
                 }
-                performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
+                playHaptic(HapticFeedbackConstants.CLOCK_TICK);
                 playClickTone();
                 return true;
             }
@@ -357,7 +383,7 @@ public class GameView extends View {
             propInventory[PROP_COLOR_BLAST]--;
             clearCells(buildColorCells(colorOf(board[row][col])), 220);
         }
-        performHapticFeedback(HapticFeedbackConstants.CONFIRM);
+        playHaptic(HapticFeedbackConstants.CONFIRM);
         playSuccessTone();
         activeProp = NONE;
         selectedRow = NONE;
@@ -373,7 +399,7 @@ public class GameView extends View {
             clearHint();
             clearCells(buildSpecialComboCells(selectedRow, selectedCol, row, col), 360);
             checkLevelState();
-            performHapticFeedback(HapticFeedbackConstants.CONFIRM);
+            playHaptic(HapticFeedbackConstants.CONFIRM);
             playSuccessTone();
             selectedRow = NONE;
             selectedCol = NONE;
@@ -384,7 +410,7 @@ public class GameView extends View {
         Set<Cell> matches = findMatches();
         if (matches.isEmpty()) {
             swap(selectedRow, selectedCol, row, col);
-            performHapticFeedback(HapticFeedbackConstants.REJECT);
+            playHaptic(HapticFeedbackConstants.REJECT);
             playRejectTone();
         } else {
             movesLeft--;
@@ -392,7 +418,7 @@ public class GameView extends View {
             createSpecialFromMatch(matches, row, col);
             resolveMatches(matches);
             checkLevelState();
-            performHapticFeedback(HapticFeedbackConstants.CONFIRM);
+            playHaptic(HapticFeedbackConstants.CONFIRM);
             playSuccessTone();
         }
         selectedRow = NONE;
@@ -654,6 +680,8 @@ public class GameView extends View {
     private void loadProgress() {
         highestUnlockedLevel = Math.min(prefs.getInt(KEY_UNLOCKED_LEVEL, 0), levels.size() - 1);
         coins = prefs.getInt(KEY_COINS, 30);
+        soundEnabled = prefs.getBoolean(KEY_SOUND_ENABLED, true);
+        hapticEnabled = prefs.getBoolean(KEY_HAPTIC_ENABLED, true);
         grantDailyReward();
         for (int i = 0; i < levels.size(); i++) {
             levelStars[i] = prefs.getInt(KEY_STARS_PREFIX + i, 0);
@@ -673,6 +701,31 @@ public class GameView extends View {
 
     private void saveCoins() {
         prefs.edit().putInt(KEY_COINS, coins).apply();
+    }
+
+    private void saveSettings() {
+        prefs.edit()
+                .putBoolean(KEY_SOUND_ENABLED, soundEnabled)
+                .putBoolean(KEY_HAPTIC_ENABLED, hapticEnabled)
+                .apply();
+    }
+
+    private void handleSettingsTap(float x, float y) {
+        if (soundToggleRect.contains(x, y)) {
+            soundEnabled = !soundEnabled;
+            saveSettings();
+            playHaptic(HapticFeedbackConstants.CLOCK_TICK);
+            playClickTone();
+            return;
+        }
+        if (hapticToggleRect.contains(x, y)) {
+            hapticEnabled = !hapticEnabled;
+            saveSettings();
+            playHaptic(HapticFeedbackConstants.CLOCK_TICK);
+            playClickTone();
+            return;
+        }
+        showingSettings = false;
     }
 
     private void grantDailyReward() {
@@ -894,13 +947,16 @@ public class GameView extends View {
         Level level = levels.get(levelIndex);
         mapButtonRect.set(getWidth() - dp(90), dp(18), getWidth() - dp(22), dp(50));
         hintButtonRect.set(getWidth() - dp(164), dp(18), getWidth() - dp(96), dp(50));
+        settingsButtonRect.set(getWidth() - dp(238), dp(18), getWidth() - dp(170), dp(50));
 
         paint.setColor(Color.argb(105, 255, 255, 255));
+        canvas.drawRoundRect(settingsButtonRect, dp(14), dp(14), paint);
         canvas.drawRoundRect(hintButtonRect, dp(14), dp(14), paint);
         canvas.drawRoundRect(mapButtonRect, dp(14), dp(14), paint);
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setTextSize(sp(14));
         textPaint.setColor(Color.WHITE);
+        canvas.drawText("设置", settingsButtonRect.centerX(), settingsButtonRect.centerY() + dp(5), textPaint);
         canvas.drawText("提示", hintButtonRect.centerX(), hintButtonRect.centerY() + dp(5), textPaint);
         canvas.drawText("选关", mapButtonRect.centerX(), mapButtonRect.centerY() + dp(5), textPaint);
 
@@ -1013,6 +1069,36 @@ public class GameView extends View {
         }
 
         drawLevelMapPager(canvas);
+    }
+
+    private void drawSettings(Canvas canvas) {
+        paint.setColor(Color.argb(175, 33, 37, 56));
+        canvas.drawRect(0, 0, getWidth(), getHeight(), paint);
+
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setTextSize(sp(26));
+        textPaint.setColor(Color.WHITE);
+        canvas.drawText("设置", getWidth() / 2f, getHeight() * 0.3f, textPaint);
+
+        soundToggleRect.set(dp(54), getHeight() * 0.4f, getWidth() - dp(54), getHeight() * 0.4f + dp(48));
+        hapticToggleRect.set(dp(54), getHeight() * 0.49f, getWidth() - dp(54), getHeight() * 0.49f + dp(48));
+        drawSettingsToggle(canvas, soundToggleRect, "音效", soundEnabled);
+        drawSettingsToggle(canvas, hapticToggleRect, "震动", hapticEnabled);
+
+        textPaint.setTextSize(sp(14));
+        canvas.drawText("点击空白返回", getWidth() / 2f, getHeight() * 0.62f, textPaint);
+    }
+
+    private void drawSettingsToggle(Canvas canvas, RectF rect, String label, boolean enabled) {
+        paint.setColor(Color.argb(145, 255, 255, 255));
+        canvas.drawRoundRect(rect, dp(16), dp(16), paint);
+        textPaint.setTextAlign(Paint.Align.LEFT);
+        textPaint.setTextSize(sp(16));
+        textPaint.setColor(Color.WHITE);
+        canvas.drawText(label, rect.left + dp(18), rect.centerY() + dp(6), textPaint);
+
+        textPaint.setTextAlign(Paint.Align.RIGHT);
+        canvas.drawText(enabled ? "开" : "关", rect.right - dp(18), rect.centerY() + dp(6), textPaint);
     }
 
     private void drawLevelMapPager(Canvas canvas) {
@@ -1382,15 +1468,30 @@ public class GameView extends View {
     }
 
     private void playClickTone() {
+        if (!soundEnabled) {
+            return;
+        }
         toneGenerator.startTone(ToneGenerator.TONE_PROP_BEEP, 45);
     }
 
     private void playSuccessTone() {
+        if (!soundEnabled) {
+            return;
+        }
         toneGenerator.startTone(ToneGenerator.TONE_PROP_ACK, 80);
     }
 
     private void playRejectTone() {
+        if (!soundEnabled) {
+            return;
+        }
         toneGenerator.startTone(ToneGenerator.TONE_PROP_NACK, 90);
+    }
+
+    private void playHaptic(int feedbackConstant) {
+        if (hapticEnabled) {
+            performHapticFeedback(feedbackConstant);
+        }
     }
 
     @Override
