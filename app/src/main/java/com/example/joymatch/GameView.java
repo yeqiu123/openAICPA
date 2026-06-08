@@ -2475,7 +2475,7 @@ public class GameView extends View {
             if (dailyChallengeMode) {
                 rewardText = lastCoinReward > 0 ? "每日金币 +" + lastCoinReward + "  返回主线" : "今日已领奖  返回主线";
             } else if (lastAchievementReward > 0) {
-                rewardText = "金币 +" + lastCoinReward + " 成就+" + lastAchievementReward + "  点击继续";
+                rewardText = "金币 +" + lastCoinReward + "  成就奖励+" + lastAchievementReward + "  点击继续";
             } else if (lastWinStreakReward > 0) {
                 rewardText = "金币 +" + lastCoinReward + " 连胜+" + lastWinStreakReward + "  点击继续";
             }
