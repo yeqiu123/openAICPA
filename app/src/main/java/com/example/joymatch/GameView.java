@@ -436,6 +436,7 @@ public class GameView extends View {
         propInventory[PROP_EXTRA_MOVES] = level.extraMoves;
         propInventory[PROP_MAGIC_WAND] = level.magicWands;
         propInventory[PROP_BRUSH] = level.brushes;
+        applyChapterMasteryStarterPerks();
 
         // 初始化时避开天然三连，让玩家第一步更清晰。
         for (int row = 0; row < BOARD_SIZE; row++) {
@@ -1081,12 +1082,36 @@ public class GameView extends View {
         chapterMasteryClaimed[chapter] = true;
         lastChapterMasteryReward = 120 + chapter * 30;
         coins += lastChapterMasteryReward;
-        propInventory[PROP_MAGIC_WAND]++;
-        propInventory[PROP_BRUSH]++;
         prefs.edit()
                 .putBoolean(KEY_CHAPTER_MASTERY_PREFIX + chapter, true)
                 .putInt(KEY_COINS, coins)
                 .apply();
+    }
+
+    private void applyChapterMasteryStarterPerks() {
+        int mastered = getClaimedChapterMasteryCount();
+        if (mastered <= 0) {
+            return;
+        }
+
+        // 章节大师奖励会转成后续关卡的固定开局助力。
+        propInventory[PROP_MAGIC_WAND]++;
+        if (mastered >= 2) {
+            propInventory[PROP_BRUSH]++;
+        }
+        if (mastered >= 4) {
+            propInventory[PROP_COLOR_BLAST]++;
+        }
+    }
+
+    private int getClaimedChapterMasteryCount() {
+        int count = 0;
+        for (boolean claimed : chapterMasteryClaimed) {
+            if (claimed) {
+                count++;
+            }
+        }
+        return count;
     }
 
     private void saveCoins() {
