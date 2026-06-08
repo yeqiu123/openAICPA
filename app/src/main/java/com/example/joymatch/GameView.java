@@ -1325,12 +1325,16 @@ public class GameView extends View {
         paint.setColor(Color.argb(45, 255, 255, 255));
         canvas.drawCircle(getWidth() * 0.18f, getHeight() * 0.18f, getWidth() * 0.22f, paint);
         canvas.drawCircle(getWidth() * 0.82f, getHeight() * 0.76f, getWidth() * 0.28f, paint);
-        paint.setColor(Color.argb(36, 255, 255, 255));
+        long time = System.currentTimeMillis();
         for (int i = 0; i < 12; i++) {
-            float x = (i * 83 % Math.max(getWidth(), 1)) + dp(10);
+            int alpha = 28 + (int) (18 * Math.abs(Math.sin(time / 650f + i)));
+            paint.setColor(Color.argb(alpha, 255, 255, 255));
+            float drift = (time / (35f + i * 3)) % Math.max(getWidth(), 1);
+            float x = (i * 83 + drift) % Math.max(getWidth(), 1);
             float y = (i * 137 % Math.max(getHeight(), 1)) + dp(12);
             canvas.drawCircle(x, y, dp(2 + i % 3), paint);
         }
+        postInvalidateOnAnimation();
     }
 
     private void drawHud(Canvas canvas) {
