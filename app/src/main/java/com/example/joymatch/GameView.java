@@ -91,6 +91,7 @@ public class GameView extends View {
     private final int[][] portal = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[][] hourglass = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[][] luckyStar = new int[BOARD_SIZE][BOARD_SIZE];
+    private final int[][] mysteryBox = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[] propInventory = new int[PROP_COUNT];
     private final RectF[] propRects = new RectF[PROP_COUNT];
     private final RectF[] levelRects = new RectF[LEVELS_PER_PAGE];
@@ -207,6 +208,9 @@ public class GameView extends View {
     private int lastPortalReward;
     private int lastHourglassReward;
     private int lastLuckyStarRewardProp = NONE;
+    private int lastMysteryRewardType;
+    private int lastMysteryRewardAmount;
+    private int lastMysteryRewardProp = NONE;
     private int lastEnergyRewardProp = NONE;
     private int lastChestNoticeType;
     private int dailyRewardAmount;
@@ -412,6 +416,7 @@ public class GameView extends View {
             int portalCount = i < 32 || i % 5 != 1 ? 0 : 2;
             int hourglassCount = i < 38 || i % 7 != 3 ? 0 : 1 + (i % 21 == 3 ? 1 : 0);
             int luckyStarCount = i < 44 || i % 8 != 4 ? 0 : 1;
+            int mysteryBoxCount = i < 50 || i % 9 != 5 ? 0 : 1 + (i % 27 == 5 ? 1 : 0);
             int moveLimitGoal = i >= 18 && i % 4 == 0 ? Math.max(8, moves - 5) : 0;
             int comboGoal = i >= 22 && i % 5 == 0 ? 3 + (i / 25) : 0;
             int scoreGoal = i >= 30 && i % 6 == 0 ? targetScore + 800 + i * 40 : 0;
@@ -425,7 +430,7 @@ public class GameView extends View {
             }
             levels.add(new Level(targetScore, moves, hammer, bomb, shuffle, rowBlast, colorBlast, extraMoves,
                     magicWand, brush, portalProp, cleanse, freeze, targetKind, targetAmount, iceCount, honeyCount, stoneCount, vineCount, giftCount,
-                    chainCount, shellCount, flowerCount, keyCount, moveChestCount, cloudCount, gemCount, portalCount, hourglassCount, luckyStarCount,
+                    chainCount, shellCount, flowerCount, keyCount, moveChestCount, cloudCount, gemCount, portalCount, hourglassCount, luckyStarCount, mysteryBoxCount,
                     moveLimitGoal, comboGoal, scoreGoal, elite));
         }
     }
@@ -469,6 +474,9 @@ public class GameView extends View {
         lastPortalReward = 0;
         lastHourglassReward = 0;
         lastLuckyStarRewardProp = NONE;
+        lastMysteryRewardType = 0;
+        lastMysteryRewardAmount = 0;
+        lastMysteryRewardProp = NONE;
         lastEnergyRewardProp = NONE;
         honeySpreadCount = 0;
         challengeCleared = false;
@@ -523,6 +531,7 @@ public class GameView extends View {
                 portal[row][col] = 0;
                 hourglass[row][col] = 0;
                 luckyStar[row][col] = 0;
+                mysteryBox[row][col] = 0;
                 do {
                     board[row][col] = makePiece(random.nextInt(TILE_KINDS), SPECIAL_NORMAL);
                 } while (createsInitialMatch(row, col));
@@ -543,6 +552,7 @@ public class GameView extends View {
         placePortal(level.portalCount);
         placeHourglass(level.hourglassCount);
         placeLuckyStar(level.luckyStarCount);
+        placeMysteryBox(level.mysteryBoxCount);
         ensurePlayableBoard();
         levelIntroUntilTime = System.currentTimeMillis() + 1400;
     }
@@ -643,6 +653,9 @@ public class GameView extends View {
             lastGemReward = 0;
             lastPortalReward = 0;
             lastHourglassReward = 0;
+            lastMysteryRewardType = 0;
+            lastMysteryRewardAmount = 0;
+            lastMysteryRewardProp = NONE;
             lastEnergyRewardProp = NONE;
             showFeedback(1, 1);
         } else if (activeProp == PROP_BRUSH) {
@@ -660,6 +673,9 @@ public class GameView extends View {
             lastGemReward = 0;
             lastPortalReward = 0;
             lastHourglassReward = 0;
+            lastMysteryRewardType = 0;
+            lastMysteryRewardAmount = 0;
+            lastMysteryRewardProp = NONE;
             lastEnergyRewardProp = NONE;
             showFeedback(1, 1);
         } else if (activeProp == PROP_CLEANSE) {
@@ -678,6 +694,9 @@ public class GameView extends View {
             lastGemReward = 0;
             lastPortalReward = 0;
             lastHourglassReward = 0;
+            lastMysteryRewardType = 0;
+            lastMysteryRewardAmount = 0;
+            lastMysteryRewardProp = NONE;
             lastEnergyRewardProp = NONE;
             showFeedback(1, Math.max(1, cleaned));
         }
@@ -758,6 +777,9 @@ public class GameView extends View {
         lastPortalReward = 0;
         lastHourglassReward = 0;
         lastLuckyStarRewardProp = NONE;
+        lastMysteryRewardType = 0;
+        lastMysteryRewardAmount = 0;
+        lastMysteryRewardProp = NONE;
         cells = expandSpecialCells(cells);
         score += applyComboFeverScore(bonusScore + cells.size() * 45);
         spawnParticles(cells);
@@ -938,6 +960,9 @@ public class GameView extends View {
         lastPortalReward = 0;
         lastHourglassReward = 0;
         lastLuckyStarRewardProp = NONE;
+        lastMysteryRewardType = 0;
+        lastMysteryRewardAmount = 0;
+        lastMysteryRewardProp = NONE;
         while (!matches.isEmpty()) {
             combo++;
             matches = expandSpecialCells(matches);
@@ -962,6 +987,9 @@ public class GameView extends View {
                 lastTaskRewardType = 3;
                 lastGiftReward = 0;
                 honeySpreadCount = 0;
+                lastMysteryRewardType = 0;
+                lastMysteryRewardAmount = 0;
+                lastMysteryRewardProp = NONE;
                 showFeedback(combo + 1, totalCleared);
             } else if (lastTaskRewardType == 0) {
                 showNormalFeedback(combo, totalCleared);
@@ -1271,7 +1299,8 @@ public class GameView extends View {
         checkAchievement(6, getTotalRankScore() >= 180, 150);
         checkAchievement(7, lastRank >= 6, 120);
         checkAchievement(8, hiddenChallengeCleared, 100);
-        checkAchievement(9, lastGemReward > 0 || lastPortalReward > 0 || lastLuckyStarRewardProp != NONE, 90);
+        checkAchievement(9, lastGemReward > 0 || lastPortalReward > 0
+                || lastLuckyStarRewardProp != NONE || lastMysteryRewardType > 0, 90);
     }
 
     private void checkAchievement(int index, boolean reached, int reward) {
@@ -1806,6 +1835,21 @@ public class GameView extends View {
         }
     }
 
+    private void placeMysteryBox(int count) {
+        int placed = 0;
+        while (placed < count) {
+            int row = random.nextInt(BOARD_SIZE);
+            int col = random.nextInt(BOARD_SIZE);
+            if (mysteryBox[row][col] == 0 && gift[row][col] == 0 && moveChest[row][col] == 0
+                    && cloud[row][col] == 0 && gem[row][col] == 0 && portal[row][col] == 0
+                    && hourglass[row][col] == 0 && luckyStar[row][col] == 0 && flower[row][col] == 0) {
+                // 神秘盒清除后随机变成局内奖励，给后期关卡多一点不可预测收益。
+                mysteryBox[row][col] = 1;
+                placed++;
+            }
+        }
+    }
+
     private void removeCells(Set<Cell> cells) {
         for (Cell cell : cells) {
             int piece = board[cell.row][cell.col];
@@ -1895,6 +1939,10 @@ public class GameView extends View {
                 propInventory[lastLuckyStarRewardProp]++;
                 score += 140;
             }
+            if (mysteryBox[cell.row][cell.col] > 0) {
+                mysteryBox[cell.row][cell.col] = 0;
+                openMysteryBox();
+            }
             board[cell.row][cell.col] = NONE;
         }
     }
@@ -1934,6 +1982,38 @@ public class GameView extends View {
         }
     }
 
+    private void openMysteryBox() {
+        int reward = random.nextInt(4);
+        lastMysteryRewardType = reward + 1;
+        lastMysteryRewardProp = NONE;
+        honeySpreadCount = 0;
+        lastGiftReward = 0;
+        lastMoveChestReward = 0;
+        lastCloudReward = 0;
+        lastFlowerReward = 0;
+        lastGemReward = 0;
+        lastPortalReward = 0;
+        lastHourglassReward = 0;
+        lastLuckyStarRewardProp = NONE;
+        lastEnergyRewardProp = NONE;
+        if (reward == 0) {
+            lastMysteryRewardAmount = 220;
+            score += lastMysteryRewardAmount;
+        } else if (reward == 1) {
+            lastMysteryRewardAmount = 5;
+            coins += lastMysteryRewardAmount;
+            saveCoins();
+        } else if (reward == 2) {
+            lastMysteryRewardAmount = 2;
+            movesLeft += lastMysteryRewardAmount;
+            moveLimitBonus += lastMysteryRewardAmount;
+        } else {
+            lastMysteryRewardProp = random.nextInt(PROP_COUNT);
+            lastMysteryRewardAmount = 1;
+            propInventory[lastMysteryRewardProp]++;
+        }
+    }
+
     private void spreadHoneyAfterMove() {
         Level level = levels.get(levelIndex);
         if (honeyFreezeMoves > 0) {
@@ -1966,6 +2046,9 @@ public class GameView extends View {
         lastMoveChestReward = 0;
         lastCloudReward = 0;
         lastFlowerReward = 0;
+        lastMysteryRewardType = 0;
+        lastMysteryRewardAmount = 0;
+        lastMysteryRewardProp = NONE;
         lastEnergyRewardProp = NONE;
         showFeedback(1, honeySpreadCount);
     }
@@ -1998,6 +2081,9 @@ public class GameView extends View {
             lastMoveChestReward = 0;
             lastCloudReward = 0;
             lastFlowerReward = 0;
+            lastMysteryRewardType = 0;
+            lastMysteryRewardAmount = 0;
+            lastMysteryRewardProp = NONE;
             lastEnergyRewardProp = NONE;
             showFeedback(1, 5);
         }
@@ -2016,6 +2102,9 @@ public class GameView extends View {
             lastMoveChestReward = 0;
             lastCloudReward = 0;
             lastFlowerReward = 0;
+            lastMysteryRewardType = 0;
+            lastMysteryRewardAmount = 0;
+            lastMysteryRewardProp = NONE;
             lastEnergyRewardProp = NONE;
             showFeedback(1, 6);
         }
@@ -2031,6 +2120,9 @@ public class GameView extends View {
             lastMoveChestReward = 0;
             lastCloudReward = 0;
             lastFlowerReward = 0;
+            lastMysteryRewardType = 0;
+            lastMysteryRewardAmount = 0;
+            lastMysteryRewardProp = NONE;
             lastEnergyRewardProp = NONE;
             showFeedback(Math.max(2, bestCombo), 3);
         }
@@ -2045,6 +2137,9 @@ public class GameView extends View {
             lastMoveChestReward = 0;
             lastCloudReward = 0;
             lastFlowerReward = 0;
+            lastMysteryRewardType = 0;
+            lastMysteryRewardAmount = 0;
+            lastMysteryRewardProp = NONE;
             lastEnergyRewardProp = NONE;
             showFeedback(1, level.keyCount);
         }
@@ -2475,6 +2570,8 @@ public class GameView extends View {
             return "步";
         } else if (level.luckyStarCount > 0) {
             return "星";
+        } else if (level.mysteryBoxCount > 0) {
+            return "盒";
         } else if (level.hourglassCount > 0) {
             return "沙";
         } else if (level.portalCount > 0) {
@@ -2895,6 +2992,7 @@ public class GameView extends View {
         drawPortal(canvas, row, col, rect);
         drawHourglass(canvas, row, col, rect);
         drawLuckyStar(canvas, row, col, rect);
+        drawMysteryBox(canvas, row, col, rect);
         drawKey(canvas, row, col, rect);
         drawMoveChest(canvas, row, col, rect);
     }
@@ -3382,6 +3480,24 @@ public class GameView extends View {
         canvas.drawCircle(centerX - dp(3), centerY - dp(3), dp(3), paint);
     }
 
+    private void drawMysteryBox(Canvas canvas, int row, int col, RectF rect) {
+        if (mysteryBox[row][col] <= 0) {
+            return;
+        }
+
+        float centerX = rect.right - dp(18);
+        float centerY = rect.bottom - dp(18);
+        paint.setColor(Color.argb(220, 255, 159, 64));
+        RectF box = new RectF(centerX - dp(12), centerY - dp(12), centerX + dp(12), centerY + dp(12));
+        canvas.drawRoundRect(box, dp(6), dp(6), paint);
+        paint.setColor(Color.argb(230, 153, 102, 255));
+        canvas.drawRect(box.left + dp(9), box.top, box.right - dp(9), box.bottom, paint);
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setTextSize(sp(16));
+        textPaint.setColor(Color.WHITE);
+        canvas.drawText("?", centerX, centerY + dp(6), textPaint);
+    }
+
     private void drawKey(Canvas canvas, int row, int col, RectF rect) {
         if (keys[row][col] <= 0) {
             return;
@@ -3498,6 +3614,8 @@ public class GameView extends View {
             text = "沙漏 +" + lastHourglassReward;
         } else if (lastLuckyStarRewardProp != NONE && age < 900) {
             text = "幸运星 " + getPropName(lastLuckyStarRewardProp);
+        } else if (lastMysteryRewardType > 0 && age < 900) {
+            text = buildMysteryRewardText();
         } else if (honeySpreadCount > 0 && age < 900) {
             text = "蜂蜜蔓延";
         } else if (lastTaskRewardType == 1 && age < 900) {
@@ -3574,6 +3692,9 @@ public class GameView extends View {
         if (level.luckyStarCount > 0) {
             goalText += "  幸运星 " + level.luckyStarCount;
         }
+        if (level.mysteryBoxCount > 0) {
+            goalText += "  神秘盒 " + level.mysteryBoxCount;
+        }
         if (level.elite) {
             goalText += "  精英奖励";
         }
@@ -3603,6 +3724,17 @@ public class GameView extends View {
         lastTaskRewardType = 0;
         lastEnergyRewardProp = NONE;
         showFeedback(combo, cleared);
+    }
+
+    private String buildMysteryRewardText() {
+        if (lastMysteryRewardType == 1) {
+            return "神秘盒 分数+" + lastMysteryRewardAmount;
+        } else if (lastMysteryRewardType == 2) {
+            return "神秘盒 金币+" + lastMysteryRewardAmount;
+        } else if (lastMysteryRewardType == 3) {
+            return "神秘盒 步数+" + lastMysteryRewardAmount;
+        }
+        return "神秘盒 " + getPropName(lastMysteryRewardProp);
     }
 
     private void playClickTone() {
@@ -3787,6 +3919,7 @@ public class GameView extends View {
         final int portalCount;
         final int hourglassCount;
         final int luckyStarCount;
+        final int mysteryBoxCount;
         final int moveLimitGoal;
         final int comboGoal;
         final int scoreGoal;
@@ -3796,8 +3929,8 @@ public class GameView extends View {
                 int extraMoves, int magicWands, int brushes, int portalProps, int cleanses, int freezes,
                 int targetKind, int targetAmount, int iceCount, int honeyCount, int stoneCount, int vineCount,
                 int giftCount, int chainCount, int shellCount, int flowerCount, int keyCount, int moveChestCount,
-                int cloudCount, int gemCount, int portalCount, int hourglassCount, int luckyStarCount, int moveLimitGoal,
-                int comboGoal, int scoreGoal, boolean elite) {
+                int cloudCount, int gemCount, int portalCount, int hourglassCount, int luckyStarCount,
+                int mysteryBoxCount, int moveLimitGoal, int comboGoal, int scoreGoal, boolean elite) {
             this.targetScore = targetScore;
             this.moves = moves;
             this.hammers = hammers;
@@ -3828,6 +3961,7 @@ public class GameView extends View {
             this.portalCount = portalCount;
             this.hourglassCount = hourglassCount;
             this.luckyStarCount = luckyStarCount;
+            this.mysteryBoxCount = mysteryBoxCount;
             this.moveLimitGoal = moveLimitGoal;
             this.comboGoal = comboGoal;
             this.scoreGoal = scoreGoal;
