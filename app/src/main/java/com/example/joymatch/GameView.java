@@ -1807,6 +1807,7 @@ public class GameView extends View {
             totalCleared += matches.size();
             score += applyComboFeverScore(matches.size() * 60 + (combo - 1) * 120);
             spawnParticles(matches);
+            spawnComboBurst(combo, matches);
             removeCells(matches);
             grantTaskRewards();
             collapseBoard();
@@ -6588,6 +6589,33 @@ public class GameView extends View {
                         (float) Math.sin(angle) * speed,
                         color, dp(3 + random.nextInt(4))));
             }
+        }
+    }
+
+    private void spawnComboBurst(int combo, Set<Cell> cells) {
+        if (tileSize <= 0 || combo < 3 || cells.isEmpty()) {
+            return;
+        }
+
+        float centerX = 0;
+        float centerY = 0;
+        for (Cell cell : cells) {
+            centerX += boardLeft + cell.col * tileSize + tileSize / 2f;
+            centerY += boardTop + cell.row * tileSize + tileSize / 2f;
+        }
+        centerX /= cells.size();
+        centerY /= cells.size();
+
+        int burstCount = Math.min(22, 6 + combo * 3);
+        for (int i = 0; i < burstCount; i++) {
+            double angle = Math.PI * 2 * i / burstCount + random.nextDouble() * 0.25;
+            float speed = dp(2.5f + random.nextFloat() * (2.5f + combo * 0.2f));
+            int color = palette[(i + combo) % TILE_KINDS];
+            // 高连击额外喷发一圈粒子，强化连续消除的爽感。
+            particles.add(new Particle(centerX, centerY,
+                    (float) Math.cos(angle) * speed,
+                    (float) Math.sin(angle) * speed,
+                    color, dp(4 + Math.min(4, combo))));
         }
     }
 
