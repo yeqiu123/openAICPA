@@ -159,6 +159,7 @@ public class GameView extends View {
     private int lastAchievementReward;
     private int winStreak;
     private int lastWinStreakReward;
+    private int lastStarUpgradeReward;
     private int starChestClaimed;
     private int lastChestReward;
     private int lastChapterChestReward;
@@ -377,6 +378,7 @@ public class GameView extends View {
         lastCoinReward = 0;
         lastAchievementReward = 0;
         lastWinStreakReward = 0;
+        lastStarUpgradeReward = 0;
         lastChestReward = 0;
         lastChapterChestReward = 0;
         lastGiftReward = 0;
@@ -982,9 +984,15 @@ public class GameView extends View {
 
     private void saveLevelProgress() {
         Level level = levels.get(levelIndex);
+        int oldStars = levelStars[levelIndex];
         levelStars[levelIndex] = Math.max(levelStars[levelIndex], lastStars);
         levelBestScores[levelIndex] = Math.max(levelBestScores[levelIndex], score);
         highestUnlockedLevel = Math.max(highestUnlockedLevel, Math.min(levelIndex + 1, levels.size() - 1));
+        if (levelStars[levelIndex] > oldStars) {
+            // 重玩补星给额外金币，鼓励把老关卡刷到满星。
+            lastStarUpgradeReward = (levelStars[levelIndex] - oldStars) * 12;
+            coins += lastStarUpgradeReward;
+        }
         grantAchievementRewards();
         prefs.edit()
                 .putInt(KEY_UNLOCKED_LEVEL, highestUnlockedLevel)
@@ -2476,6 +2484,8 @@ public class GameView extends View {
                 rewardText = lastCoinReward > 0 ? "每日金币 +" + lastCoinReward + "  返回主线" : "今日已领奖  返回主线";
             } else if (lastAchievementReward > 0) {
                 rewardText = "金币 +" + lastCoinReward + "  成就奖励+" + lastAchievementReward + "  点击继续";
+            } else if (lastStarUpgradeReward > 0) {
+                rewardText = "金币 +" + lastCoinReward + "  补星+" + lastStarUpgradeReward + "  点击继续";
             } else if (lastWinStreakReward > 0) {
                 rewardText = "金币 +" + lastCoinReward + " 连胜+" + lastWinStreakReward + "  点击继续";
             }
