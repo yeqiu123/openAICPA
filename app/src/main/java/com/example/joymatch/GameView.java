@@ -2052,13 +2052,14 @@ public class GameView extends View {
         drawDailyChallengeEntry(canvas);
         drawChapterChestEntry(canvas);
         drawChapterProgress(canvas);
+        drawAchievementProgress(canvas);
 
         int columns = 6;
         int pageStart = levelMapPage * LEVELS_PER_PAGE;
         int pageCount = Math.min(LEVELS_PER_PAGE, levels.size() - pageStart);
         int rows = (int) Math.ceil(pageCount / (float) columns);
         float gap = dp(6);
-        float startY = dp(188);
+        float startY = dp(204);
         float pagerTop = getHeight() - dp(64);
         float sizeByWidth = (getWidth() - dp(32) - gap * (columns - 1)) / columns;
         float sizeByHeight = (pagerTop - startY - dp(10) - gap * (rows - 1)) / rows;
@@ -2199,6 +2200,24 @@ public class GameView extends View {
                 + "  星 " + getChapterStars(chapter) + status, getWidth() / 2f, top + dp(26), textPaint);
     }
 
+    private void drawAchievementProgress(Canvas canvas) {
+        float left = dp(34);
+        float top = dp(188);
+        float right = getWidth() - dp(34);
+        float progress = getClaimedAchievementCount() / (float) ACHIEVEMENT_COUNT;
+
+        paint.setColor(Color.argb(80, 33, 37, 56));
+        canvas.drawRoundRect(new RectF(left, top, right, top + dp(8)), dp(4), dp(4), paint);
+        paint.setColor(Color.argb(210, 116, 219, 214));
+        canvas.drawRoundRect(new RectF(left, top, left + (right - left) * progress, top + dp(8)), dp(4), dp(4), paint);
+
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setTextSize(sp(11));
+        textPaint.setColor(Color.WHITE);
+        canvas.drawText("成就 " + getClaimedAchievementCount() + "/" + ACHIEVEMENT_COUNT
+                + "  评级 " + getTotalRankScore(), getWidth() / 2f, top + dp(22), textPaint);
+    }
+
     private void drawSettings(Canvas canvas) {
         paint.setColor(Color.argb(175, 33, 37, 56));
         canvas.drawRect(0, 0, getWidth(), getHeight(), paint);
@@ -2335,6 +2354,16 @@ public class GameView extends View {
             total += levelRanks[i];
         }
         return total;
+    }
+
+    private int getClaimedAchievementCount() {
+        int count = 0;
+        for (boolean claimed : achievementsClaimed) {
+            if (claimed) {
+                count++;
+            }
+        }
+        return count;
     }
 
     private boolean canClaimChapterChest(int chapter) {
