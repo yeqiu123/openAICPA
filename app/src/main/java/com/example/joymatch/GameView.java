@@ -68,8 +68,9 @@ public class GameView extends View {
     private static final int PROP_BRUSH = 7;
     private static final int PROP_PORTAL = 8;
     private static final int PROP_CLEANSE = 9;
-    private static final int PROP_COUNT = 10;
-    private static final int[] PROP_COSTS = {8, 12, 10, 16, 18, 14, 22, 20, 24, 20};
+    private static final int PROP_FREEZE = 10;
+    private static final int PROP_COUNT = 11;
+    private static final int[] PROP_COSTS = {8, 12, 10, 16, 18, 14, 22, 20, 24, 20, 18};
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -170,6 +171,7 @@ public class GameView extends View {
     private int levelMapPage;
     private int comboEnergy;
     private int comboFeverMoves;
+    private int honeyFreezeMoves;
     private int bestCombo;
     private int lastStars;
     private int lastRank;
@@ -390,6 +392,7 @@ public class GameView extends View {
             int brush = i >= 26 && i % 16 == 0 ? 1 : 0;
             int portalProp = i >= 34 && i % 18 == 0 ? 1 : 0;
             int cleanse = i >= 30 && i % 13 == 0 ? 1 : 0;
+            int freeze = i >= 36 && i % 15 == 6 ? 1 : 0;
             int targetKind = i % TILE_KINDS;
             int targetAmount = 8 + (i % 7) + i / 10;
             int iceCount = i < 4 ? i * 2 : Math.min(24, 6 + i / 2);
@@ -418,7 +421,7 @@ public class GameView extends View {
                 honeyCount = Math.min(20, honeyCount + 2);
             }
             levels.add(new Level(targetScore, moves, hammer, bomb, shuffle, rowBlast, colorBlast, extraMoves,
-                    magicWand, brush, portalProp, cleanse, targetKind, targetAmount, iceCount, honeyCount, stoneCount, vineCount, giftCount,
+                    magicWand, brush, portalProp, cleanse, freeze, targetKind, targetAmount, iceCount, honeyCount, stoneCount, vineCount, giftCount,
                     chainCount, shellCount, flowerCount, keyCount, moveChestCount, cloudCount, gemCount, portalCount, hourglassCount,
                     moveLimitGoal, comboGoal, scoreGoal, elite));
         }
@@ -437,6 +440,7 @@ public class GameView extends View {
         activeProp = NONE;
         comboEnergy = 0;
         comboFeverMoves = 0;
+        honeyFreezeMoves = 0;
         bestCombo = 0;
         lastRank = 0;
         lastCoinReward = 0;
@@ -494,6 +498,7 @@ public class GameView extends View {
         propInventory[PROP_BRUSH] = level.brushes;
         propInventory[PROP_PORTAL] = level.portalProps;
         propInventory[PROP_CLEANSE] = level.cleanses;
+        propInventory[PROP_FREEZE] = level.freezes;
         applyChapterMasteryStarterPerks();
 
         // 初始化时避开天然三连，让玩家第一步更清晰。
@@ -582,6 +587,13 @@ public class GameView extends View {
                     propInventory[prop]--;
                     movesLeft += 5;
                     moveLimitBonus += 5;
+                    activeProp = NONE;
+                    selectedRow = NONE;
+                    selectedCol = NONE;
+                } else if (prop == PROP_FREEZE) {
+                    // 冻结道具暂停蜂蜜蔓延，给高压局面留出规划窗口。
+                    propInventory[prop]--;
+                    honeyFreezeMoves = 4;
                     activeProp = NONE;
                     selectedRow = NONE;
                     selectedCol = NONE;
@@ -1895,6 +1907,10 @@ public class GameView extends View {
 
     private void spreadHoneyAfterMove() {
         Level level = levels.get(levelIndex);
+        if (honeyFreezeMoves > 0) {
+            honeyFreezeMoves--;
+            return;
+        }
         if (level.honeyCount <= 0 || movesUsed % 3 != 0 || honeyRemaining >= 24) {
             return;
         }
@@ -2268,6 +2284,9 @@ public class GameView extends View {
         }
         if (comboFeverMoves > 0) {
             starText += " 爆发" + comboFeverMoves;
+        }
+        if (honeyFreezeMoves > 0) {
+            starText += " 冻结" + honeyFreezeMoves;
         }
         canvas.drawText(starText, getWidth() - dp(22), dp(154), textPaint);
         drawComboEnergy(canvas);
@@ -2914,7 +2933,7 @@ public class GameView extends View {
     private void drawPropBar(Canvas canvas) {
         float top = boardTop + tileSize * BOARD_SIZE + dp(18);
         float gap = dp(6);
-        int columns = PROP_COUNT > 9 ? 5 : PROP_COUNT;
+        int columns = PROP_COUNT > 10 ? 4 : (PROP_COUNT > 9 ? 5 : PROP_COUNT);
         float buttonWidth = (getWidth() - dp(32) - gap * (columns - 1)) / columns;
         for (int prop = 0; prop < PROP_COUNT; prop++) {
             int row = prop / columns;
@@ -2996,6 +3015,14 @@ public class GameView extends View {
             paint.setStrokeWidth(dp(3));
             canvas.drawLine(centerX - dp(8), centerY, centerX - dp(1), centerY + dp(7), paint);
             canvas.drawLine(centerX - dp(1), centerY + dp(7), centerX + dp(10), centerY - dp(8), paint);
+        } else if (prop == PROP_FREEZE) {
+            paint.setStyle(Paint.Style.STROKE);
+            canvas.drawCircle(centerX, centerY, dp(13), paint);
+            canvas.drawLine(centerX - dp(10), centerY, centerX + dp(10), centerY, paint);
+            canvas.drawLine(centerX, centerY - dp(10), centerX, centerY + dp(10), paint);
+            canvas.drawLine(centerX - dp(7), centerY - dp(7), centerX + dp(7), centerY + dp(7), paint);
+            canvas.drawLine(centerX + dp(7), centerY - dp(7), centerX - dp(7), centerY + dp(7), paint);
+            paint.setStyle(Paint.Style.FILL);
         } else {
             canvas.drawRoundRect(new RectF(centerX - dp(13), centerY - dp(10), centerX + dp(13), centerY - dp(2)),
                     dp(4), dp(4), paint);
@@ -3022,6 +3049,8 @@ public class GameView extends View {
             return "传送";
         } else if (prop == PROP_CLEANSE) {
             return "净化";
+        } else if (prop == PROP_FREEZE) {
+            return "冻结";
         }
         return "加步";
     }
@@ -3677,6 +3706,7 @@ public class GameView extends View {
         final int brushes;
         final int portalProps;
         final int cleanses;
+        final int freezes;
         final int targetKind;
         final int targetAmount;
         final int iceCount;
@@ -3699,7 +3729,7 @@ public class GameView extends View {
         final boolean elite;
 
         Level(int targetScore, int moves, int hammers, int bombs, int shuffles, int rowBlasts, int colorBlasts,
-                int extraMoves, int magicWands, int brushes, int portalProps, int cleanses,
+                int extraMoves, int magicWands, int brushes, int portalProps, int cleanses, int freezes,
                 int targetKind, int targetAmount, int iceCount, int honeyCount, int stoneCount, int vineCount,
                 int giftCount, int chainCount, int shellCount, int flowerCount, int keyCount, int moveChestCount,
                 int cloudCount, int gemCount, int portalCount, int hourglassCount, int moveLimitGoal,
@@ -3716,6 +3746,7 @@ public class GameView extends View {
             this.brushes = brushes;
             this.portalProps = portalProps;
             this.cleanses = cleanses;
+            this.freezes = freezes;
             this.targetKind = targetKind;
             this.targetAmount = targetAmount;
             this.iceCount = iceCount;
