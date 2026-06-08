@@ -31,6 +31,7 @@ public class GameView extends View {
     private static final String KEY_COINS = "coins";
     private static final String KEY_STAR_CHEST_CLAIMED = "star_chest_claimed";
     private static final String KEY_CHAPTER_CHEST_PREFIX = "chapter_chest_";
+    private static final String KEY_ACHIEVEMENT_PREFIX = "achievement_";
     private static final String KEY_DAILY_REWARD_DAY = "daily_reward_day";
     private static final String KEY_DAILY_STREAK = "daily_streak";
     private static final String KEY_DAILY_CHALLENGE_DAY = "daily_challenge_day";
@@ -82,6 +83,7 @@ public class GameView extends View {
     private final int[] levelStars = new int[LEVEL_COUNT];
     private final int[] levelBestScores = new int[LEVEL_COUNT];
     private final boolean[] chapterChestClaimed = new boolean[6];
+    private final boolean[] achievementsClaimed = new boolean[3];
     private final List<Particle> particles = new ArrayList<>();
     private final List<Level> levels = new ArrayList<>();
     private final ToneGenerator toneGenerator = new ToneGenerator(AudioManager.STREAM_MUSIC, 45);
@@ -143,6 +145,7 @@ public class GameView extends View {
     private boolean comboChallengeCleared;
     private int coins;
     private int lastCoinReward;
+    private int lastAchievementReward;
     private int starChestClaimed;
     private int lastChestReward;
     private int lastChapterChestReward;
@@ -346,6 +349,7 @@ public class GameView extends View {
         comboEnergy = 0;
         bestCombo = 0;
         lastCoinReward = 0;
+        lastAchievementReward = 0;
         lastChestReward = 0;
         lastChapterChestReward = 0;
         challengeCleared = false;
@@ -787,6 +791,28 @@ public class GameView extends View {
                 .apply();
     }
 
+    private void grantAchievementRewards() {
+        lastAchievementReward = 0;
+        checkAchievement(0, getTotalStars() >= 30, 60);
+        checkAchievement(1, highestUnlockedLevel >= 20, 80);
+        checkAchievement(2, score >= 20000, 100);
+    }
+
+    private void checkAchievement(int index, boolean reached, int reward) {
+        if (achievementsClaimed[index] || !reached) {
+            return;
+        }
+
+        // 成就奖励把长期目标转成可见金币反馈。
+        achievementsClaimed[index] = true;
+        lastAchievementReward += reward;
+        coins += reward;
+        prefs.edit()
+                .putBoolean(KEY_ACHIEVEMENT_PREFIX + index, true)
+                .putInt(KEY_COINS, coins)
+                .apply();
+    }
+
     private void loadProgress() {
         highestUnlockedLevel = Math.min(prefs.getInt(KEY_UNLOCKED_LEVEL, 0), levels.size() - 1);
         coins = prefs.getInt(KEY_COINS, 30);
@@ -801,6 +827,9 @@ public class GameView extends View {
         for (int i = 0; i < chapterChestClaimed.length; i++) {
             chapterChestClaimed[i] = prefs.getBoolean(KEY_CHAPTER_CHEST_PREFIX + i, false);
         }
+        for (int i = 0; i < achievementsClaimed.length; i++) {
+            achievementsClaimed[i] = prefs.getBoolean(KEY_ACHIEVEMENT_PREFIX + i, false);
+        }
     }
 
     private void saveLevelProgress() {
@@ -808,6 +837,7 @@ public class GameView extends View {
         levelStars[levelIndex] = Math.max(levelStars[levelIndex], lastStars);
         levelBestScores[levelIndex] = Math.max(levelBestScores[levelIndex], score);
         highestUnlockedLevel = Math.max(highestUnlockedLevel, Math.min(levelIndex + 1, levels.size() - 1));
+        grantAchievementRewards();
         prefs.edit()
                 .putInt(KEY_UNLOCKED_LEVEL, highestUnlockedLevel)
                 .putInt(KEY_STARS_PREFIX + levelIndex, levelStars[levelIndex])
@@ -1886,6 +1916,8 @@ public class GameView extends View {
             String rewardText = "金币 +" + lastCoinReward + "  点击继续";
             if (dailyChallengeMode) {
                 rewardText = lastCoinReward > 0 ? "每日金币 +" + lastCoinReward + "  返回主线" : "今日已领奖  返回主线";
+            } else if (lastAchievementReward > 0) {
+                rewardText = "金币 +" + lastCoinReward + " 成就+" + lastAchievementReward + "  点击继续";
             }
             canvas.drawText(rewardText, getWidth() / 2f, getHeight() * 0.61f, textPaint);
         } else if (coins >= CONTINUE_COST) {
