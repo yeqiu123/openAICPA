@@ -2072,6 +2072,7 @@ public class GameView extends View {
         paint.setColor(Color.argb(45, 255, 255, 255));
         canvas.drawCircle(getWidth() * 0.18f, getHeight() * 0.18f, getWidth() * 0.22f, paint);
         canvas.drawCircle(getWidth() * 0.82f, getHeight() * 0.76f, getWidth() * 0.28f, paint);
+        drawChapterDecorations(canvas, chapter);
         long time = System.currentTimeMillis();
         for (int i = 0; i < 12; i++) {
             int alpha = 28 + (int) (18 * Math.abs(Math.sin(time / 650f + i)));
@@ -2082,6 +2083,86 @@ public class GameView extends View {
             canvas.drawCircle(x, y, dp(2 + i % 3), paint);
         }
         postInvalidateOnAnimation();
+    }
+
+    private void drawChapterDecorations(Canvas canvas, int chapter) {
+        long time = System.currentTimeMillis();
+        paint.setColor(Color.argb(55, 255, 255, 255));
+        if (chapter == 0) {
+            for (int i = 0; i < 6; i++) {
+                float x = (i * getWidth() / 5f) + (float) Math.sin(time / 900.0 + i) * dp(8);
+                float y = getHeight() * (0.14f + (i % 3) * 0.18f);
+                drawLeaf(canvas, x, y, dp(18 + i % 2 * 5));
+            }
+        } else if (chapter == 1) {
+            for (int i = 0; i < 5; i++) {
+                float x = getWidth() * (0.12f + i * 0.18f);
+                float y = getHeight() * (0.18f + (i % 2) * 0.28f) + (float) Math.sin(time / 700.0 + i) * dp(5);
+                canvas.drawCircle(x, y, dp(14), paint);
+                canvas.drawCircle(x + dp(14), y + dp(3), dp(12), paint);
+                canvas.drawCircle(x - dp(12), y + dp(5), dp(10), paint);
+            }
+        } else if (chapter == 2) {
+            for (int i = 0; i < 5; i++) {
+                Path shard = new Path();
+                float x = getWidth() * (0.1f + i * 0.2f);
+                float y = getHeight() * (0.2f + (i % 3) * 0.16f);
+                shard.moveTo(x, y - dp(18));
+                shard.lineTo(x + dp(16), y + dp(16));
+                shard.lineTo(x - dp(14), y + dp(12));
+                shard.close();
+                canvas.drawPath(shard, paint);
+            }
+        } else if (chapter == 3) {
+            for (int i = 0; i < 7; i++) {
+                float x = getWidth() * (0.08f + i * 0.14f);
+                float y = getHeight() * 0.22f + (i % 3) * dp(42);
+                drawLeaf(canvas, x, y, dp(14), -35);
+            }
+        } else if (chapter == 4) {
+            for (int i = 0; i < 9; i++) {
+                float x = getWidth() * (0.08f + i * 0.11f);
+                float y = getHeight() * (0.16f + (i % 4) * 0.13f);
+                drawStar(canvas, x, y, dp(8 + i % 3));
+            }
+        } else {
+            for (int i = 0; i < 6; i++) {
+                float x = getWidth() * (0.1f + i * 0.16f);
+                float y = getHeight() * (0.18f + (i % 2) * 0.22f);
+                canvas.drawCircle(x, y, dp(12), paint);
+                canvas.drawCircle(x + dp(10), y + dp(10), dp(12), paint);
+                canvas.drawCircle(x - dp(10), y + dp(10), dp(12), paint);
+            }
+        }
+    }
+
+    private void drawLeaf(Canvas canvas, float centerX, float centerY, float size) {
+        drawLeaf(canvas, centerX, centerY, size, 28);
+    }
+
+    private void drawLeaf(Canvas canvas, float centerX, float centerY, float size, float tiltDegrees) {
+        canvas.save();
+        canvas.rotate(tiltDegrees, centerX, centerY);
+        canvas.drawOval(new RectF(centerX - size * 0.45f, centerY - size * 0.2f,
+                centerX + size * 0.45f, centerY + size * 0.2f), paint);
+        canvas.restore();
+    }
+
+    private void drawStar(Canvas canvas, float centerX, float centerY, float radius) {
+        Path star = new Path();
+        for (int i = 0; i < 10; i++) {
+            double angle = -Math.PI / 2 + i * Math.PI / 5;
+            float r = i % 2 == 0 ? radius : radius * 0.45f;
+            float x = centerX + (float) Math.cos(angle) * r;
+            float y = centerY + (float) Math.sin(angle) * r;
+            if (i == 0) {
+                star.moveTo(x, y);
+            } else {
+                star.lineTo(x, y);
+            }
+        }
+        star.close();
+        canvas.drawPath(star, paint);
     }
 
     private void drawHud(Canvas canvas) {
