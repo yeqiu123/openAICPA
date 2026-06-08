@@ -2724,6 +2724,12 @@ public class GameView extends View {
         } else if (winStreak == 12) {
             lastWinStreakRewardProp = PROP_BUBBLE_WAND;
             lastWinStreakRewardAmount = 1;
+        } else if (winStreak == 20) {
+            lastWinStreakRewardProp = PROP_STAR_HARP;
+            lastWinStreakRewardAmount = 1;
+        } else if (winStreak == 25) {
+            lastWinStreakRewardProp = PROP_SNOW_GLOBE;
+            lastWinStreakRewardAmount = 3;
         } else if (winStreak > 0 && winStreak % 15 == 0) {
             lastWinStreakRewardProp = PROP_SNOW_GLOBE;
             lastWinStreakRewardAmount = 2;
