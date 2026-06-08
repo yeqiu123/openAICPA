@@ -3476,7 +3476,7 @@ public class GameView extends View {
         }
 
         if (replayHintRect.contains(x, y)) {
-            focusReplayLevel();
+            startReplayTargetLevel();
             return;
         }
 
@@ -6661,6 +6661,17 @@ public class GameView extends View {
 
         // 智能补星推荐优先选择高收益关卡，减少地图翻找成本。
         levelMapPage = level / LEVELS_PER_PAGE;
+    }
+
+    private void startReplayTargetLevel() {
+        int level = findReplayTargetLevel();
+        if (level < 0) {
+            return;
+        }
+
+        // 智能推荐直接进入关卡，让补星和冲评级少一步地图操作。
+        showingLevelMap = false;
+        startLevel(level);
     }
 
     private int getCurrentMapChapter() {
