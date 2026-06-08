@@ -88,6 +88,7 @@ public class GameView extends View {
     private final int[][] flower = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[][] gem = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[][] portal = new int[BOARD_SIZE][BOARD_SIZE];
+    private final int[][] hourglass = new int[BOARD_SIZE][BOARD_SIZE];
     private final int[] propInventory = new int[PROP_COUNT];
     private final RectF[] propRects = new RectF[PROP_COUNT];
     private final RectF[] levelRects = new RectF[LEVELS_PER_PAGE];
@@ -199,6 +200,7 @@ public class GameView extends View {
     private int lastFlowerReward;
     private int lastGemReward;
     private int lastPortalReward;
+    private int lastHourglassReward;
     private int lastEnergyRewardProp = NONE;
     private int lastChestNoticeType;
     private int dailyRewardAmount;
@@ -401,6 +403,7 @@ public class GameView extends View {
             int cloudCount = i < 18 ? 0 : Math.min(10, 2 + i / 18);
             int gemCount = i < 24 ? 0 : Math.min(7, 1 + i / 20);
             int portalCount = i < 32 || i % 5 != 1 ? 0 : 2;
+            int hourglassCount = i < 38 || i % 7 != 3 ? 0 : 1 + (i % 21 == 3 ? 1 : 0);
             int moveLimitGoal = i >= 18 && i % 4 == 0 ? Math.max(8, moves - 5) : 0;
             int comboGoal = i >= 22 && i % 5 == 0 ? 3 + (i / 25) : 0;
             int scoreGoal = i >= 30 && i % 6 == 0 ? targetScore + 800 + i * 40 : 0;
@@ -414,8 +417,8 @@ public class GameView extends View {
             }
             levels.add(new Level(targetScore, moves, hammer, bomb, shuffle, rowBlast, colorBlast, extraMoves,
                     magicWand, brush, portalProp, cleanse, targetKind, targetAmount, iceCount, honeyCount, stoneCount, vineCount, giftCount,
-                    chainCount, shellCount, flowerCount, keyCount, moveChestCount, cloudCount, gemCount, portalCount, moveLimitGoal, comboGoal,
-                    scoreGoal, elite));
+                    chainCount, shellCount, flowerCount, keyCount, moveChestCount, cloudCount, gemCount, portalCount, hourglassCount,
+                    moveLimitGoal, comboGoal, scoreGoal, elite));
         }
     }
 
@@ -453,6 +456,7 @@ public class GameView extends View {
         lastFlowerReward = 0;
         lastGemReward = 0;
         lastPortalReward = 0;
+        lastHourglassReward = 0;
         lastEnergyRewardProp = NONE;
         honeySpreadCount = 0;
         challengeCleared = false;
@@ -504,6 +508,7 @@ public class GameView extends View {
                 flower[row][col] = 0;
                 gem[row][col] = 0;
                 portal[row][col] = 0;
+                hourglass[row][col] = 0;
                 do {
                     board[row][col] = makePiece(random.nextInt(TILE_KINDS), SPECIAL_NORMAL);
                 } while (createsInitialMatch(row, col));
@@ -522,6 +527,7 @@ public class GameView extends View {
         placeCloud(level.cloudCount);
         placeGem(level.gemCount);
         placePortal(level.portalCount);
+        placeHourglass(level.hourglassCount);
         ensurePlayableBoard();
         levelIntroUntilTime = System.currentTimeMillis() + 1400;
     }
@@ -614,6 +620,7 @@ public class GameView extends View {
             lastFlowerReward = 0;
             lastGemReward = 0;
             lastPortalReward = 0;
+            lastHourglassReward = 0;
             lastEnergyRewardProp = NONE;
             showFeedback(1, 1);
         } else if (activeProp == PROP_BRUSH) {
@@ -630,6 +637,7 @@ public class GameView extends View {
             lastFlowerReward = 0;
             lastGemReward = 0;
             lastPortalReward = 0;
+            lastHourglassReward = 0;
             lastEnergyRewardProp = NONE;
             showFeedback(1, 1);
         } else if (activeProp == PROP_CLEANSE) {
@@ -647,6 +655,7 @@ public class GameView extends View {
             lastFlowerReward = 0;
             lastGemReward = 0;
             lastPortalReward = 0;
+            lastHourglassReward = 0;
             lastEnergyRewardProp = NONE;
             showFeedback(1, Math.max(1, cleaned));
         }
@@ -722,6 +731,7 @@ public class GameView extends View {
         lastFlowerReward = 0;
         lastGemReward = 0;
         lastPortalReward = 0;
+        lastHourglassReward = 0;
         cells = expandSpecialCells(cells);
         score += bonusScore + cells.size() * 45;
         spawnParticles(cells);
@@ -900,6 +910,7 @@ public class GameView extends View {
         lastFlowerReward = 0;
         lastGemReward = 0;
         lastPortalReward = 0;
+        lastHourglassReward = 0;
         while (!matches.isEmpty()) {
             combo++;
             matches = expandSpecialCells(matches);
@@ -1717,6 +1728,21 @@ public class GameView extends View {
         }
     }
 
+    private void placeHourglass(int count) {
+        int placed = 0;
+        while (placed < count) {
+            int row = random.nextInt(BOARD_SIZE);
+            int col = random.nextInt(BOARD_SIZE);
+            if (hourglass[row][col] == 0 && gift[row][col] == 0 && moveChest[row][col] == 0
+                    && cloud[row][col] == 0 && gem[row][col] == 0 && portal[row][col] == 0
+                    && flower[row][col] == 0) {
+                // 沙漏格提供额外步数，是后期关卡的翻盘奖励点。
+                hourglass[row][col] = 1;
+                placed++;
+            }
+        }
+    }
+
     private void removeCells(Set<Cell> cells) {
         for (Cell cell : cells) {
             int piece = board[cell.row][cell.col];
@@ -1792,6 +1818,13 @@ public class GameView extends View {
             if (portal[cell.row][cell.col] > 0) {
                 portal[cell.row][cell.col] = 0;
                 triggerPortalShift();
+            }
+            if (hourglass[cell.row][cell.col] > 0) {
+                hourglass[cell.row][cell.col] = 0;
+                movesLeft += 3;
+                moveLimitBonus += 3;
+                score += 150;
+                lastHourglassReward += 3;
             }
             board[cell.row][cell.col] = NONE;
         }
@@ -2280,6 +2313,8 @@ public class GameView extends View {
             return "连";
         } else if (level.moveLimitGoal > 0) {
             return "步";
+        } else if (level.hourglassCount > 0) {
+            return "沙";
         } else if (level.portalCount > 0) {
             return "传";
         } else if (level.gemCount > 0) {
@@ -2696,6 +2731,7 @@ public class GameView extends View {
         drawCloud(canvas, row, col, rect);
         drawGem(canvas, row, col, rect);
         drawPortal(canvas, row, col, rect);
+        drawHourglass(canvas, row, col, rect);
         drawKey(canvas, row, col, rect);
         drawMoveChest(canvas, row, col, rect);
     }
@@ -3122,6 +3158,24 @@ public class GameView extends View {
         postInvalidateOnAnimation();
     }
 
+    private void drawHourglass(Canvas canvas, int row, int col, RectF rect) {
+        if (hourglass[row][col] <= 0) {
+            return;
+        }
+
+        float centerX = rect.right - dp(18);
+        float centerY = rect.top + dp(18);
+        Path glass = new Path();
+        glass.moveTo(centerX - dp(11), centerY - dp(12));
+        glass.lineTo(centerX + dp(11), centerY - dp(12));
+        glass.lineTo(centerX - dp(8), centerY + dp(12));
+        glass.lineTo(centerX + dp(8), centerY + dp(12));
+        paint.setColor(Color.argb(210, 255, 236, 133));
+        canvas.drawPath(glass, paint);
+        paint.setColor(Color.WHITE);
+        canvas.drawCircle(centerX, centerY, dp(4), paint);
+    }
+
     private void drawKey(Canvas canvas, int row, int col, RectF rect) {
         if (keys[row][col] <= 0) {
             return;
@@ -3234,6 +3288,8 @@ public class GameView extends View {
             text = "钻石 +" + lastGemReward;
         } else if (lastPortalReward > 0 && age < 900) {
             text = "传送门 x" + lastPortalReward;
+        } else if (lastHourglassReward > 0 && age < 900) {
+            text = "沙漏 +" + lastHourglassReward;
         } else if (honeySpreadCount > 0 && age < 900) {
             text = "蜂蜜蔓延";
         } else if (lastTaskRewardType == 1 && age < 900) {
@@ -3303,6 +3359,9 @@ public class GameView extends View {
         }
         if (level.portalCount > 0) {
             goalText += "  传送门 " + level.portalCount;
+        }
+        if (level.hourglassCount > 0) {
+            goalText += "  沙漏 " + level.hourglassCount;
         }
         if (level.elite) {
             goalText += "  精英奖励";
@@ -3508,6 +3567,7 @@ public class GameView extends View {
         final int cloudCount;
         final int gemCount;
         final int portalCount;
+        final int hourglassCount;
         final int moveLimitGoal;
         final int comboGoal;
         final int scoreGoal;
@@ -3517,8 +3577,8 @@ public class GameView extends View {
                 int extraMoves, int magicWands, int brushes, int portalProps, int cleanses,
                 int targetKind, int targetAmount, int iceCount, int honeyCount, int stoneCount, int vineCount,
                 int giftCount, int chainCount, int shellCount, int flowerCount, int keyCount, int moveChestCount,
-                int cloudCount, int gemCount, int portalCount, int moveLimitGoal, int comboGoal, int scoreGoal,
-                boolean elite) {
+                int cloudCount, int gemCount, int portalCount, int hourglassCount, int moveLimitGoal,
+                int comboGoal, int scoreGoal, boolean elite) {
             this.targetScore = targetScore;
             this.moves = moves;
             this.hammers = hammers;
@@ -3546,6 +3606,7 @@ public class GameView extends View {
             this.cloudCount = cloudCount;
             this.gemCount = gemCount;
             this.portalCount = portalCount;
+            this.hourglassCount = hourglassCount;
             this.moveLimitGoal = moveLimitGoal;
             this.comboGoal = comboGoal;
             this.scoreGoal = scoreGoal;
