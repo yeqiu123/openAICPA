@@ -6918,6 +6918,9 @@ public class GameView extends View {
         if (levelComplete || levelFailed) {
             return false;
         }
+        if (propInventory[prop] <= 0 && coins < PROP_COSTS[prop]) {
+            return false;
+        }
 
         Level level = levels.get(levelIndex);
         int obstaclePressure = iceRemaining + honeyRemaining + stoneRemaining + vineRemaining
