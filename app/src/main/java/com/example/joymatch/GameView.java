@@ -38,6 +38,7 @@ public class GameView extends View {
     private static final String KEY_CHAPTER_ELITE_PREFIX = "chapter_elite_";
     private static final String KEY_CHAPTER_RANK_PREFIX = "chapter_rank_";
     private static final String KEY_ACHIEVEMENT_PREFIX = "achievement_";
+    private static final String KEY_FAIL_STREAK_PREFIX = "fail_streak_";
     private static final String KEY_WIN_STREAK = "win_streak";
     private static final String KEY_DAILY_REWARD_DAY = "daily_reward_day";
     private static final String KEY_DAILY_STREAK = "daily_streak";
@@ -165,6 +166,7 @@ public class GameView extends View {
     private final int[] levelStars = new int[LEVEL_COUNT];
     private final int[] levelBestScores = new int[LEVEL_COUNT];
     private final int[] levelRanks = new int[LEVEL_COUNT];
+    private final int[] levelFailStreaks = new int[LEVEL_COUNT];
     private final boolean[] chapterChestClaimed = new boolean[CHAPTER_COUNT];
     private final boolean[] chapterMasteryClaimed = new boolean[CHAPTER_COUNT];
     private final boolean[] chapterEliteClaimed = new boolean[CHAPTER_COUNT];
@@ -289,6 +291,9 @@ public class GameView extends View {
     private int lastReplayReward;
     private int lastReplayRewardProp = NONE;
     private int lastReplayRewardAmount;
+    private int lastComebackAssistMoves;
+    private int lastComebackAssistProp = NONE;
+    private int lastComebackAssistAmount;
     private int starChestClaimed;
     private int rankChestClaimed;
     private int lastChestReward;
@@ -720,7 +725,11 @@ public class GameView extends View {
     }
 
     private void startLevel(int index) {
-        dailyChallengeMode = false;
+        startLevel(index, false);
+    }
+
+    private void startLevel(int index, boolean dailyMode) {
+        dailyChallengeMode = dailyMode;
         levelIndex = index;
         Level level = levels.get(levelIndex);
         movesLeft = level.moves;
@@ -754,6 +763,9 @@ public class GameView extends View {
         lastReplayReward = 0;
         lastReplayRewardProp = NONE;
         lastReplayRewardAmount = 0;
+        lastComebackAssistMoves = 0;
+        lastComebackAssistProp = NONE;
+        lastComebackAssistAmount = 0;
         lastDailyGoalReward = 0;
         lastSeasonReward = 0;
         lastSeasonRewardProp = NONE;
@@ -862,6 +874,7 @@ public class GameView extends View {
         propInventory[PROP_SNOW_GLOBE] = level.snowGlobes;
         propInventory[PROP_STAR_HARP] = level.starHarps;
         applyChapterMasteryStarterPerks();
+        applyComebackAssist();
         for (int prop = 0; prop < PROP_COUNT; prop++) {
             // 长期奖励道具作为储备带入新关卡，提升收集和回访价值。
             propInventory[prop] += propReserve[prop];
@@ -962,9 +975,8 @@ public class GameView extends View {
     private void startDailyChallenge() {
         long today = getToday();
         int challengeIndex = (int) ((today * 37 + 11) % levels.size());
-        startLevel(challengeIndex);
+        startLevel(challengeIndex, true);
         // 每日挑战复用关卡池，但奖励和通关不推进主线。
-        dailyChallengeMode = true;
         movesLeft = Math.max(12, movesLeft - 3);
         movesUsed = 0;
         score = 0;
@@ -2480,8 +2492,19 @@ public class GameView extends View {
             }
         } else if (movesLeft <= 0) {
             levelFailed = true;
+            recordLevelFailure();
             resetWinStreak();
         }
+    }
+
+    private void recordLevelFailure() {
+        if (dailyChallengeMode || usedContinueThisLevel) {
+            return;
+        }
+
+        // 连续失败会记录下来，下次开局给轻量补偿，减少卡关挫败感。
+        levelFailStreaks[levelIndex] = Math.min(5, levelFailStreaks[levelIndex] + 1);
+        prefs.edit().putInt(KEY_FAIL_STREAK_PREFIX + levelIndex, levelFailStreaks[levelIndex]).apply();
     }
 
     private boolean isMoveLimitGoalCleared(Level level) {
@@ -2833,6 +2856,7 @@ public class GameView extends View {
             levelStars[i] = prefs.getInt(KEY_STARS_PREFIX + i, 0);
             levelBestScores[i] = prefs.getInt(KEY_BEST_SCORE_PREFIX + i, 0);
             levelRanks[i] = prefs.getInt(KEY_RANK_PREFIX + i, 0);
+            levelFailStreaks[i] = prefs.getInt(KEY_FAIL_STREAK_PREFIX + i, 0);
         }
         for (int i = 0; i < chapterChestClaimed.length; i++) {
             chapterChestClaimed[i] = prefs.getBoolean(KEY_CHAPTER_CHEST_PREFIX + i, false);
@@ -2886,10 +2910,12 @@ public class GameView extends View {
                 .putInt(KEY_STARS_PREFIX + levelIndex, levelStars[levelIndex])
                 .putInt(KEY_BEST_SCORE_PREFIX + levelIndex, levelBestScores[levelIndex])
                 .putInt(KEY_RANK_PREFIX + levelIndex, levelRanks[levelIndex])
+                .putInt(KEY_FAIL_STREAK_PREFIX + levelIndex, 0)
                 .putInt(KEY_COINS, coins)
                 .putInt(KEY_STAR_CHEST_CLAIMED, starChestClaimed)
                 .putInt(KEY_RANK_CHEST_CLAIMED, rankChestClaimed)
                 .apply();
+        levelFailStreaks[levelIndex] = 0;
     }
 
     private void grantFullStarReward(Level level) {
@@ -3214,6 +3240,23 @@ public class GameView extends View {
         }
         if (mastered >= 4) {
             addProp(PROP_COLOR_BLAST, 1);
+        }
+    }
+
+    private void applyComebackAssist() {
+        int failStreak = levelFailStreaks[levelIndex];
+        if (dailyChallengeMode || failStreak <= 0) {
+            return;
+        }
+
+        // 卡关后下次开局逐步补一点步数和定向道具，帮助玩家继续推进。
+        lastComebackAssistMoves = Math.min(3, failStreak);
+        movesLeft += lastComebackAssistMoves;
+        moveLimitBonus += lastComebackAssistMoves;
+        if (failStreak >= 2) {
+            lastComebackAssistProp = failStreak >= 4 ? PROP_STAR_HARP : PROP_BOMB;
+            lastComebackAssistAmount = 1;
+            addProp(lastComebackAssistProp, lastComebackAssistAmount);
         }
     }
 
@@ -4654,6 +4697,7 @@ public class GameView extends View {
                     }
                     countdownBombExploded = true;
                     levelFailed = true;
+                    recordLevelFailure();
                     resetWinStreak();
                     return;
                 }
@@ -7947,6 +7991,12 @@ public class GameView extends View {
         }
         if (isHiddenChallengeLevel()) {
             goalText += "  隐藏步限 " + Math.max(7, level.moves - 4);
+        }
+        if (lastComebackAssistMoves > 0) {
+            goalText += "  助力 +" + lastComebackAssistMoves + "步";
+            if (lastComebackAssistProp != NONE) {
+                goalText += " " + getPropName(lastComebackAssistProp) + "+" + lastComebackAssistAmount;
+            }
         }
         canvas.drawText(goalText,
                 getWidth() / 2f, centerY + dp(32), textPaint);
