@@ -447,6 +447,10 @@ public class GameView extends View {
             if (dailyChallengeMode) {
                 dailyChallengeMode = false;
                 startLevel(highestUnlockedLevel);
+            } else if (hasClaimableMapRewardAfterClear()) {
+                // 通关后若已有可领奖励，优先回地图领取，避免玩家一路跳关错过奖励反馈。
+                levelMapPage = levelIndex / LEVELS_PER_PAGE;
+                showingLevelMap = true;
             } else {
                 startLevel((levelIndex + 1) % levels.size());
             }
@@ -8792,6 +8796,11 @@ public class GameView extends View {
                     getWidth() - dp(34), getHeight() * (assistText.length() > 0 ? 0.598f : 0.565f));
             drawTextFit(canvas, buildFailureProgressText(), failProgressRect, 14, Color.WHITE);
         }
+    }
+
+    private boolean hasClaimableMapRewardAfterClear() {
+        int chapter = getChapterIndex(levelIndex);
+        return canClaimChapterChest(chapter) || getAvailableStarChests() > 0 || getAvailableRankChests() > 0;
     }
 
     private String buildFailureProgressText() {
