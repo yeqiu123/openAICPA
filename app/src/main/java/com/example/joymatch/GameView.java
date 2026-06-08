@@ -779,6 +779,7 @@ public class GameView extends View {
             levelComplete = true;
             lastBonusScore = movesLeft * 80;
             score += lastBonusScore;
+            spawnWinFireworks();
             lastStars = movesLeft > level.moves / 2 ? 3 : (movesLeft > level.moves / 5 ? 2 : 1);
             challengeCleared = level.moveLimitGoal > 0;
             comboChallengeCleared = level.comboGoal > 0;
@@ -1955,6 +1956,22 @@ public class GameView extends View {
                         (float) Math.sin(angle) * speed,
                         color, dp(3 + random.nextInt(4))));
             }
+        }
+    }
+
+    private void spawnWinFireworks() {
+        int count = Math.min(48, 16 + movesLeft * 2);
+        for (int i = 0; i < count; i++) {
+            float centerX = getWidth() / 2f + (random.nextFloat() - 0.5f) * getWidth() * 0.45f;
+            float centerY = getHeight() * 0.38f + (random.nextFloat() - 0.5f) * dp(90);
+            double angle = random.nextDouble() * Math.PI * 2;
+            float speed = dp(2.2f + random.nextFloat() * 3.6f);
+            int color = palette[random.nextInt(TILE_KINDS)];
+            // 通关烟花把剩余步数奖励转成更明显的视觉反馈。
+            particles.add(new Particle(centerX, centerY,
+                    (float) Math.cos(angle) * speed,
+                    (float) Math.sin(angle) * speed,
+                    color, dp(4 + random.nextInt(5))));
         }
     }
 
