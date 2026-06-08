@@ -75,8 +75,9 @@ public class GameView extends View {
     private static final int PROP_MAGNET = 11;
     private static final int PROP_CLOCK = 12;
     private static final int PROP_STAR_HAMMER = 13;
-    private static final int PROP_COUNT = 14;
-    private static final int[] PROP_COSTS = {8, 12, 10, 16, 18, 14, 22, 20, 24, 20, 18, 16, 18, 26};
+    private static final int PROP_ROCKET = 14;
+    private static final int PROP_COUNT = 15;
+    private static final int[] PROP_COSTS = {8, 12, 10, 16, 18, 14, 22, 20, 24, 20, 18, 16, 18, 26, 18};
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -430,6 +431,7 @@ public class GameView extends View {
             int magnet = i >= 42 && i % 17 == 8 ? 1 : 0;
             int clock = i >= 60 && i % 19 == 11 ? 1 : 0;
             int starHammer = i >= 92 && i % 20 == 4 ? 1 : 0;
+            int rocket = i >= 48 && i % 16 == 5 ? 1 : 0;
             int targetKind = i % TILE_KINDS;
             int targetAmount = 8 + (i % 7) + i / 10;
             int iceCount = i < 4 ? i * 2 : Math.min(24, 6 + i / 2);
@@ -469,7 +471,7 @@ public class GameView extends View {
                 honeyCount = Math.min(20, honeyCount + 2);
             }
             levels.add(new Level(targetScore, moves, hammer, bomb, shuffle, rowBlast, colorBlast, extraMoves,
-                    magicWand, brush, portalProp, cleanse, freeze, magnet, clock, starHammer, targetKind, targetAmount, iceCount, honeyCount, stoneCount, vineCount, giftCount,
+                    magicWand, brush, portalProp, cleanse, freeze, magnet, clock, starHammer, rocket, targetKind, targetAmount, iceCount, honeyCount, stoneCount, vineCount, giftCount,
                     chainCount, shellCount, flowerCount, keyCount, moveChestCount, cloudCount, gemCount, goldenEggCount, coinPouchCount, paintBucketCount, windmillCount, jewelBowCount, rainbowBottleCount, energyPotionCount, butterflyCount, portalCount, hourglassCount, luckyStarCount, mysteryBoxCount, countdownBombCount,
                     moveLimitGoal, comboGoal, scoreGoal, elite));
         }
@@ -564,6 +566,7 @@ public class GameView extends View {
         propInventory[PROP_MAGNET] = level.magnets;
         propInventory[PROP_CLOCK] = level.clocks;
         propInventory[PROP_STAR_HAMMER] = level.starHammers;
+        propInventory[PROP_ROCKET] = level.rockets;
         applyChapterMasteryStarterPerks();
 
         // 初始化时避开天然三连，让玩家第一步更清晰。
@@ -727,6 +730,10 @@ public class GameView extends View {
         } else if (activeProp == PROP_COLOR_BLAST) {
             propInventory[PROP_COLOR_BLAST]--;
             clearCells(buildColorCells(colorOf(board[row][col])), 220);
+        } else if (activeProp == PROP_ROCKET) {
+            // 火箭按点击格的奇偶方向清一行或一列，适合精确打开局面。
+            propInventory[PROP_ROCKET]--;
+            clearCells(buildRocketCells(row, col), 190);
         } else if (activeProp == PROP_MAGIC_WAND) {
             // 魔法棒把指定棋子升级成彩虹棋，让玩家主动创造关键大招。
             propInventory[PROP_MAGIC_WAND]--;
@@ -1013,6 +1020,20 @@ public class GameView extends View {
         for (int index = 0; index < BOARD_SIZE; index++) {
             cells.add(new Cell(row, index));
             cells.add(new Cell(index, col));
+        }
+        return cells;
+    }
+
+    private Set<Cell> buildRocketCells(int row, int col) {
+        Set<Cell> cells = new HashSet<>();
+        if ((row + col + movesUsed) % 2 == 0) {
+            for (int sweepCol = 0; sweepCol < BOARD_SIZE; sweepCol++) {
+                cells.add(new Cell(row, sweepCol));
+            }
+        } else {
+            for (int sweepRow = 0; sweepRow < BOARD_SIZE; sweepRow++) {
+                cells.add(new Cell(sweepRow, col));
+            }
         }
         return cells;
     }
@@ -3904,6 +3925,16 @@ public class GameView extends View {
                     centerX + dp(12), centerY - dp(4)), dp(4), dp(4), paint);
             canvas.drawLine(centerX + dp(5), centerY, centerX + dp(16), centerY + dp(14), paint);
             drawPropStar(canvas, centerX - dp(13), centerY + dp(11), dp(7));
+        } else if (prop == PROP_ROCKET) {
+            Path rocket = new Path();
+            rocket.moveTo(centerX, centerY - dp(17));
+            rocket.lineTo(centerX + dp(12), centerY + dp(10));
+            rocket.lineTo(centerX, centerY + dp(4));
+            rocket.lineTo(centerX - dp(12), centerY + dp(10));
+            rocket.close();
+            canvas.drawPath(rocket, paint);
+            paint.setColor(Color.WHITE);
+            canvas.drawCircle(centerX, centerY - dp(3), dp(4), paint);
         } else {
             canvas.drawRoundRect(new RectF(centerX - dp(13), centerY - dp(10), centerX + dp(13), centerY - dp(2)),
                     dp(4), dp(4), paint);
@@ -3955,6 +3986,8 @@ public class GameView extends View {
             return "时钟";
         } else if (prop == PROP_STAR_HAMMER) {
             return "星锤";
+        } else if (prop == PROP_ROCKET) {
+            return "火箭";
         }
         return "加步";
     }
@@ -4887,6 +4920,7 @@ public class GameView extends View {
         final int magnets;
         final int clocks;
         final int starHammers;
+        final int rockets;
         final int targetKind;
         final int targetAmount;
         final int iceCount;
@@ -4921,7 +4955,7 @@ public class GameView extends View {
 
         Level(int targetScore, int moves, int hammers, int bombs, int shuffles, int rowBlasts, int colorBlasts,
                 int extraMoves, int magicWands, int brushes, int portalProps, int cleanses, int freezes,
-                int magnets, int clocks, int starHammers, int targetKind, int targetAmount, int iceCount, int honeyCount, int stoneCount, int vineCount,
+                int magnets, int clocks, int starHammers, int rockets, int targetKind, int targetAmount, int iceCount, int honeyCount, int stoneCount, int vineCount,
                 int giftCount, int chainCount, int shellCount, int flowerCount, int keyCount, int moveChestCount,
                 int cloudCount, int gemCount, int goldenEggCount, int coinPouchCount, int paintBucketCount, int windmillCount, int jewelBowCount, int rainbowBottleCount, int energyPotionCount, int butterflyCount,
                 int portalCount, int hourglassCount, int luckyStarCount,
@@ -4942,6 +4976,7 @@ public class GameView extends View {
             this.magnets = magnets;
             this.clocks = clocks;
             this.starHammers = starHammers;
+            this.rockets = rockets;
             this.targetKind = targetKind;
             this.targetAmount = targetAmount;
             this.iceCount = iceCount;
