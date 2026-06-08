@@ -102,6 +102,7 @@ public class GameView extends View {
     private final RectF rankChestRect = new RectF();
     private final RectF dailyChallengeRect = new RectF();
     private final RectF chapterChestRect = new RectF();
+    private final RectF replayHintRect = new RectF();
     private final int[] levelStars = new int[LEVEL_COUNT];
     private final int[] levelBestScores = new int[LEVEL_COUNT];
     private final int[] levelRanks = new int[LEVEL_COUNT];
@@ -1429,6 +1430,11 @@ public class GameView extends View {
             return;
         }
 
+        if (replayHintRect.contains(x, y)) {
+            focusReplayLevel();
+            return;
+        }
+
         if (starChestRect.contains(x, y)) {
             claimStarChest();
             return;
@@ -2170,6 +2176,7 @@ public class GameView extends View {
         drawChapterChestEntry(canvas);
         drawChapterProgress(canvas);
         drawAchievementProgress(canvas);
+        drawReplayHintEntry(canvas);
 
         int columns = 6;
         int pageStart = levelMapPage * LEVELS_PER_PAGE;
@@ -2207,6 +2214,13 @@ public class GameView extends View {
                 paint.setStyle(Paint.Style.STROKE);
                 paint.setStrokeWidth(dp(3));
                 paint.setColor(Color.WHITE);
+                canvas.drawRoundRect(rect, dp(10), dp(10), paint);
+                paint.setStyle(Paint.Style.FILL);
+            }
+            if (isReplayTargetLevel(level)) {
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setStrokeWidth(dp(2));
+                paint.setColor(Color.argb(230, 255, 236, 133));
                 canvas.drawRoundRect(rect, dp(10), dp(10), paint);
                 paint.setStyle(Paint.Style.FILL);
             }
@@ -2371,6 +2385,19 @@ public class GameView extends View {
         textPaint.setColor(Color.WHITE);
         canvas.drawText("成就 " + getClaimedAchievementCount() + "/" + ACHIEVEMENT_COUNT
                 + "  评级 " + getTotalRankScore(), getWidth() / 2f, top + dp(22), textPaint);
+    }
+
+    private void drawReplayHintEntry(Canvas canvas) {
+        replayHintRect.set(dp(28), dp(186), getWidth() - dp(28), dp(210));
+        int replayLevel = findReplayTargetLevel();
+        paint.setColor(replayLevel >= 0 ? Color.argb(120, 255, 236, 133) : Color.argb(70, 255, 255, 255));
+        canvas.drawRoundRect(replayHintRect, dp(10), dp(10), paint);
+
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setTextSize(sp(11));
+        textPaint.setColor(Color.WHITE);
+        String text = replayLevel >= 0 ? "补星推荐 第" + (replayLevel + 1) + "关  点击定位" : "已通关卡暂无补星目标";
+        canvas.drawText(text, replayHintRect.centerX(), replayHintRect.centerY() + dp(4), textPaint);
     }
 
     private void drawSettings(Canvas canvas) {
@@ -2565,6 +2592,30 @@ public class GameView extends View {
             }
         }
         return unlocked;
+    }
+
+    private int findReplayTargetLevel() {
+        for (int level = 0; level <= highestUnlockedLevel && level < levels.size(); level++) {
+            if (isReplayTargetLevel(level)) {
+                return level;
+            }
+        }
+        return NONE;
+    }
+
+    private boolean isReplayTargetLevel(int level) {
+        return level <= highestUnlockedLevel && levelStars[level] > 0
+                && (levelStars[level] < 3 || levelRanks[level] < 4);
+    }
+
+    private void focusReplayLevel() {
+        int level = findReplayTargetLevel();
+        if (level < 0) {
+            return;
+        }
+
+        // 补星推荐直接定位到最早可提升关卡，减少地图翻找成本。
+        levelMapPage = level / LEVELS_PER_PAGE;
     }
 
     private int getCurrentMapChapter() {
