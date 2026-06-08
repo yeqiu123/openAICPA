@@ -34,7 +34,9 @@ public class GameView extends View {
     private static final int PROP_HAMMER = 0;
     private static final int PROP_BOMB = 1;
     private static final int PROP_SHUFFLE = 2;
-    private static final int PROP_COUNT = 3;
+    private static final int PROP_ROW_BLAST = 3;
+    private static final int PROP_COLOR_BLAST = 4;
+    private static final int PROP_COUNT = 5;
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -169,10 +171,13 @@ public class GameView extends View {
             int hammer = 2 + (i % 3 == 0 ? 1 : 0);
             int bomb = 1 + (i % 4 == 0 ? 1 : 0);
             int shuffle = 1 + (i % 6 == 0 ? 1 : 0);
+            int rowBlast = i >= 5 ? 1 + (i % 8 == 0 ? 1 : 0) : 0;
+            int colorBlast = i >= 10 ? 1 + (i % 12 == 0 ? 1 : 0) : 0;
             int targetKind = i % TILE_KINDS;
             int targetAmount = 8 + (i % 7) + i / 10;
             int iceCount = i < 4 ? i * 2 : Math.min(24, 6 + i / 2);
-            levels.add(new Level(targetScore, moves, hammer, bomb, shuffle, targetKind, targetAmount, iceCount));
+            levels.add(new Level(targetScore, moves, hammer, bomb, shuffle, rowBlast, colorBlast,
+                    targetKind, targetAmount, iceCount));
         }
     }
 
@@ -190,6 +195,8 @@ public class GameView extends View {
         propInventory[PROP_HAMMER] = level.hammers;
         propInventory[PROP_BOMB] = level.bombs;
         propInventory[PROP_SHUFFLE] = level.shuffles;
+        propInventory[PROP_ROW_BLAST] = level.rowBlasts;
+        propInventory[PROP_COLOR_BLAST] = level.colorBlasts;
 
         // 初始化时避开天然三连，让玩家第一步更清晰。
         for (int row = 0; row < BOARD_SIZE; row++) {
@@ -233,6 +240,12 @@ public class GameView extends View {
         } else if (activeProp == PROP_BOMB) {
             propInventory[PROP_BOMB]--;
             clearCells(buildBombCells(row, col), 140);
+        } else if (activeProp == PROP_ROW_BLAST) {
+            propInventory[PROP_ROW_BLAST]--;
+            clearCells(buildCrossCells(row, col), 180);
+        } else if (activeProp == PROP_COLOR_BLAST) {
+            propInventory[PROP_COLOR_BLAST]--;
+            clearCells(buildColorCells(colorOf(board[row][col])), 220);
         }
         activeProp = NONE;
         selectedRow = NONE;
@@ -276,6 +289,27 @@ public class GameView extends View {
             for (int nearCol = col - 1; nearCol <= col + 1; nearCol++) {
                 if (isInside(nearRow, nearCol)) {
                     cells.add(new Cell(nearRow, nearCol));
+                }
+            }
+        }
+        return cells;
+    }
+
+    private Set<Cell> buildCrossCells(int row, int col) {
+        Set<Cell> cells = new HashSet<>();
+        for (int index = 0; index < BOARD_SIZE; index++) {
+            cells.add(new Cell(row, index));
+            cells.add(new Cell(index, col));
+        }
+        return cells;
+    }
+
+    private Set<Cell> buildColorCells(int color) {
+        Set<Cell> cells = new HashSet<>();
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (colorOf(board[row][col]) == color) {
+                    cells.add(new Cell(row, col));
                 }
             }
         }
@@ -657,9 +691,10 @@ public class GameView extends View {
 
     private void drawPropBar(Canvas canvas) {
         float top = boardTop + tileSize * BOARD_SIZE + dp(18);
-        float buttonWidth = (getWidth() - dp(48)) / PROP_COUNT;
+        float gap = dp(6);
+        float buttonWidth = (getWidth() - dp(32) - gap * (PROP_COUNT - 1)) / PROP_COUNT;
         for (int prop = 0; prop < PROP_COUNT; prop++) {
-            float left = dp(16) + prop * (buttonWidth + dp(8));
+            float left = dp(16) + prop * (buttonWidth + gap);
             RectF rect = new RectF(left, top, left + buttonWidth, top + dp(58));
             propRects[prop] = rect;
 
@@ -684,7 +719,7 @@ public class GameView extends View {
         } else if (prop == PROP_BOMB) {
             canvas.drawCircle(centerX, centerY + dp(2), dp(12), paint);
             canvas.drawLine(centerX + dp(6), centerY - dp(10), centerX + dp(13), centerY - dp(18), paint);
-        } else {
+        } else if (prop == PROP_SHUFFLE) {
             Path path = new Path();
             path.moveTo(centerX - dp(15), centerY);
             path.lineTo(centerX - dp(2), centerY - dp(10));
@@ -697,6 +732,15 @@ public class GameView extends View {
             path.lineTo(centerX + dp(2), centerY + dp(8));
             path.lineTo(centerX - dp(15), centerY + dp(8));
             canvas.drawPath(path, paint);
+        } else if (prop == PROP_ROW_BLAST) {
+            canvas.drawLine(centerX - dp(16), centerY, centerX + dp(16), centerY, paint);
+            canvas.drawLine(centerX, centerY - dp(16), centerX, centerY + dp(16), paint);
+        } else {
+            // 同色道具用圆环表示一键清掉同色棋子。
+            paint.setStyle(Paint.Style.STROKE);
+            canvas.drawCircle(centerX, centerY, dp(14), paint);
+            paint.setStyle(Paint.Style.FILL);
+            canvas.drawCircle(centerX, centerY, dp(5), paint);
         }
     }
 
@@ -705,8 +749,12 @@ public class GameView extends View {
             return "锤子";
         } else if (prop == PROP_BOMB) {
             return "炸弹";
+        } else if (prop == PROP_SHUFFLE) {
+            return "重排";
+        } else if (prop == PROP_ROW_BLAST) {
+            return "十字";
         }
-        return "重排";
+        return "同色";
     }
 
     private void drawTileIcon(Canvas canvas, int kind, float centerX, float centerY) {
@@ -835,17 +883,21 @@ public class GameView extends View {
         final int hammers;
         final int bombs;
         final int shuffles;
+        final int rowBlasts;
+        final int colorBlasts;
         final int targetKind;
         final int targetAmount;
         final int iceCount;
 
-        Level(int targetScore, int moves, int hammers, int bombs, int shuffles,
+        Level(int targetScore, int moves, int hammers, int bombs, int shuffles, int rowBlasts, int colorBlasts,
                 int targetKind, int targetAmount, int iceCount) {
             this.targetScore = targetScore;
             this.moves = moves;
             this.hammers = hammers;
             this.bombs = bombs;
             this.shuffles = shuffles;
+            this.rowBlasts = rowBlasts;
+            this.colorBlasts = colorBlasts;
             this.targetKind = targetKind;
             this.targetAmount = targetAmount;
             this.iceCount = iceCount;
