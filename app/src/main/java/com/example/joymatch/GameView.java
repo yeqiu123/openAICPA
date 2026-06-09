@@ -7032,7 +7032,7 @@ public class GameView extends View {
         if (level.elite && levelRanks[levelIndex] < 4) {
             return "补精英评级";
         } else if (level.moveLimitGoal > 0 && levelRanks[levelIndex] < 4) {
-            return "补限步" + getMoveLimitGoal(level);
+            return "补限步" + level.moveLimitGoal + "步";
         } else if (level.comboGoal > 0 && levelRanks[levelIndex] < 4) {
             return "补连击挑战";
         } else if (level.scoreGoal > 0 && levelRanks[levelIndex] < 4) {
