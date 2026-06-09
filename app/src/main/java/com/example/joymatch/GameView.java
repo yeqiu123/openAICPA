@@ -8851,7 +8851,8 @@ public class GameView extends View {
 
     private boolean hasClaimableMapRewardAfterClear() {
         int chapter = getChapterIndex(levelIndex);
-        return canClaimChapterChest(chapter) || getAvailableStarChests() > 0 || getAvailableRankChests() > 0;
+        return (!dailyGoalClaimed && dailyGoalProgress >= 6) || canClaimChapterChest(chapter)
+                || getAvailableStarChests() > 0 || getAvailableRankChests() > 0;
     }
 
     private String buildFailureProgressText() {
