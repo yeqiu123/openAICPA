@@ -1107,6 +1107,8 @@ public class GameView extends View {
                     // 道具用完后可直接用金币补一个，减少关卡中断感。
                     coins -= PROP_COSTS[prop];
                     propInventory[prop]++;
+                    lastTaskRewardType = 22;
+                    showFeedback(1, PROP_COSTS[prop]);
                     // 金币临时购买只用于当前关，不写入长期储备。
                     saveCoins();
                 }
@@ -8691,6 +8693,8 @@ public class GameView extends View {
             text = "星弦竖琴 能量+36";
         } else if (lastTaskRewardType == 21 && age < 900) {
             text = "金币不足 还差" + feedbackCleared;
+        } else if (lastTaskRewardType == 22 && age < 900) {
+            text = "购买道具 -" + feedbackCleared + "币";
         }
 
         textPaint.setTextAlign(Paint.Align.CENTER);
