@@ -9994,6 +9994,10 @@ public class GameView extends View {
             appendFailureProgressPart(text, "炸弹剩", getCountdownBombRemainingCount());
             appendFailureProgressPart(text, "炸弹急", getCountdownBombUrgency());
         }
+        if (level.musicBoxCount > 0) {
+            // 失败复盘也显示音乐盒剩余，提醒下局优先拿星弦琴储备。
+            appendFailureProgressPart(text, "音乐盒剩", getMusicBoxRemainingCount());
+        }
         if (level.moveLimitGoal > 0 && !isMoveLimitGoalCleared(level)) {
             appendFailureProgressPart(text, "步限超", movesUsed - getMoveLimitGoal(level));
         }
