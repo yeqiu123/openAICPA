@@ -7605,6 +7605,9 @@ public class GameView extends View {
         } else if (level.countdownBombCount > 0
                 && (prop == PROP_SHIELD || prop == PROP_CLOCK || prop == PROP_SNOW_GLOBE)) {
             return "推荐 " + getPropName(prop) + " 稳住炸弹";
+        } else if (keyRemaining > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            return "推荐 " + getPropName(prop) + " 抢钥匙";
         } else if (chainRemaining > 0 && prop == PROP_CHAIN_BREAKER) {
             return "推荐 " + getPropName(prop) + " 破锁开局";
         } else if (honeyRemaining > 0 && (prop == PROP_FREEZE || prop == PROP_SNOW_GLOBE)) {
@@ -7647,6 +7650,11 @@ public class GameView extends View {
         }
         if (level.countdownBombCount > 0
                 && (prop == PROP_SHIELD || prop == PROP_CLOCK || prop == PROP_SNOW_GLOBE)) {
+            return true;
+        }
+        if (keyRemaining > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            // 钥匙关优先推荐可直达关键格的道具，减少后期找不到落点的挫败感。
             return true;
         }
         if (chainRemaining > 0 && prop == PROP_CHAIN_BREAKER) {
@@ -9198,6 +9206,8 @@ public class GameView extends View {
             return "策略 控步数留爆炸冲完美";
         } else if (level.countdownBombCount > 0) {
             return "策略 护盾/时钟稳住炸弹";
+        } else if (level.keyCount > 0) {
+            return "策略 火箭/罗盘优先抢钥匙";
         } else if (level.chainCount > 0) {
             return "策略 破锁先开链";
         } else if (level.honeyCount > 0) {
