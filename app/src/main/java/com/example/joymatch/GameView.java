@@ -4815,7 +4815,8 @@ public class GameView extends View {
             }
             if (musicBox[cell.row][cell.col] > 0) {
                 musicBox[cell.row][cell.col] = 0;
-                addProp(PROP_STAR_HARP, 1);
+                // 音乐盒作为资源型回访目标，星弦琴同时进入储备并带到后续关卡。
+                addReserveProp(PROP_STAR_HARP, 1);
                 upgradeRandomDirectionalPiece();
                 comboEnergy = Math.min(100, comboEnergy + 32);
                 score += 300;
