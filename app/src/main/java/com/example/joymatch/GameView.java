@@ -2561,6 +2561,10 @@ public class GameView extends View {
             // 星尘罐会补能量并生成方向特效，智能提示优先指向连锁资源点。
             priority += 17;
         }
+        if (wishLamp[row][col] > 0) {
+            // 许愿灯会直接推进收集目标，智能提示优先指向卡目标色时的关键资源。
+            priority += 17;
+        }
         if (auroraPrism[row][col] > 0) {
             // 极光棱镜会补能量并制造彩虹棋，智能提示优先指向爆发资源点。
             priority += 18;
@@ -6208,6 +6212,13 @@ public class GameView extends View {
                 obstacleText += " 能+" + lastStardustJarReward;
             }
         }
+        if (level.wishLampCount > 0) {
+            // 许愿灯直接推进收集目标，HUD单独显示剩余和本局许愿收益。
+            obstacleText += " 愿" + getWishLampRemainingCount();
+            if (lastWishLampReward > 0) {
+                obstacleText += " 收+" + lastWishLampReward;
+            }
+        }
         if (level.crystalCoreCount > 0) {
             // 糖晶塔芯会生成爆炸棋，HUD单独露出剩余数量，避免淹没在奖励格总数里。
             obstacleText += " 晶" + getCrystalCoreRemainingCount();
@@ -8226,6 +8237,9 @@ public class GameView extends View {
         } else if (getStardustJarRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 开星尘罐铺方向";
+        } else if (getWishLampRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            return "推荐 " + getPropName(prop) + " 点许愿灯补收集";
         } else if (getCrystalCoreRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 开塔芯造爆炸";
@@ -8387,6 +8401,11 @@ public class GameView extends View {
             // 星尘罐能补能量并制造方向特效，推荐精准道具提前铺连锁。
             return true;
         }
+        if (getWishLampRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            // 许愿灯能直接推进目标收集，推荐精准道具优先补齐目标差距。
+            return true;
+        }
         if (getCrystalCoreRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             // 糖晶塔芯打开后会补爆炸棋，推荐精准道具优先触发连锁。
@@ -8500,6 +8519,10 @@ public class GameView extends View {
         if (getStardustJarRemainingCount() > 0) {
             // 星尘罐失败后提示优先打开，把方向特效和能量收益提前打出来。
             return "建议下局优先开星尘罐";
+        }
+        if (getWishLampRemainingCount() > 0) {
+            // 许愿灯失败后提示优先点亮，帮助下局更早补齐目标收集。
+            return "建议下局优先点许愿灯";
         }
         if (getCrystalCoreRemainingCount() > 0) {
             // 糖晶塔芯失败后提示精准开芯，帮助下局把爆炸棋收益提前打出来。
@@ -9246,6 +9269,13 @@ public class GameView extends View {
 
         float centerX = rect.left + rect.width() * 0.24f;
         float centerY = rect.bottom - dp(18);
+        float pulse = 0.55f + 0.45f * (float) Math.sin(System.currentTimeMillis() / 205.0);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(2 + pulse * 2));
+        paint.setColor(Color.argb((int) (90 + pulse * 95), 255, 196, 82));
+        canvas.drawRoundRect(new RectF(rect.left + dp(5), rect.top + dp(5),
+                rect.right - dp(5), rect.bottom - dp(5)), dp(13), dp(13), paint);
+        paint.setStyle(Paint.Style.FILL);
         paint.setColor(Color.argb(225, 255, 196, 82));
         canvas.drawOval(new RectF(centerX - dp(13), centerY - dp(8), centerX + dp(13), centerY + dp(9)), paint);
         paint.setColor(Color.argb(230, 255, 236, 118));
@@ -9253,6 +9283,7 @@ public class GameView extends View {
                 centerX + dp(8), centerY - dp(2)), dp(8), dp(8), paint);
         paint.setColor(Color.WHITE);
         canvas.drawCircle(centerX - dp(3), centerY - dp(10), dp(3), paint);
+        postInvalidateOnAnimation();
     }
 
     private void drawResonanceDrum(Canvas canvas, int row, int col, RectF rect) {
@@ -10092,6 +10123,8 @@ public class GameView extends View {
         }
         if (level.wishLampCount > 0) {
             goalText += "  许愿灯 " + level.wishLampCount;
+            // 开场说明许愿灯收益，让玩家优先补齐目标收集。
+            goalText += "  点灯补收集";
         }
         if (level.resonanceDrumCount > 0) {
             goalText += "  共鸣鼓 " + level.resonanceDrumCount;
@@ -10248,6 +10281,8 @@ public class GameView extends View {
             return "策略 火箭/罗盘优先敲共鸣";
         } else if (level.stardustJarCount > 0) {
             return "策略 火箭/罗盘优先开星尘";
+        } else if (level.wishLampCount > 0) {
+            return "策略 火箭/罗盘优先点许愿";
         } else if (level.fireworksBarrelCount > 0) {
             return "策略 火箭/罗盘优先点烟花";
         } else if (level.meteorTrailCount > 0) {
@@ -10805,6 +10840,10 @@ public class GameView extends View {
             // 星尘罐剩余量单独复盘，提示下局优先拿能量和方向特效。
             appendFailureProgressPart(text, "星尘剩", getStardustJarRemainingCount());
         }
+        if (level.wishLampCount > 0) {
+            // 许愿灯剩余量单独复盘，提示下局优先补齐目标收集。
+            appendFailureProgressPart(text, "许愿剩", getWishLampRemainingCount());
+        }
         if (level.crystalCoreCount > 0) {
             // 塔芯剩余量单独复盘，避免玩家把爆炸棋来源错当普通奖励格。
             appendFailureProgressPart(text, "塔芯剩", getCrystalCoreRemainingCount());
@@ -11071,6 +11110,18 @@ public class GameView extends View {
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
                 if (stardustJar[row][col] > 0) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    private int getWishLampRemainingCount() {
+        int count = 0;
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (wishLamp[row][col] > 0) {
                     count++;
                 }
             }
