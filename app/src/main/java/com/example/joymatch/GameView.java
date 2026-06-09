@@ -2489,6 +2489,10 @@ public class GameView extends View {
         if (moveChest[row][col] > 0) {
             priority += 18;
         }
+        if (rainbowArc[row][col] > 0) {
+            // 彩虹拱桥会生成彩虹棋，智能提示优先指向能启动大连锁的落点。
+            priority += 18;
+        }
         if (crystalCore[row][col] > 0) {
             // 糖晶塔芯能制造爆炸棋，智能提示优先指向可打开连锁的落点。
             priority += 20;
@@ -6017,6 +6021,13 @@ public class GameView extends View {
                 obstacleText += " 全开";
             }
         }
+        if (level.rainbowArcCount > 0) {
+            // 彩虹拱桥是彩虹棋来源，HUD单独显示剩余和本局能量收益。
+            obstacleText += " 拱" + getRainbowArcRemainingCount();
+            if (lastRainbowArcReward > 0) {
+                obstacleText += " 虹+" + lastRainbowArcReward;
+            }
+        }
         if (level.crystalCoreCount > 0) {
             // 糖晶塔芯会生成爆炸棋，HUD单独露出剩余数量，避免淹没在奖励格总数里。
             obstacleText += " 晶" + getCrystalCoreRemainingCount();
@@ -7977,6 +7988,9 @@ public class GameView extends View {
         } else if (getMusicBoxRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 开音乐盒拿星弦";
+        } else if (getRainbowArcRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            return "推荐 " + getPropName(prop) + " 开拱桥造彩虹";
         } else if (getCrystalCoreRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 开塔芯造爆炸";
@@ -8050,6 +8064,11 @@ public class GameView extends View {
             // 音乐盒能转成可储备星弦琴，推荐精准道具优先开盒。
             return true;
         }
+        if (getRainbowArcRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            // 彩虹拱桥打开后会补彩虹棋，推荐精准道具提前引爆连锁。
+            return true;
+        }
         if (getCrystalCoreRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             // 糖晶塔芯打开后会补爆炸棋，推荐精准道具优先触发连锁。
@@ -8090,6 +8109,10 @@ public class GameView extends View {
         if (getMusicBoxRemainingCount() > 0) {
             // 音乐盒关失败时直接提示资源目标，帮助下局优先规划星弦琴储备。
             return "建议下局优先开音乐盒";
+        }
+        if (getRainbowArcRemainingCount() > 0) {
+            // 彩虹拱桥失败后提示优先开桥，把彩虹棋收益前置到下局开局节奏里。
+            return "建议下局优先开彩虹拱桥";
         }
         if (getCrystalCoreRemainingCount() > 0) {
             // 糖晶塔芯失败后提示精准开芯，帮助下局把爆炸棋收益提前打出来。
@@ -9131,7 +9154,12 @@ public class GameView extends View {
 
         float centerX = rect.centerX();
         float centerY = rect.top + rect.height() * 0.38f;
+        float pulse = 0.55f + 0.45f * (float) Math.sin(System.currentTimeMillis() / 210.0);
         paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(2 + pulse * 2));
+        paint.setColor(Color.argb((int) (90 + pulse * 95), 255, 236, 118));
+        canvas.drawRoundRect(new RectF(rect.left + dp(5), rect.top + dp(5),
+                rect.right - dp(5), rect.bottom - dp(5)), dp(13), dp(13), paint);
         paint.setStrokeWidth(dp(3));
         paint.setColor(Color.argb(230, 255, 99, 132));
         canvas.drawArc(new RectF(centerX - dp(18), centerY - dp(8), centerX + dp(18), centerY + dp(24)),
@@ -9607,6 +9635,8 @@ public class GameView extends View {
         }
         if (level.rainbowArcCount > 0) {
             goalText += "  彩虹拱桥 " + level.rainbowArcCount;
+            // 开场说明拱桥收益，鼓励玩家优先启动彩虹棋连锁。
+            goalText += "  开桥造彩虹";
         }
         if (level.crystalCoreCount > 0) {
             goalText += "  糖晶塔芯 " + level.crystalCoreCount;
@@ -9668,6 +9698,8 @@ public class GameView extends View {
             return "策略 优先开音乐盒铺连击";
         } else if (level.crystalCoreCount > 0) {
             return "策略 火箭/罗盘优先开塔芯";
+        } else if (level.rainbowArcCount > 0) {
+            return "策略 火箭/罗盘优先开拱桥";
         } else if (getRewardCellCount() >= 3) {
             // 奖励格密集时优先提示精准道具，帮助玩家把额外收益转成通关优势。
             return "策略 火箭/罗盘优先收奖励";
@@ -10131,6 +10163,10 @@ public class GameView extends View {
             // 失败复盘也显示音乐盒剩余，提醒下局优先拿星弦琴储备。
             appendFailureProgressPart(text, "音乐盒剩", getMusicBoxRemainingCount());
         }
+        if (level.rainbowArcCount > 0) {
+            // 彩虹拱桥剩余量单独复盘，提示下局优先拿彩虹棋爆发点。
+            appendFailureProgressPart(text, "拱桥剩", getRainbowArcRemainingCount());
+        }
         if (level.crystalCoreCount > 0) {
             // 塔芯剩余量单独复盘，避免玩家把爆炸棋来源错当普通奖励格。
             appendFailureProgressPart(text, "塔芯剩", getCrystalCoreRemainingCount());
@@ -10189,6 +10225,18 @@ public class GameView extends View {
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
                 if (musicBox[row][col] > 0) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    private int getRainbowArcRemainingCount() {
+        int count = 0;
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (rainbowArc[row][col] > 0) {
                     count++;
                 }
             }
