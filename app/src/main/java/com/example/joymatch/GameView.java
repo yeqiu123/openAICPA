@@ -2489,6 +2489,10 @@ public class GameView extends View {
         if (moveChest[row][col] > 0) {
             priority += 18;
         }
+        if (luckyStar[row][col] > 0) {
+            // 幸运星会直接给随机道具，智能提示优先指向可补库存的资源点。
+            priority += 15;
+        }
         if (mysteryBox[row][col] > 0) {
             // 神秘盒会给随机补给，智能提示优先指向惊喜资源点。
             priority += 15;
@@ -6049,6 +6053,13 @@ public class GameView extends View {
                 obstacleText += " 全开";
             }
         }
+        if (level.luckyStarCount > 0) {
+            // 幸运星直接补随机道具，HUD显示剩余和本局最新道具。
+            obstacleText += " 星" + getLuckyStarRemainingCount();
+            if (lastLuckyStarRewardProp != NONE) {
+                obstacleText += " 道具+1";
+            }
+        }
         if (level.mysteryBoxCount > 0) {
             // 神秘盒奖励随机，HUD显示剩余数量和本局最新奖励。
             obstacleText += " 盒" + getMysteryBoxRemainingCount();
@@ -8065,6 +8076,9 @@ public class GameView extends View {
         } else if (getMusicBoxRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 开音乐盒拿星弦";
+        } else if (getLuckyStarRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            return "推荐 " + getPropName(prop) + " 收幸运星拿道具";
         } else if (getMysteryBoxRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 开神秘盒拿补给";
@@ -8162,6 +8176,11 @@ public class GameView extends View {
             // 音乐盒能转成可储备星弦琴，推荐精准道具优先开盒。
             return true;
         }
+        if (getLuckyStarRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            // 幸运星会直接补随机道具，推荐精准道具优先拿库存收益。
+            return true;
+        }
         if (getMysteryBoxRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             // 神秘盒会随机给分数、金币、步数或道具，推荐精准道具优先打开补给。
@@ -8242,6 +8261,10 @@ public class GameView extends View {
         if (getMusicBoxRemainingCount() > 0) {
             // 音乐盒关失败时直接提示资源目标，帮助下局优先规划星弦琴储备。
             return "建议下局优先开音乐盒";
+        }
+        if (getLuckyStarRemainingCount() > 0) {
+            // 幸运星失败后提示优先收集，让随机道具更早加入下局库存。
+            return "建议下局优先收幸运星";
         }
         if (getMysteryBoxRemainingCount() > 0) {
             // 神秘盒失败后提示优先开盒，让随机补给更早参与下局节奏。
@@ -9143,6 +9166,13 @@ public class GameView extends View {
 
         float centerX = rect.left + rect.width() * 0.24f;
         float centerY = rect.top + dp(18);
+        float pulse = 0.55f + 0.45f * (float) Math.sin(System.currentTimeMillis() / 210.0);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(2 + pulse * 2));
+        paint.setColor(Color.argb((int) (90 + pulse * 95), 255, 236, 118));
+        canvas.drawRoundRect(new RectF(rect.left + dp(5), rect.top + dp(5),
+                rect.right - dp(5), rect.bottom - dp(5)), dp(13), dp(13), paint);
+        paint.setStyle(Paint.Style.FILL);
         Path star = new Path();
         for (int i = 0; i < 10; i++) {
             double angle = -Math.PI / 2 + i * Math.PI / 5;
@@ -9812,6 +9842,8 @@ public class GameView extends View {
         }
         if (level.luckyStarCount > 0) {
             goalText += "  幸运星 " + level.luckyStarCount;
+            // 开场说明幸运星收益，提醒玩家优先拿随机道具。
+            goalText += "  收星拿道具";
         }
         if (level.luckyCloverCount > 0) {
             goalText += "  幸运草 " + level.luckyCloverCount;
@@ -9932,6 +9964,8 @@ public class GameView extends View {
             return "策略 火箭/罗盘优先收珍珠";
         } else if (level.mysteryBoxCount > 0) {
             return "策略 火箭/罗盘优先开神秘盒";
+        } else if (level.luckyStarCount > 0) {
+            return "策略 火箭/罗盘优先收幸运星";
         } else if (getRewardCellCount() >= 3) {
             // 奖励格密集时优先提示精准道具，帮助玩家把额外收益转成通关优势。
             return "策略 火箭/罗盘优先收奖励";
@@ -10395,6 +10429,10 @@ public class GameView extends View {
             // 失败复盘也显示音乐盒剩余，提醒下局优先拿星弦琴储备。
             appendFailureProgressPart(text, "音乐盒剩", getMusicBoxRemainingCount());
         }
+        if (level.luckyStarCount > 0) {
+            // 幸运星剩余量单独复盘，提示下局优先拿随机道具。
+            appendFailureProgressPart(text, "幸运星剩", getLuckyStarRemainingCount());
+        }
         if (level.mysteryBoxCount > 0) {
             // 神秘盒剩余量单独复盘，提示下局优先拿随机补给。
             appendFailureProgressPart(text, "神秘盒剩", getMysteryBoxRemainingCount());
@@ -10485,6 +10523,18 @@ public class GameView extends View {
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
                 if (musicBox[row][col] > 0) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    private int getLuckyStarRemainingCount() {
+        int count = 0;
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (luckyStar[row][col] > 0) {
                     count++;
                 }
             }
