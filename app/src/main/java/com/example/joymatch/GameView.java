@@ -6087,10 +6087,7 @@ public class GameView extends View {
         }
 
         String text = dailyGoalClaimed ? "每日目标 已领"
-                : "每日目标 " + Math.min(6, dailyGoalProgress) + "/6星";
-        if (claimable) {
-            text += " 月票";
-        }
+                : (claimable ? "每日目标 领取月票" : "每日目标 " + Math.min(6, dailyGoalProgress) + "/6星");
         drawTextFit(canvas, text, dailyGoalRect, 12, claimable ? Color.rgb(33, 37, 56) : Color.WHITE);
         drawDailyGoalProgressBar(canvas, dailyGoalRect, claimable);
     }
