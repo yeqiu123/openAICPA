@@ -5863,8 +5863,19 @@ public class GameView extends View {
             paint.setColor(Color.argb((int) (145 + pulse * 70), 255, 236, 133));
             canvas.drawRoundRect(rect, dp(10), dp(10), paint);
         }
+        drawActivePropConfirmMarker(canvas, pulse);
         paint.setStyle(Paint.Style.FILL);
         postInvalidateOnAnimation();
+    }
+
+    private void drawActivePropConfirmMarker(Canvas canvas, float pulse) {
+        float centerX = boardLeft + selectedCol * tileSize + tileSize / 2f;
+        float centerY = boardTop + selectedRow * tileSize + tileSize / 2f;
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(Color.argb((int) (180 + pulse * 55), 33, 37, 56));
+        canvas.drawCircle(centerX, centerY, dp(10 + pulse * 3), paint);
+        paint.setColor(Color.rgb(255, 236, 133));
+        drawPropStar(canvas, centerX, centerY, dp(6 + pulse * 2));
     }
 
     private Set<Cell> buildActivePropPreviewCells(int row, int col) {
