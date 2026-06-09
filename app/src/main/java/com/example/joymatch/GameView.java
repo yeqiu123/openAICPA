@@ -101,6 +101,18 @@ public class GameView extends View {
     private static final int PROP_STAR_HARP = 29;
     private static final int PROP_COUNT = 30;
     private static final int[] PROP_COSTS = {8, 12, 10, 16, 18, 14, 22, 20, 24, 20, 18, 16, 18, 26, 18, 20, 22, 24, 20, 22, 24, 26, 28, 24, 26, 30, 32, 34, 36, 38};
+    private static final int[] CHAPTER_CHEST_PROPS = {
+            PROP_CLEANSE, PROP_TIDE, PROP_METEOR, PROP_BUBBLE_WAND, PROP_STAR_COMPASS,
+            PROP_FREEZE, PROP_STARFISH_PICK, PROP_AURORA_ORB, PROP_MOON_TICKET, PROP_FIREWORK_CANNON,
+            PROP_AURORA_ORB, PROP_STAR_COMPASS, PROP_BUBBLE_WAND, PROP_FIREWORK_CANNON, PROP_SNOW_GLOBE,
+            PROP_STAR_COMPASS, PROP_CLOCK, PROP_AURORA_ORB, PROP_STAR_HARP, PROP_STAR_HARP
+    };
+    private static final int[] CHAPTER_CHEST_PROP_AMOUNTS = {
+            1, 1, 1, 1, 1,
+            1, 1, 1, 1, 1,
+            1, 1, 1, 1, 2,
+            1, 1, 1, 2, 2
+    };
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -3691,7 +3703,7 @@ public class GameView extends View {
         coins += lastChapterChestReward;
         // 章节宝箱追加一个长期储备道具，让整章刷星奖励更有实用价值。
         lastChestRewardProp = getChapterChestRewardProp(chapter);
-        lastChestRewardAmount = 1;
+        lastChestRewardAmount = getChapterChestRewardAmount(chapter);
         addReserveProp(lastChestRewardProp, lastChestRewardAmount);
         prefs.edit()
                 .putBoolean(KEY_CHAPTER_CHEST_PREFIX + chapter, true)
@@ -3703,7 +3715,11 @@ public class GameView extends View {
     }
 
     private int getChapterChestRewardProp(int chapter) {
-        return chapter % 2 == 0 ? PROP_CLEANSE : PROP_BOMB;
+        return CHAPTER_CHEST_PROPS[Math.min(chapter, CHAPTER_CHEST_PROPS.length - 1)];
+    }
+
+    private int getChapterChestRewardAmount(int chapter) {
+        return CHAPTER_CHEST_PROP_AMOUNTS[Math.min(chapter, CHAPTER_CHEST_PROP_AMOUNTS.length - 1)];
     }
 
     private void placeIce(int count) {
@@ -6188,7 +6204,7 @@ public class GameView extends View {
         String text = chapterChestClaimed[chapter] ? chapterNames[chapter] + " 已领"
                 : chapterNames[chapter] + " 宝箱 " + getChapterStars(chapter) + "/" + CHAPTER_CHEST_STARS;
         if (claimable) {
-            text += " " + getPropName(getChapterChestRewardProp(chapter));
+            text += " " + getPropName(getChapterChestRewardProp(chapter)) + "+" + getChapterChestRewardAmount(chapter);
         }
         drawTextFit(canvas, text, chapterChestRect, 14, claimable ? Color.rgb(33, 37, 56) : Color.WHITE);
         drawChapterChestProgressBar(canvas, chapter, chapterChestRect, claimable);
