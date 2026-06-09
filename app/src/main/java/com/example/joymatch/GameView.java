@@ -8945,6 +8945,11 @@ public class GameView extends View {
         if (levelStars[levelIndex] < 3) {
             return "再冲" + (3 - levelStars[levelIndex]) + "星";
         }
+        String challenge = buildReplayChallengeReason(levelIndex);
+        if (challenge.length() > 0) {
+            // 回访开场直接提示具体挑战，避免只看到泛化评级目标。
+            return challenge;
+        }
         if (levelRanks[levelIndex] < 4) {
             return "再冲" + buildRankText(4);
         }
