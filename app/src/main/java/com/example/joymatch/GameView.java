@@ -368,6 +368,7 @@ public class GameView extends View {
     private int lastRainbowArcReward;
     private int lastCrystalCoreReward;
     private int lastMusicBoxReward;
+    private int lastRewardCellMilestoneAmount;
     private int lastEnergyRewardProp = NONE;
     private int lastChestNoticeType;
     private int dailyRewardAmount;
@@ -389,6 +390,8 @@ public class GameView extends View {
     private int rewardObstacleMilestone;
     private int rewardComboMilestone;
     private int rewardKeyMilestone;
+    private int rewardCellClearedCount;
+    private int rewardCellMilestone;
     private int lastShieldReward;
     private int lastTaskRewardType;
     private long feedbackStartTime;
@@ -887,6 +890,8 @@ public class GameView extends View {
         rewardObstacleMilestone = 0;
         rewardComboMilestone = 0;
         rewardKeyMilestone = 0;
+        rewardCellClearedCount = 0;
+        rewardCellMilestone = 0;
         lastShieldReward = 0;
         lastTaskRewardType = 0;
         targetKind = level.targetKind;
@@ -4556,6 +4561,7 @@ public class GameView extends View {
     private void removeCells(Set<Cell> cells) {
         for (Cell cell : cells) {
             int piece = board[cell.row][cell.col];
+            boolean hadRewardCell = hasRewardCell(cell.row, cell.col);
             if (piece != NONE && colorOf(piece) == targetKind && targetRemaining > 0) {
                 targetRemaining--;
             }
@@ -4805,6 +4811,9 @@ public class GameView extends View {
             if (countdownBomb[cell.row][cell.col] > 0) {
                 countdownBomb[cell.row][cell.col] = 0;
                 score += 180;
+            }
+            if (hadRewardCell) {
+                rewardCellClearedCount++;
             }
             board[cell.row][cell.col] = NONE;
         }
@@ -5430,6 +5439,36 @@ public class GameView extends View {
             lastMusicBoxReward = 0;
             lastEnergyRewardProp = NONE;
             showFeedback(1, level.keyCount);
+        }
+
+        int rewardCellMilestoneNow = rewardCellClearedCount / 3;
+        if (rewardCellMilestoneNow > rewardCellMilestone) {
+            // 奖励格形成独立的局内累计目标，鼓励玩家主动规划高收益格。
+            addProp(PROP_STAR_COMPASS, rewardCellMilestoneNow - rewardCellMilestone);
+            lastRewardCellMilestoneAmount = rewardCellMilestoneNow - rewardCellMilestone;
+            rewardCellMilestone = rewardCellMilestoneNow;
+            lastTaskRewardType = 23;
+            lastGiftReward = 0;
+            honeySpreadCount = 0;
+            lastMoveChestReward = 0;
+            lastCloudReward = 0;
+            lastFlowerReward = 0;
+            lastRainbowBottleReward = 0;
+            lastEnergyPotionReward = 0;
+            lastButterflyReward = 0;
+            lastMysteryRewardType = 0;
+            lastMysteryRewardAmount = 0;
+            lastMysteryRewardProp = NONE;
+            lastPearlReward = 0;
+            lastFerrisTicketReward = 0;
+            lastFireworksBarrelReward = 0;
+            lastStarportBeaconReward = 0;
+            lastMeteorTrailReward = 0;
+            lastRainbowArcReward = 0;
+            lastCrystalCoreReward = 0;
+            lastMusicBoxReward = 0;
+            lastEnergyRewardProp = NONE;
+            showFeedback(1, rewardCellClearedCount);
         }
     }
 
@@ -8952,7 +8991,9 @@ public class GameView extends View {
         int alpha = (int) (255 * (1f - progress));
         float y = boardTop - dp(18) - progress * dp(20);
         String text = feedbackCombo > 1 ? "连击 x" + feedbackCombo : "消除 +" + feedbackCleared;
-        if (lastGiftReward > 0 && age < 900) {
+        if (lastTaskRewardType == 23 && age < 900) {
+            text = "奖励格连收 罗盘+" + lastRewardCellMilestoneAmount;
+        } else if (lastGiftReward > 0 && age < 900) {
             text = "礼盒奖励 +" + lastGiftReward;
         } else if (lastMoveChestReward > 0 && age < 900) {
             text = "步数 +" + lastMoveChestReward;
