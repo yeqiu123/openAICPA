@@ -2489,6 +2489,10 @@ public class GameView extends View {
         if (moveChest[row][col] > 0) {
             priority += 18;
         }
+        if (butterfly[row][col] > 0) {
+            // 蝴蝶会自动助力消除，智能提示优先指向可打开额外清除的落点。
+            priority += 16;
+        }
         if (energyPotion[row][col] > 0) {
             // 能量药水直接补能量，智能提示优先指向爆发充能点。
             priority += 16;
@@ -6069,6 +6073,13 @@ public class GameView extends View {
                 obstacleText += " 全开";
             }
         }
+        if (level.butterflyCount > 0) {
+            // 蝴蝶会触发自动助力，HUD显示剩余和本局助力次数。
+            obstacleText += " 蝶" + getButterflyRemainingCount();
+            if (lastButterflyReward > 0) {
+                obstacleText += " 助+" + lastButterflyReward;
+            }
+        }
         if (level.energyPotionCount > 0) {
             // 能量药水直接补能量，HUD显示剩余和本局充能收益。
             obstacleText += " 能" + getEnergyPotionRemainingCount();
@@ -8120,6 +8131,9 @@ public class GameView extends View {
         } else if (getMusicBoxRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 开音乐盒拿星弦";
+        } else if (getButterflyRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            return "推荐 " + getPropName(prop) + " 唤蝴蝶助消除";
         } else if (getEnergyPotionRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 收药水攒能量";
@@ -8232,6 +8246,11 @@ public class GameView extends View {
             // 音乐盒能转成可储备星弦琴，推荐精准道具优先开盒。
             return true;
         }
+        if (getButterflyRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            // 蝴蝶会触发自动助力，推荐精准道具优先释放额外清除。
+            return true;
+        }
         if (getEnergyPotionRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             // 能量药水能直接抬高爆发进度，推荐精准道具优先收取。
@@ -8337,6 +8356,10 @@ public class GameView extends View {
         if (getMusicBoxRemainingCount() > 0) {
             // 音乐盒关失败时直接提示资源目标，帮助下局优先规划星弦琴储备。
             return "建议下局优先开音乐盒";
+        }
+        if (getButterflyRemainingCount() > 0) {
+            // 蝴蝶失败后提示优先唤醒，让下局更早触发自动助力。
+            return "建议下局优先唤蝴蝶";
         }
         if (getEnergyPotionRemainingCount() > 0) {
             // 能量药水失败后提示优先收集，让下局更早进入能量爆发。
@@ -9214,6 +9237,13 @@ public class GameView extends View {
 
         float centerX = rect.left + rect.width() * 0.25f;
         float centerY = rect.bottom - dp(18);
+        float pulse = 0.55f + 0.45f * (float) Math.sin(System.currentTimeMillis() / 195.0);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(2 + pulse * 2));
+        paint.setColor(Color.argb((int) (90 + pulse * 95), 255, 139, 176));
+        canvas.drawRoundRect(new RectF(rect.left + dp(5), rect.top + dp(5),
+                rect.right - dp(5), rect.bottom - dp(5)), dp(13), dp(13), paint);
+        paint.setStyle(Paint.Style.FILL);
         paint.setColor(Color.argb(210, 255, 139, 176));
         canvas.drawOval(new RectF(centerX - dp(14), centerY - dp(9), centerX - dp(2), centerY + dp(9)), paint);
         paint.setColor(Color.argb(210, 116, 219, 214));
@@ -9953,6 +9983,8 @@ public class GameView extends View {
         }
         if (level.butterflyCount > 0) {
             goalText += "  蝴蝶 " + level.butterflyCount;
+            // 开场说明蝴蝶收益，提醒玩家优先触发自动助力。
+            goalText += "  唤蝶助消除";
         }
         if (level.portalCount > 0) {
             goalText += "  传送门 " + level.portalCount;
@@ -10100,6 +10132,8 @@ public class GameView extends View {
             return "策略 火箭/罗盘优先开传送门";
         } else if (level.energyPotionCount > 0) {
             return "策略 火箭/罗盘优先收能量药水";
+        } else if (level.butterflyCount > 0) {
+            return "策略 火箭/罗盘优先唤蝴蝶";
         } else if (getRewardCellCount() >= 3) {
             // 奖励格密集时优先提示精准道具，帮助玩家把额外收益转成通关优势。
             return "策略 火箭/罗盘优先收奖励";
@@ -10563,6 +10597,10 @@ public class GameView extends View {
             // 失败复盘也显示音乐盒剩余，提醒下局优先拿星弦琴储备。
             appendFailureProgressPart(text, "音乐盒剩", getMusicBoxRemainingCount());
         }
+        if (level.butterflyCount > 0) {
+            // 蝴蝶剩余量单独复盘，提示下局优先触发自动助力。
+            appendFailureProgressPart(text, "蝴蝶剩", getButterflyRemainingCount());
+        }
         if (level.energyPotionCount > 0) {
             // 能量药水剩余量单独复盘，提示下局优先积攒爆发能量。
             appendFailureProgressPart(text, "药水剩", getEnergyPotionRemainingCount());
@@ -10673,6 +10711,18 @@ public class GameView extends View {
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
                 if (musicBox[row][col] > 0) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    private int getButterflyRemainingCount() {
+        int count = 0;
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (butterfly[row][col] > 0) {
                     count++;
                 }
             }
