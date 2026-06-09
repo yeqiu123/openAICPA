@@ -3109,9 +3109,7 @@ public class GameView extends View {
         lastSeasonRewardProp = NONE;
         lastSeasonRewardAmount = 0;
         lastSeasonRewardProp = getSeasonRewardProp(step);
-        if (lastSeasonRewardProp != NONE) {
-            lastSeasonRewardAmount = 1;
-        }
+        lastSeasonRewardAmount = getSeasonRewardAmount(lastSeasonRewardProp);
         if (lastSeasonRewardProp != NONE) {
             addReserveProp(lastSeasonRewardProp, lastSeasonRewardAmount);
         }
@@ -3132,6 +3130,13 @@ public class GameView extends View {
             return PROP_AURORA_ORB;
         }
         return NONE;
+    }
+
+    private int getSeasonRewardAmount(int prop) {
+        if (prop == PROP_STAR_HARP || prop == PROP_SNOW_GLOBE) {
+            return 2;
+        }
+        return prop == NONE ? 0 : 1;
     }
 
     private void saveSeasonProgress() {
@@ -3658,9 +3663,7 @@ public class GameView extends View {
         lastChestRewardProp = NONE;
         lastChestRewardAmount = 0;
         lastChestRewardProp = getStarChestRewardProp(starChestClaimed);
-        if (lastChestRewardProp != NONE) {
-            lastChestRewardAmount = 1;
-        }
+        lastChestRewardAmount = getStarChestRewardAmount(lastChestRewardProp);
         if (lastChestRewardProp != NONE) {
             // 星级宝箱节点追加稀有道具，鼓励补星刷满。
             addReserveProp(lastChestRewardProp, lastChestRewardAmount);
@@ -3680,15 +3683,15 @@ public class GameView extends View {
         return NONE;
     }
 
+    private int getStarChestRewardAmount(int prop) {
+        return prop == PROP_SNOW_GLOBE ? 2 : (prop == NONE ? 0 : 1);
+    }
+
     private void grantRankChestPropReward() {
         lastChestRewardProp = NONE;
         lastChestRewardAmount = 0;
         lastChestRewardProp = getRankChestRewardProp(rankChestClaimed);
-        if (lastChestRewardProp == PROP_MOON_TICKET) {
-            lastChestRewardAmount = 2;
-        } else if (lastChestRewardProp != NONE) {
-            lastChestRewardAmount = 1;
-        }
+        lastChestRewardAmount = getRankChestRewardAmount(lastChestRewardProp);
         if (lastChestRewardProp != NONE) {
             // 评级宝箱节点奖励更偏向冲榜和高连击关卡。
             addReserveProp(lastChestRewardProp, lastChestRewardAmount);
@@ -3702,6 +3705,10 @@ public class GameView extends View {
             return PROP_MOON_TICKET;
         }
         return NONE;
+    }
+
+    private int getRankChestRewardAmount(int prop) {
+        return prop == PROP_MOON_TICKET ? 2 : (prop == NONE ? 0 : 1);
     }
 
     private void claimChapterChest() {
@@ -6390,7 +6397,8 @@ public class GameView extends View {
     private String buildNextAchievementRewardHint() {
         int index = getNextAchievementRewardIndex();
         int prop = getAchievementRewardProp(index);
-        return prop == NONE ? "" : " 到" + (index + 1) + "成就奖" + getPropName(prop);
+        return prop == NONE ? "" : " 到" + (index + 1) + "成就奖" + getPropName(prop)
+                + "+" + getAchievementRewardAmount(index);
     }
 
     private int getNextAchievementRewardIndex() {
@@ -6406,7 +6414,8 @@ public class GameView extends View {
     private String buildNextSeasonRewardHint() {
         int nextStep = getNextSeasonRewardStep();
         int prop = getSeasonRewardProp(nextStep);
-        return prop == NONE ? "" : " 到" + nextStep + "季奖" + getPropName(prop);
+        return prop == NONE ? "" : " 到" + nextStep + "季奖" + getPropName(prop)
+                + "+" + getSeasonRewardAmount(prop);
     }
 
     private int getNextSeasonRewardStep() {
@@ -6587,13 +6596,15 @@ public class GameView extends View {
     private String buildNextStarChestPropHint() {
         int nextChest = getNextStarChestPropStep();
         int prop = getStarChestRewardProp(nextChest);
-        return prop == NONE ? "" : " 到" + nextChest + "箱" + getPropName(prop);
+        return prop == NONE ? "" : " 到" + nextChest + "箱" + getPropName(prop)
+                + "+" + getStarChestRewardAmount(prop);
     }
 
     private String buildNextRankChestPropHint() {
         int nextChest = getNextRankChestPropStep();
         int prop = getRankChestRewardProp(nextChest);
-        return prop == NONE ? "" : " 到" + nextChest + "箱" + getPropName(prop);
+        return prop == NONE ? "" : " 到" + nextChest + "箱" + getPropName(prop)
+                + "+" + getRankChestRewardAmount(prop);
     }
 
     private int getNextStarChestPropStep() {
