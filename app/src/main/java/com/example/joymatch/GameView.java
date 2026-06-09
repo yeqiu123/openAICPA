@@ -7447,6 +7447,10 @@ public class GameView extends View {
                 && (prop == PROP_EXTRA_MOVES || prop == PROP_CLOCK || prop == PROP_MOON_TICKET)) {
             return true;
         }
+        if (isHiddenChallengeLevel() && movesUsed + 2 >= Math.max(7, level.moves - 4)
+                && (prop == PROP_CLOCK || prop == PROP_EXTRA_MOVES || prop == PROP_MOON_TICKET)) {
+            return true;
+        }
         if (level.countdownBombCount > 0
                 && (prop == PROP_SHIELD || prop == PROP_CLOCK || prop == PROP_SNOW_GLOBE)) {
             return true;
@@ -9011,6 +9015,8 @@ public class GameView extends View {
             return "策略 礼炮/罗盘冲高分";
         } else if (level.moveLimitGoal > 0) {
             return "策略 加步/时钟保步限";
+        } else if (isHiddenChallengeLevel()) {
+            return "策略 时钟/加步保隐藏步限";
         } else if (level.elite) {
             return "策略 留爆炸道具给尾盘";
         }
