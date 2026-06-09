@@ -9342,7 +9342,8 @@ public class GameView extends View {
             return "下一目标 第" + (nextLevel + 1) + "关";
         }
         if (replayLevel >= 0) {
-            return "回访推荐 第" + (replayLevel + 1) + "关 " + buildReplayReason(replayLevel);
+            return "回访推荐 " + chapterNames[getChapterIndex(replayLevel)] + " 第" + (replayLevel + 1)
+                    + "关 " + buildReplayReason(replayLevel);
         }
         // 通关页给一个明确的下一步，减少玩家在主线和补星之间的选择成本。
         return "下一目标 收集满星和高评级";
