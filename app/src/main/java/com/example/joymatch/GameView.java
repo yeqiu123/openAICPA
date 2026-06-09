@@ -7549,6 +7549,9 @@ public class GameView extends View {
         if (movesLeft <= Math.max(3, level.moves / 5)
                 && (prop == PROP_EXTRA_MOVES || prop == PROP_CLOCK || prop == PROP_MOON_TICKET)) {
             return "推荐 " + getPropName(prop) + " 补步保星";
+        } else if (!dailyChallengeMode && levelRanks[levelIndex] >= 4 && !levelPerfectCleared[levelIndex]
+                && (prop == PROP_STAR_HARP || prop == PROP_FIREWORK_CANNON || prop == PROP_STAR_COMPASS)) {
+            return "推荐 " + getPropName(prop) + " 冲完美";
         } else if (level.countdownBombCount > 0
                 && (prop == PROP_SHIELD || prop == PROP_CLOCK || prop == PROP_SNOW_GLOBE)) {
             return "推荐 " + getPropName(prop) + " 稳住炸弹";
@@ -7582,6 +7585,10 @@ public class GameView extends View {
                 + chainRemaining + shellRemaining + coralReefRemaining + flowerRemaining;
         if (movesLeft <= Math.max(3, level.moves / 5)
                 && (prop == PROP_EXTRA_MOVES || prop == PROP_CLOCK || prop == PROP_MOON_TICKET)) {
+            return true;
+        }
+        if (!dailyChallengeMode && levelRanks[levelIndex] >= 4 && !levelPerfectCleared[levelIndex]
+                && (prop == PROP_STAR_HARP || prop == PROP_FIREWORK_CANNON || prop == PROP_STAR_COMPASS)) {
             return true;
         }
         if (isHiddenChallengeLevel() && movesUsed + 2 >= Math.max(7, level.moves - 4)
