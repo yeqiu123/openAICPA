@@ -1096,6 +1096,10 @@ public class GameView extends View {
                 if (propInventory[prop] <= 0) {
                     if (coins < PROP_COSTS[prop]) {
                         activeProp = NONE;
+                        selectedRow = NONE;
+                        selectedCol = NONE;
+                        playHaptic(HapticFeedbackConstants.REJECT);
+                        playRejectTone();
                         return true;
                     }
                     // 道具用完后可直接用金币补一个，减少关卡中断感。
