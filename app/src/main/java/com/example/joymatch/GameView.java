@@ -9357,6 +9357,9 @@ public class GameView extends View {
         addRewardLine(lines, "补星", lastStarUpgradeReward, "");
         addRewardLine(lines, "评级", lastRankUpgradeReward, buildRankUpgradeRewardText());
         addRewardLine(lines, "完美", lastPerfectReward, buildPerfectRewardText());
+        if (lastPerfectRetained) {
+            lines.add("完美保持");
+        }
         addRewardLine(lines, "隐藏", lastHiddenReward, buildHiddenRewardText());
         addRewardLine(lines, "精英", lastEliteReward, "");
         addRewardLine(lines, "成就", lastAchievementReward, buildAchievementPropRewardText());
