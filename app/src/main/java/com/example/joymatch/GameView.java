@@ -7380,7 +7380,9 @@ public class GameView extends View {
         return level <= highestUnlockedLevel && levelStars[level] > 0
                 && (levelStars[level] < 3 || levelRanks[level] < 4
                 || (isHiddenChallengeLevel(level) && !levelHiddenChallengesCleared[level])
-                || (levelRanks[level] >= 4 && !levelPerfectCleared[level]));
+                || (levelRanks[level] >= 4 && !levelPerfectCleared[level])
+                // 已完美的音乐盒关仍可作为星弦琴补给点，给后期保留资源型回访目标。
+                || (levelPerfectCleared[level] && levels.get(level).musicBoxCount > 0));
     }
 
     private int getReplayPriorityScore(int level) {
