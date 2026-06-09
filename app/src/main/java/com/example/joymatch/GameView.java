@@ -6603,19 +6603,23 @@ public class GameView extends View {
         int hiddenCount = getChapterHiddenChallengeCount(chapter);
         int clearedHidden = getChapterClearedHiddenChallengeCount(chapter);
         int hiddenMissing = hiddenCount - clearedHidden;
+        int unlockedCount = getChapterUnlockedCount(chapter);
+        int perfectMissing = unlockedCount - getChapterPerfectClearCount(chapter);
         return (!chapterMasteryClaimed[chapter] && stars >= CHAPTER_CHEST_STARS && fullStarMissing >= 0 && fullStarMissing <= 6)
-                || (!chapterRankClaimed[chapter] && getChapterUnlockedCount(chapter) >= CHAPTER_SIZE / 2
+                || (!chapterRankClaimed[chapter] && unlockedCount >= CHAPTER_SIZE / 2
                 && rankMissing >= 0 && rankMissing <= 8)
                 || (!chapterEliteClaimed[chapter] && eliteCount > 0
-                && (clearedElite > 0 || getChapterUnlockedCount(chapter) >= CHAPTER_SIZE)
+                && (clearedElite > 0 || unlockedCount >= CHAPTER_SIZE)
                 && eliteMissing >= 0 && eliteMissing <= 1)
                 || (!chapterHiddenClaimed[chapter] && hiddenCount > 0
-                && (clearedHidden > 0 || getChapterUnlockedCount(chapter) >= CHAPTER_SIZE)
-                && hiddenMissing >= 0 && hiddenMissing <= 1);
+                && (clearedHidden > 0 || unlockedCount >= CHAPTER_SIZE)
+                && hiddenMissing >= 0 && hiddenMissing <= 1)
+                || (!chapterPerfectClaimed[chapter] && unlockedCount >= CHAPTER_SIZE
+                && perfectMissing >= 0 && perfectMissing <= 1);
     }
 
     private void drawChapterProgressGoalSpark(Canvas canvas, float x, float y) {
-        // 章节奖励临近时给进度条加一点闪光，提醒玩家回头补星、冲评级和补隐藏。
+        // 章节奖励临近时给进度条加一点闪光，提醒玩家回头补星、冲评级、补隐藏和冲完美。
         float pulse = 0.5f + 0.5f * (float) Math.sin(System.currentTimeMillis() / 180.0);
         paint.setColor(Color.argb((int) (120 + pulse * 85), 255, 255, 255));
         canvas.drawCircle(x, y, dp(3) + pulse * dp(2), paint);
