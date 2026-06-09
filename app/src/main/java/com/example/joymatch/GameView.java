@@ -7692,6 +7692,9 @@ public class GameView extends View {
         } else if (keyRemaining > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 抢钥匙";
+        } else if (isRewardCellMilestoneNear()
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            return "推荐 " + getPropName(prop) + " 补1格拿罗盘";
         } else if (chainRemaining > 0 && prop == PROP_CHAIN_BREAKER) {
             return "推荐 " + getPropName(prop) + " 破锁开局";
         } else if (honeyRemaining > 0 && (prop == PROP_FREEZE || prop == PROP_SNOW_GLOBE)) {
@@ -7744,6 +7747,11 @@ public class GameView extends View {
             // 钥匙关优先推荐可直达关键格的道具，减少后期找不到落点的挫败感。
             return true;
         }
+        if (isRewardCellMilestoneNear()
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            // 奖励格只差1格触发罗盘时，优先推荐精准打点道具。
+            return true;
+        }
         if (chainRemaining > 0 && prop == PROP_CHAIN_BREAKER) {
             return true;
         }
@@ -7774,6 +7782,10 @@ public class GameView extends View {
         }
         return level.moveLimitGoal > 0 && movesUsed + 2 >= getMoveLimitGoal(level)
                 && (prop == PROP_EXTRA_MOVES || prop == PROP_CLOCK || prop == PROP_MOON_TICKET);
+    }
+
+    private boolean isRewardCellMilestoneNear() {
+        return rewardCellClearedCount % 3 == 2 && getRewardCellCount() > 0;
     }
 
     private String buildFailurePropAdviceText() {
