@@ -9822,6 +9822,10 @@ public class GameView extends View {
         if (lastChapterPerfectReward > 0) {
             return chapterNames[chapter] + "完美奖励已入账";
         }
+        String rewardCellGoalText = buildRewardCellNextGoalText();
+        if (rewardCellGoalText.length() > 0) {
+            return rewardCellGoalText;
+        }
         if (canClaimChapterChest(chapter)) {
             return "下一目标 " + chapterNames[chapter] + "宝箱可领取";
         }
@@ -9882,6 +9886,14 @@ public class GameView extends View {
         }
         // 通关页给一个明确的下一步，减少玩家在主线和补星之间的选择成本。
         return "下一目标 收集满星和高评级";
+    }
+
+    private String buildRewardCellNextGoalText() {
+        if (rewardCellClearedCount <= 0 || rewardCellClearedCount % 3 == 0) {
+            return "";
+        }
+        // 结算页提示奖励格差额，把局内收奖励格的节奏延续到下一局。
+        return "下一目标 奖励格差" + (3 - rewardCellClearedCount % 3) + "拿罗盘";
     }
 
     private String buildDailyGoalNextGoalText() {
