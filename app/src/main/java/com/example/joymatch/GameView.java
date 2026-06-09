@@ -7180,7 +7180,8 @@ public class GameView extends View {
             if (propReserve[prop] > 0) {
                 drawReservePropBadge(canvas, rect, propReserve[prop]);
             }
-            canvas.drawText(label, rect.centerX(), rect.bottom - dp(7), textPaint);
+            drawTextFit(canvas, label, new RectF(rect.left + dp(2), rect.bottom - dp(16), rect.right - dp(2),
+                    rect.bottom - dp(2)), 9, Color.WHITE);
         }
         drawRecommendedPropTip(canvas, top);
     }
