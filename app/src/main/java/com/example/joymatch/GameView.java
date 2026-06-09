@@ -6394,12 +6394,14 @@ public class GameView extends View {
         String status = buildChapterStarGoalHint(chapter);
         String eliteStatus = buildChapterEliteGoalHint(chapter);
         String rankStatus = buildChapterRankGoalHint(chapter);
+        String hiddenStatus = buildChapterHiddenProgressText(chapter);
         RectF progressTextRect = new RectF(left, top + dp(14), right, top + dp(34));
         RectF rankTextRect = new RectF(left, top + dp(28), right, top + dp(50));
         drawTextFit(canvas, "章节进度 " + getChapterUnlockedCount(chapter) + "/" + CHAPTER_SIZE
                 + "  星 " + getChapterStars(chapter) + status, progressTextRect, 12, Color.WHITE);
         drawTextFit(canvas, "章节评级 " + getChapterRankScore(chapter) + "/" + getChapterRankRewardTarget() + rankStatus
-                        + "  精英 " + getChapterClearedEliteCount(chapter) + "/" + getChapterEliteCount(chapter) + eliteStatus,
+                        + "  精英 " + getChapterClearedEliteCount(chapter) + "/" + getChapterEliteCount(chapter) + eliteStatus
+                        + hiddenStatus,
                 rankTextRect, 12, Color.WHITE);
         if (shouldPulseChapterProgressGoal(chapter)) {
             drawChapterProgressGoalSpark(canvas, right - dp(8), top + dp(5));
@@ -6443,6 +6445,23 @@ public class GameView extends View {
             return " 差" + (eliteCount - clearedElite);
         }
         return "";
+    }
+
+    private String buildChapterHiddenProgressText(int chapter) {
+        int hiddenCount = getChapterHiddenChallengeCount(chapter);
+        if (hiddenCount <= 0) {
+            return "";
+        }
+
+        int clearedHidden = getChapterClearedHiddenChallengeCount(chapter);
+        String hint = "";
+        if (clearedHidden >= hiddenCount) {
+            hint = " 已清";
+        } else if (clearedHidden > 0 || getChapterUnlockedCount(chapter) >= CHAPTER_SIZE) {
+            hint = " 差" + (hiddenCount - clearedHidden);
+        }
+        // 章节页补上隐藏挑战进度，给老关回访多一个可见追求。
+        return "  隐藏 " + clearedHidden + "/" + hiddenCount + hint;
     }
 
     private boolean shouldPulseChapterProgressGoal(int chapter) {
@@ -6859,6 +6878,30 @@ public class GameView extends View {
         int end = Math.min(start + CHAPTER_SIZE, levels.size());
         for (int level = start; level < end; level++) {
             if (isEliteLevel(level) && levelStars[level] > 0) {
+                total++;
+            }
+        }
+        return total;
+    }
+
+    private int getChapterHiddenChallengeCount(int chapter) {
+        int total = 0;
+        int start = chapter * CHAPTER_SIZE;
+        int end = Math.min(start + CHAPTER_SIZE, levels.size());
+        for (int level = start; level < end; level++) {
+            if (isHiddenChallengeLevel(level)) {
+                total++;
+            }
+        }
+        return total;
+    }
+
+    private int getChapterClearedHiddenChallengeCount(int chapter) {
+        int total = 0;
+        int start = chapter * CHAPTER_SIZE;
+        int end = Math.min(start + CHAPTER_SIZE, levels.size());
+        for (int level = start; level < end; level++) {
+            if (isHiddenChallengeLevel(level) && levelRanks[level] >= 4) {
                 total++;
             }
         }
