@@ -7887,6 +7887,9 @@ public class GameView extends View {
         } else if (targetRemaining > level.targetAmount / 2 && movesLeft <= level.moves / 2
                 && (prop == PROP_MAGNET || prop == PROP_COLOR_BLAST || prop == PROP_TARGET_BRUSH || prop == PROP_BRUSH)) {
             return "推荐 " + getPropName(prop) + " 补齐收集";
+        } else if (getMusicBoxRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            return "推荐 " + getPropName(prop) + " 开音乐盒拿星弦";
         } else if (getRewardCellCount() >= 3 && movesLeft <= level.moves / 2
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 收奖励格";
@@ -7950,6 +7953,11 @@ public class GameView extends View {
         }
         if (targetRemaining > level.targetAmount / 2 && movesLeft <= level.moves / 2
                 && (prop == PROP_MAGNET || prop == PROP_COLOR_BLAST || prop == PROP_TARGET_BRUSH || prop == PROP_BRUSH)) {
+            return true;
+        }
+        if (getMusicBoxRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            // 音乐盒能转成可储备星弦琴，推荐精准道具优先开盒。
             return true;
         }
         if (getRewardCellCount() >= 3 && movesLeft <= level.moves / 2
