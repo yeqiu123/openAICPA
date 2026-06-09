@@ -2553,6 +2553,10 @@ public class GameView extends View {
             // 音乐盒能产出可储备星弦琴，智能提示优先指向能开盒的走法。
             priority += 24;
         }
+        if (rainbowBottle[row][col] > 0) {
+            // 彩虹瓶能制造彩虹棋，智能提示优先指向可启动大连锁的资源点。
+            priority += 18;
+        }
         if (hasRewardCell(row, col)) {
             priority += 14;
             if (isRewardCellMilestoneNear()) {
@@ -6178,6 +6182,13 @@ public class GameView extends View {
                 obstacleText += " 爆+" + lastCrystalCoreReward;
             }
         }
+        if (level.rainbowBottleCount > 0) {
+            // 彩虹瓶能制造彩虹棋，HUD单独显示剩余和本局彩虹收益。
+            obstacleText += " 瓶" + getRainbowBottleRemainingCount();
+            if (lastRainbowBottleReward > 0) {
+                obstacleText += " 虹+" + lastRainbowBottleReward;
+            }
+        }
         drawTextFitRight(canvas, obstacleText, new RectF(getWidth() * 0.48f, dp(118), getWidth() - dp(18), dp(136)), 15, Color.WHITE);
         textPaint.setTextSize(sp(13));
         String starText = buildStars(getPreviewStars(level));
@@ -8176,6 +8187,9 @@ public class GameView extends View {
         } else if (getCrystalCoreRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 开塔芯造爆炸";
+        } else if (getRainbowBottleRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            return "推荐 " + getPropName(prop) + " 开彩虹瓶造彩虹";
         } else if (getRewardCellCount() >= 3 && movesLeft <= level.moves / 2
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 收奖励格";
@@ -8321,6 +8335,11 @@ public class GameView extends View {
             // 糖晶塔芯打开后会补爆炸棋，推荐精准道具优先触发连锁。
             return true;
         }
+        if (getRainbowBottleRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            // 彩虹瓶打开后会制造彩虹棋，推荐精准道具提前铺大连锁。
+            return true;
+        }
         if (getRewardCellCount() >= 3 && movesLeft <= level.moves / 2
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             // 奖励格密集且步数吃紧时，推荐能精准打到关键格的道具。
@@ -8416,6 +8435,10 @@ public class GameView extends View {
         if (getCrystalCoreRemainingCount() > 0) {
             // 糖晶塔芯失败后提示精准开芯，帮助下局把爆炸棋收益提前打出来。
             return "建议下局优先开糖晶塔芯";
+        }
+        if (getRainbowBottleRemainingCount() > 0) {
+            // 彩虹瓶失败后提示优先打开，让下局更早制造彩虹棋连锁。
+            return "建议下局优先开彩虹瓶";
         }
         for (int prop = 0; prop < PROP_COUNT; prop++) {
             if (isRecommendedPropForLevel(prop)) {
@@ -9202,12 +9225,20 @@ public class GameView extends View {
 
         float centerX = rect.left + rect.width() * 0.24f;
         float centerY = rect.top + dp(20);
+        float pulse = 0.55f + 0.45f * (float) Math.sin(System.currentTimeMillis() / 205.0);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(2 + pulse * 2));
+        paint.setColor(Color.argb((int) (90 + pulse * 95), 255, 236, 133));
+        canvas.drawRoundRect(new RectF(rect.left + dp(5), rect.top + dp(5),
+                rect.right - dp(5), rect.bottom - dp(5)), dp(13), dp(13), paint);
+        paint.setStyle(Paint.Style.FILL);
         paint.setColor(Color.argb(220, 255, 255, 255));
         canvas.drawRoundRect(new RectF(centerX - dp(7), centerY - dp(13),
                 centerX + dp(7), centerY + dp(12)), dp(5), dp(5), paint);
         paint.setColor(palette[(row + col + movesUsed) % TILE_KINDS]);
         canvas.drawRoundRect(new RectF(centerX - dp(5), centerY - dp(4),
                 centerX + dp(5), centerY + dp(10)), dp(4), dp(4), paint);
+        postInvalidateOnAnimation();
     }
 
     private void drawEnergyPotion(Canvas canvas, int row, int col, RectF rect) {
@@ -9975,6 +10006,8 @@ public class GameView extends View {
         }
         if (level.rainbowBottleCount > 0) {
             goalText += "  彩虹瓶 " + level.rainbowBottleCount;
+            // 开场说明彩虹瓶收益，让玩家优先制造彩虹棋连锁。
+            goalText += "  开瓶造彩虹";
         }
         if (level.energyPotionCount > 0) {
             goalText += "  能量药水 " + level.energyPotionCount;
@@ -10134,6 +10167,8 @@ public class GameView extends View {
             return "策略 火箭/罗盘优先收能量药水";
         } else if (level.butterflyCount > 0) {
             return "策略 火箭/罗盘优先唤蝴蝶";
+        } else if (level.rainbowBottleCount > 0) {
+            return "策略 火箭/罗盘优先开彩虹瓶";
         } else if (getRewardCellCount() >= 3) {
             // 奖励格密集时优先提示精准道具，帮助玩家把额外收益转成通关优势。
             return "策略 火箭/罗盘优先收奖励";
@@ -10657,6 +10692,10 @@ public class GameView extends View {
             // 塔芯剩余量单独复盘，避免玩家把爆炸棋来源错当普通奖励格。
             appendFailureProgressPart(text, "塔芯剩", getCrystalCoreRemainingCount());
         }
+        if (level.rainbowBottleCount > 0) {
+            // 彩虹瓶剩余量单独复盘，提示下局优先制造彩虹棋连锁。
+            appendFailureProgressPart(text, "彩虹瓶剩", getRainbowBottleRemainingCount());
+        }
         if (level.moveLimitGoal > 0 && !isMoveLimitGoalCleared(level)) {
             appendFailureProgressPart(text, "步限超", movesUsed - getMoveLimitGoal(level));
         }
@@ -10891,6 +10930,18 @@ public class GameView extends View {
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
                 if (crystalCore[row][col] > 0) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    private int getRainbowBottleRemainingCount() {
+        int count = 0;
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (rainbowBottle[row][col] > 0) {
                     count++;
                 }
             }
