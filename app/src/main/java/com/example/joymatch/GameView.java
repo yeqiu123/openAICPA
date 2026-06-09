@@ -7046,7 +7046,8 @@ public class GameView extends View {
     private boolean isReplayTargetLevel(int level) {
         return level <= highestUnlockedLevel && levelStars[level] > 0
                 && (levelStars[level] < 3 || levelRanks[level] < 4
-                || (isHiddenChallengeLevel(level) && !levelHiddenChallengesCleared[level]));
+                || (isHiddenChallengeLevel(level) && !levelHiddenChallengesCleared[level])
+                || (levelRanks[level] >= 4 && !levelPerfectCleared[level]));
     }
 
     private int getReplayPriorityScore(int level) {
@@ -7068,6 +7069,10 @@ public class GameView extends View {
             // 隐藏挑战有独立章节奖励，未完成时提高回访推荐优先级。
             score += 22;
         }
+        if (levelRanks[level] >= 4 && !levelPerfectCleared[level]) {
+            // 已达高评级后继续推荐冲完美，给高手回访目标。
+            score += 10;
+        }
         if (chapterMissingStars > 0 && chapterMissingStars <= 6) {
             score += 20;
         }
@@ -7081,6 +7086,9 @@ public class GameView extends View {
         String challenge = buildReplayChallengeReason(level);
         if (challenge.length() > 0) {
             return challenge;
+        }
+        if (levelRanks[level] >= 4 && !levelPerfectCleared[level]) {
+            return "冲完美";
         }
         return "冲" + buildRankText(4);
     }
