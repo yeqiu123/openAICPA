@@ -6502,16 +6502,22 @@ public class GameView extends View {
         int eliteCount = getChapterEliteCount(chapter);
         int clearedElite = getChapterClearedEliteCount(chapter);
         int eliteMissing = eliteCount - clearedElite;
+        int hiddenCount = getChapterHiddenChallengeCount(chapter);
+        int clearedHidden = getChapterClearedHiddenChallengeCount(chapter);
+        int hiddenMissing = hiddenCount - clearedHidden;
         return (!chapterMasteryClaimed[chapter] && stars >= CHAPTER_CHEST_STARS && fullStarMissing >= 0 && fullStarMissing <= 6)
                 || (!chapterRankClaimed[chapter] && getChapterUnlockedCount(chapter) >= CHAPTER_SIZE / 2
                 && rankMissing >= 0 && rankMissing <= 8)
                 || (!chapterEliteClaimed[chapter] && eliteCount > 0
                 && (clearedElite > 0 || getChapterUnlockedCount(chapter) >= CHAPTER_SIZE)
-                && eliteMissing >= 0 && eliteMissing <= 1);
+                && eliteMissing >= 0 && eliteMissing <= 1)
+                || (!chapterHiddenClaimed[chapter] && hiddenCount > 0
+                && (clearedHidden > 0 || getChapterUnlockedCount(chapter) >= CHAPTER_SIZE)
+                && hiddenMissing >= 0 && hiddenMissing <= 1);
     }
 
     private void drawChapterProgressGoalSpark(Canvas canvas, float x, float y) {
-        // 章节奖励临近时给进度条加一点闪光，提醒玩家回头补星和冲评级。
+        // 章节奖励临近时给进度条加一点闪光，提醒玩家回头补星、冲评级和补隐藏。
         float pulse = 0.5f + 0.5f * (float) Math.sin(System.currentTimeMillis() / 180.0);
         paint.setColor(Color.argb((int) (120 + pulse * 85), 255, 255, 255));
         canvas.drawCircle(x, y, dp(3) + pulse * dp(2), paint);
