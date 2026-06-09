@@ -9387,6 +9387,8 @@ public class GameView extends View {
         }
         if (level.countdownBombCount > 0) {
             goalText += "  炸弹 " + level.countdownBombCount;
+            // 开场提示拆弹奖励，让玩家主动处理炸弹更有动力。
+            goalText += "  拆完护盾";
         }
         if (level.elite) {
             goalText += "  精英奖励";
