@@ -9731,6 +9731,10 @@ public class GameView extends View {
         if (getAvailableRankChests() > 0) {
             return "下一目标 评级宝箱可领取";
         }
+        String hiddenGoalText = buildChapterHiddenNextGoalText(chapter);
+        if (hiddenGoalText.length() > 0) {
+            return hiddenGoalText;
+        }
         if (!chapterPerfectClaimed[chapter] && getChapterUnlockedCount(chapter) >= CHAPTER_SIZE
                 && getChapterPerfectClearCount(chapter) >= getChapterUnlockedCount(chapter)) {
             return "下一目标 " + chapterNames[chapter] + "完美奖励";
@@ -9746,6 +9750,23 @@ public class GameView extends View {
         }
         // 通关页给一个明确的下一步，减少玩家在主线和补星之间的选择成本。
         return "下一目标 收集满星和高评级";
+    }
+
+    private String buildChapterHiddenNextGoalText(int chapter) {
+        int hiddenCount = getChapterHiddenChallengeCount(chapter);
+        if (chapterHiddenClaimed[chapter] || hiddenCount <= 0 || getChapterUnlockedCount(chapter) < CHAPTER_SIZE) {
+            return "";
+        }
+
+        int clearedHidden = getChapterClearedHiddenChallengeCount(chapter);
+        if (clearedHidden >= hiddenCount) {
+            return "下一目标 " + chapterNames[chapter] + "隐藏奖励";
+        }
+        if (hiddenCount - clearedHidden <= 1) {
+            // 通关后提示章节隐藏挑战差额，把老关回访目标接到结算页。
+            return "下一目标 " + chapterNames[chapter] + "隐藏差" + (hiddenCount - clearedHidden);
+        }
+        return "";
     }
 
     private void drawRewardLines(Canvas canvas) {
