@@ -2867,42 +2867,8 @@ public class GameView extends View {
     }
 
     private void grantAchievementPropReward(int index) {
-        int prop = NONE;
-        int amount = 0;
-        if (index == 7 || index == 13) {
-            prop = PROP_MOON_TICKET;
-            amount = 1;
-        } else if (index == 16 || index == 20) {
-            prop = PROP_AURORA_ORB;
-            amount = 1;
-        } else if (index == 17 || index == 21 || index == 22) {
-            prop = PROP_STAR_COMPASS;
-            amount = 1;
-        } else if (index == 23) {
-            prop = PROP_FIREWORK_CANNON;
-            amount = 2;
-        } else if (index == 24 || index == 28) {
-            prop = PROP_STAR_COMPASS;
-            amount = 2;
-        } else if (index == 25 || index == 29 || index == 33) {
-            prop = PROP_BUBBLE_WAND;
-            amount = 2;
-        } else if (index == 26 || index == 27 || index == 30) {
-            prop = PROP_SNOW_GLOBE;
-            amount = 2;
-        } else if (index == 31) {
-            prop = PROP_STAR_COMPASS;
-            amount = 2;
-        } else if (index == 32 || index == 34 || index == 36) {
-            prop = PROP_STAR_HARP;
-            amount = 2;
-        } else if (index == 35 || index == 37 || index == 38) {
-            prop = PROP_SNOW_GLOBE;
-            amount = 2;
-        } else if (index == 39) {
-            prop = PROP_STAR_HARP;
-            amount = 3;
-        }
+        int prop = getAchievementRewardProp(index);
+        int amount = getAchievementRewardAmount(index);
         if (prop == NONE) {
             return;
         }
@@ -2911,6 +2877,44 @@ public class GameView extends View {
         addReserveProp(prop, amount);
         lastAchievementRewardProp = prop;
         lastAchievementRewardAmount += amount;
+    }
+
+    private int getAchievementRewardProp(int index) {
+        if (index == 7 || index == 13) {
+            return PROP_MOON_TICKET;
+        } else if (index == 16 || index == 20) {
+            return PROP_AURORA_ORB;
+        } else if (index == 17 || index == 21 || index == 22) {
+            return PROP_STAR_COMPASS;
+        } else if (index == 23) {
+            return PROP_FIREWORK_CANNON;
+        } else if (index == 24 || index == 28) {
+            return PROP_STAR_COMPASS;
+        } else if (index == 25 || index == 29 || index == 33) {
+            return PROP_BUBBLE_WAND;
+        } else if (index == 26 || index == 27 || index == 30) {
+            return PROP_SNOW_GLOBE;
+        } else if (index == 31) {
+            return PROP_STAR_COMPASS;
+        } else if (index == 32 || index == 34 || index == 36) {
+            return PROP_STAR_HARP;
+        } else if (index == 35 || index == 37 || index == 38) {
+            return PROP_SNOW_GLOBE;
+        } else if (index == 39) {
+            return PROP_STAR_HARP;
+        }
+        return NONE;
+    }
+
+    private int getAchievementRewardAmount(int index) {
+        if (getAchievementRewardProp(index) == NONE) {
+            return 0;
+        } else if (index == 39) {
+            return 3;
+        } else if (index >= 23) {
+            return 2;
+        }
+        return 1;
     }
 
     private void loadProgress() {
@@ -6346,10 +6350,27 @@ public class GameView extends View {
         textPaint.setColor(Color.WHITE);
         RectF seasonTextRect = new RectF(left, top + dp(12), right, top + dp(30));
         drawTextFit(canvas, "成就 " + getClaimedAchievementCount() + "/" + ACHIEVEMENT_COUNT
-                + "  评级 " + getTotalRankScore() + "  赛季 " + seasonLevels + "/" + getNextSeasonLevelTarget()
+                + buildNextAchievementRewardHint() + "  评级 " + getTotalRankScore()
+                + "  赛季 " + seasonLevels + "/" + getNextSeasonLevelTarget()
                 + "关 " + seasonStars + "/" + getNextSeasonStarTarget() + "星" + buildNextSeasonRewardHint(),
                 seasonTextRect, 11, Color.WHITE);
         drawSeasonProgressBar(canvas, left, top + dp(30), right);
+    }
+
+    private String buildNextAchievementRewardHint() {
+        int index = getNextAchievementRewardIndex();
+        int prop = getAchievementRewardProp(index);
+        return prop == NONE ? "" : " 到" + (index + 1) + "成就奖" + getPropName(prop);
+    }
+
+    private int getNextAchievementRewardIndex() {
+        // 成就道具从中后期开始出现，预告最近节点提升长期追求感。
+        for (int index = 0; index < ACHIEVEMENT_COUNT; index++) {
+            if (!achievementsClaimed[index] && getAchievementRewardProp(index) != NONE) {
+                return index;
+            }
+        }
+        return NONE;
     }
 
     private String buildNextSeasonRewardHint() {
