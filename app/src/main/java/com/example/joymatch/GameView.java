@@ -6654,6 +6654,7 @@ public class GameView extends View {
         RectF seasonTextRect = new RectF(left, top + dp(12), right, top + dp(30));
         drawTextFit(canvas, "成就 " + getClaimedAchievementCount() + "/" + ACHIEVEMENT_COUNT
                 + buildNextAchievementRewardHint() + "  评级 " + getTotalRankScore()
+                + "  完美 " + getTotalPerfectClearCount()
                 + "  赛季 " + seasonLevels + "/" + getNextSeasonLevelTarget()
                 + "关 " + seasonStars + "/" + getNextSeasonStarTarget() + "星" + buildNextSeasonRewardHint(),
                 seasonTextRect, 11, Color.WHITE);
@@ -6959,6 +6960,16 @@ public class GameView extends View {
         int total = 0;
         for (int i = 0; i < levels.size(); i++) {
             total += levelRanks[i];
+        }
+        return total;
+    }
+
+    private int getTotalPerfectClearCount() {
+        int total = 0;
+        for (int i = 0; i < levels.size(); i++) {
+            if (levelPerfectCleared[i]) {
+                total++;
+            }
         }
         return total;
     }
