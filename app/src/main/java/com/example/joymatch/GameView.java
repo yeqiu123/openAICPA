@@ -6649,9 +6649,11 @@ public class GameView extends View {
             postInvalidateOnAnimation();
         }
 
+        String musicBoxBonusText = lastMusicBoxMilestoneReward > 0 ? "+乐" : "";
         String text = dailyGoalClaimed ? "每日目标 已领"
                 : (claimable ? "每日目标 领取" + getDailyGoalRewardText()
-                : "每日目标 " + Math.min(6, dailyGoalProgress) + "/6星 " + getDailyGoalRewardText());
+                : "每日目标 " + Math.min(6, dailyGoalProgress) + "/6星" + musicBoxBonusText
+                + " " + getDailyGoalRewardText());
         drawTextFit(canvas, text, dailyGoalRect, 12, claimable ? Color.rgb(33, 37, 56) : Color.WHITE);
         drawDailyGoalProgressBar(canvas, dailyGoalRect, claimable);
     }
