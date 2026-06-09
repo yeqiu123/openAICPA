@@ -6108,9 +6108,19 @@ public class GameView extends View {
     }
 
     private String buildNextDailyChallengeRewardHint() {
-        int nextStreak = dailyChallengeStreak + 1;
+        int nextStreak = getNextDailyChallengeMilestone();
         int prop = getDailyChallengeMilestoneProp(nextStreak);
-        return prop == NONE ? "" : " 奖" + getPropName(prop);
+        return prop == NONE ? "" : " 到" + nextStreak + "奖" + getPropName(prop);
+    }
+
+    private int getNextDailyChallengeMilestone() {
+        // 预告最近的每日挑战连胜奖励节点，方便玩家规划下一轮挑战。
+        for (int streak = dailyChallengeStreak + 1; streak <= dailyChallengeStreak + 30; streak++) {
+            if (getDailyChallengeMilestoneProp(streak) != NONE) {
+                return streak;
+            }
+        }
+        return NONE;
     }
 
     private void drawDailyGoalEntry(Canvas canvas) {
