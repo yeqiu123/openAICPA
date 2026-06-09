@@ -2489,6 +2489,10 @@ public class GameView extends View {
         if (moveChest[row][col] > 0) {
             priority += 18;
         }
+        if (meteorTrail[row][col] > 0) {
+            // 流星航线会斜向清场并补金币，智能提示优先指向能打开斜线收益的落点。
+            priority += 16;
+        }
         if (fireworksBarrel[row][col] > 0) {
             // 烟花桶能直接点燃爆点，智能提示优先指向可制造爆发的落点。
             priority += 17;
@@ -6029,6 +6033,13 @@ public class GameView extends View {
                 obstacleText += " 全开";
             }
         }
+        if (level.meteorTrailCount > 0) {
+            // 流星航线会带来斜线清除和金币收益，HUD单独显示剩余和已收金币。
+            obstacleText += " 航" + getMeteorTrailRemainingCount();
+            if (lastMeteorTrailReward > 0) {
+                obstacleText += " 金+" + lastMeteorTrailReward;
+            }
+        }
         if (level.fireworksBarrelCount > 0) {
             // 烟花桶是直接爆发点，HUD单独显示剩余和本局能量收益。
             obstacleText += " 烟" + getFireworksBarrelRemainingCount();
@@ -8010,6 +8021,9 @@ public class GameView extends View {
         } else if (getMusicBoxRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 开音乐盒拿星弦";
+        } else if (getMeteorTrailRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            return "推荐 " + getPropName(prop) + " 开航线扫斜线";
         } else if (getFireworksBarrelRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 点烟花开爆发";
@@ -8092,6 +8106,11 @@ public class GameView extends View {
             // 音乐盒能转成可储备星弦琴，推荐精准道具优先开盒。
             return true;
         }
+        if (getMeteorTrailRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            // 流星航线能扫开斜线并补金币，推荐精准道具优先打出收益。
+            return true;
+        }
         if (getFireworksBarrelRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             // 烟花桶能直接触发爆点，推荐精准道具提前打开爆发节奏。
@@ -8147,6 +8166,10 @@ public class GameView extends View {
         if (getMusicBoxRemainingCount() > 0) {
             // 音乐盒关失败时直接提示资源目标，帮助下局优先规划星弦琴储备。
             return "建议下局优先开音乐盒";
+        }
+        if (getMeteorTrailRemainingCount() > 0) {
+            // 流星航线失败后提示优先打开，把斜线清场和金币收益前置。
+            return "建议下局优先开流星航线";
         }
         if (getFireworksBarrelRemainingCount() > 0) {
             // 烟花桶失败后提示优先点燃，把爆发收益尽早打出来。
@@ -9195,7 +9218,12 @@ public class GameView extends View {
 
         float centerX = rect.left + rect.width() * 0.30f;
         float centerY = rect.top + rect.height() * 0.30f;
+        float pulse = 0.55f + 0.45f * (float) Math.sin(System.currentTimeMillis() / 195.0);
         paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(2 + pulse * 2));
+        paint.setColor(Color.argb((int) (90 + pulse * 95), 116, 219, 214));
+        canvas.drawRoundRect(new RectF(rect.left + dp(5), rect.top + dp(5),
+                rect.right - dp(5), rect.bottom - dp(5)), dp(13), dp(13), paint);
         paint.setStrokeWidth(dp(3));
         paint.setColor(Color.argb(225, 116, 219, 214));
         canvas.drawLine(rect.left + dp(10), rect.top + dp(12), rect.right - dp(10), rect.bottom - dp(12), paint);
@@ -9694,6 +9722,8 @@ public class GameView extends View {
         }
         if (level.meteorTrailCount > 0) {
             goalText += "  流星航线 " + level.meteorTrailCount;
+            // 开场说明航线收益，提醒玩家优先扫开斜线并拿金币。
+            goalText += "  开航扫斜线";
         }
         if (level.rainbowArcCount > 0) {
             goalText += "  彩虹拱桥 " + level.rainbowArcCount;
@@ -9766,6 +9796,8 @@ public class GameView extends View {
             return "策略 火箭/罗盘优先开信标";
         } else if (level.fireworksBarrelCount > 0) {
             return "策略 火箭/罗盘优先点烟花";
+        } else if (level.meteorTrailCount > 0) {
+            return "策略 火箭/罗盘优先开航线";
         } else if (getRewardCellCount() >= 3) {
             // 奖励格密集时优先提示精准道具，帮助玩家把额外收益转成通关优势。
             return "策略 火箭/罗盘优先收奖励";
@@ -10229,6 +10261,10 @@ public class GameView extends View {
             // 失败复盘也显示音乐盒剩余，提醒下局优先拿星弦琴储备。
             appendFailureProgressPart(text, "音乐盒剩", getMusicBoxRemainingCount());
         }
+        if (level.meteorTrailCount > 0) {
+            // 流星航线剩余量单独复盘，提示下局优先打开斜线清场收益。
+            appendFailureProgressPart(text, "航线剩", getMeteorTrailRemainingCount());
+        }
         if (level.fireworksBarrelCount > 0) {
             // 烟花桶剩余量单独复盘，提示下局优先打开爆发点。
             appendFailureProgressPart(text, "烟花剩", getFireworksBarrelRemainingCount());
@@ -10299,6 +10335,18 @@ public class GameView extends View {
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
                 if (musicBox[row][col] > 0) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    private int getMeteorTrailRemainingCount() {
+        int count = 0;
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (meteorTrail[row][col] > 0) {
                     count++;
                 }
             }
