@@ -2941,7 +2941,8 @@ public class GameView extends View {
         checkAchievement(8, hiddenChallengeCleared, 100);
         checkAchievement(9, lastGemReward > 0 || lastCoinPouchReward > 0 || lastWishLampReward > 0
                 || lastResonanceDrumReward > 0 || lastAuroraPrismReward > 0 || lastPortalReward > 0
-                || lastLuckyStarRewardProp != NONE || lastLuckyCloverRewardType > 0 || lastMysteryRewardType > 0, 90);
+                || lastLuckyStarRewardProp != NONE || lastLuckyCloverRewardType > 0 || lastMysteryRewardType > 0
+                || lastMusicBoxReward > 0, 90);
         checkAchievement(10, getTotalStars() >= 300, 220);
         checkAchievement(11, getTotalRankScore() >= 420, 240);
         checkAchievement(12, getFullyClearedChapterCount() >= 3, 260);
