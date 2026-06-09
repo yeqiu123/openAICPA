@@ -7997,6 +7997,10 @@ public class GameView extends View {
     }
 
     private String buildFailurePropAdviceText() {
+        if (getMusicBoxRemainingCount() > 0) {
+            // 音乐盒关失败时直接提示资源目标，帮助下局优先规划星弦琴储备。
+            return "建议下局优先开音乐盒";
+        }
         for (int prop = 0; prop < PROP_COUNT; prop++) {
             if (isRecommendedPropForLevel(prop)) {
                 // 失败页复用局内推荐逻辑，提示下局优先使用的道具。
