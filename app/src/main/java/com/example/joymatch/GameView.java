@@ -2748,8 +2748,18 @@ public class GameView extends View {
     }
 
     private String buildNextWinStreakRewardHint() {
-        int prop = getWinStreakMilestoneProp(winStreak + 1);
-        return prop == NONE ? "" : " 奖" + getPropName(prop);
+        int nextStreak = getNextWinStreakMilestone();
+        int prop = getWinStreakMilestoneProp(nextStreak);
+        return prop == NONE ? "" : " 到" + nextStreak + "奖" + getPropName(prop);
+    }
+
+    private int getNextWinStreakMilestone() {
+        for (int streak = winStreak + 1; streak <= winStreak + 15; streak++) {
+            if (getWinStreakMilestoneProp(streak) != NONE) {
+                return streak;
+            }
+        }
+        return NONE;
     }
 
     private int getWinStreakMilestoneProp(int streak) {
