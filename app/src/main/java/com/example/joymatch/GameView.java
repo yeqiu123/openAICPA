@@ -5839,6 +5839,9 @@ public class GameView extends View {
             starText += levelHiddenChallengesCleared[levelIndex] ? " 隐✓"
                     : " 隐" + movesUsed + "/" + Math.max(7, level.moves - 4);
         }
+        if (levelPerfectCleared[levelIndex]) {
+            starText += " 完✓";
+        }
         if (comboFeverMoves > 0) {
             starText += " 爆发" + comboFeverMoves;
         }
