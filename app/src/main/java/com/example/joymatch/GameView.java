@@ -6445,6 +6445,11 @@ public class GameView extends View {
             // 章节奖励关全部解锁后在横幅展示，方便玩家快速定位高收益章节。
             text += " 奖";
         }
+        if (getChapterBombLevelCount(chapter) > 0
+                && getChapterUnlockedBombLevelCount(chapter) >= getChapterBombLevelCount(chapter)) {
+            // 章节炸弹关全部解锁后也显示，便于提前规划护盾/时钟道具。
+            text += " 炸";
+        }
         return text;
     }
 
