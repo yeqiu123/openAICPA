@@ -9718,6 +9718,10 @@ public class GameView extends View {
         if (!dailyGoalClaimed && dailyGoalProgress >= 6) {
             return "下一目标 每日目标可领取";
         }
+        String dailyGoalText = buildDailyGoalNextGoalText();
+        if (dailyGoalText.length() > 0) {
+            return dailyGoalText;
+        }
         String dailyChallengeGoalText = buildDailyChallengeNextGoalText();
         if (dailyChallengeGoalText.length() > 0) {
             return dailyChallengeGoalText;
@@ -9770,6 +9774,19 @@ public class GameView extends View {
         }
         // 通关页给一个明确的下一步，减少玩家在主线和补星之间的选择成本。
         return "下一目标 收集满星和高评级";
+    }
+
+    private String buildDailyGoalNextGoalText() {
+        if (dailyGoalClaimed) {
+            return "";
+        }
+
+        int missingStars = 6 - dailyGoalProgress;
+        if (missingStars > 0 && missingStars <= 2) {
+            // 每日目标临近完成时优先提示，强化当天继续补星的回访动力。
+            return "下一目标 每日目标差" + missingStars + "星";
+        }
+        return "";
     }
 
     private String buildDailyChallengeNextGoalText() {
