@@ -2489,6 +2489,10 @@ public class GameView extends View {
         if (moveChest[row][col] > 0) {
             priority += 18;
         }
+        if (crystalCore[row][col] > 0) {
+            // 糖晶塔芯能制造爆炸棋，智能提示优先指向可打开连锁的落点。
+            priority += 20;
+        }
         if (musicBox[row][col] > 0) {
             // 音乐盒能产出可储备星弦琴，智能提示优先指向能开盒的走法。
             priority += 24;
@@ -6013,6 +6017,13 @@ public class GameView extends View {
                 obstacleText += " 全开";
             }
         }
+        if (level.crystalCoreCount > 0) {
+            // 糖晶塔芯会生成爆炸棋，HUD单独露出剩余数量，避免淹没在奖励格总数里。
+            obstacleText += " 晶" + getCrystalCoreRemainingCount();
+            if (lastCrystalCoreReward > 0) {
+                obstacleText += " 爆+" + lastCrystalCoreReward;
+            }
+        }
         drawTextFitRight(canvas, obstacleText, new RectF(getWidth() * 0.48f, dp(118), getWidth() - dp(18), dp(136)), 15, Color.WHITE);
         textPaint.setTextSize(sp(13));
         String starText = buildStars(getPreviewStars(level));
@@ -7966,6 +7977,9 @@ public class GameView extends View {
         } else if (getMusicBoxRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 开音乐盒拿星弦";
+        } else if (getCrystalCoreRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            return "推荐 " + getPropName(prop) + " 开塔芯造爆炸";
         } else if (getRewardCellCount() >= 3 && movesLeft <= level.moves / 2
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 收奖励格";
@@ -8036,6 +8050,11 @@ public class GameView extends View {
             // 音乐盒能转成可储备星弦琴，推荐精准道具优先开盒。
             return true;
         }
+        if (getCrystalCoreRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            // 糖晶塔芯打开后会补爆炸棋，推荐精准道具优先触发连锁。
+            return true;
+        }
         if (getRewardCellCount() >= 3 && movesLeft <= level.moves / 2
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             // 奖励格密集且步数吃紧时，推荐能精准打到关键格的道具。
@@ -8071,6 +8090,10 @@ public class GameView extends View {
         if (getMusicBoxRemainingCount() > 0) {
             // 音乐盒关失败时直接提示资源目标，帮助下局优先规划星弦琴储备。
             return "建议下局优先开音乐盒";
+        }
+        if (getCrystalCoreRemainingCount() > 0) {
+            // 糖晶塔芯失败后提示精准开芯，帮助下局把爆炸棋收益提前打出来。
+            return "建议下局优先开糖晶塔芯";
         }
         for (int prop = 0; prop < PROP_COUNT; prop++) {
             if (isRecommendedPropForLevel(prop)) {
@@ -9130,6 +9153,13 @@ public class GameView extends View {
 
         float centerX = rect.right - dp(18);
         float centerY = rect.bottom - dp(18);
+        float pulse = 0.55f + 0.45f * (float) Math.sin(System.currentTimeMillis() / 190.0);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(2 + pulse * 2));
+        paint.setColor(Color.argb((int) (105 + pulse * 90), 106, 225, 255));
+        canvas.drawRoundRect(new RectF(rect.left + dp(4), rect.top + dp(4),
+                rect.right - dp(4), rect.bottom - dp(4)), dp(12), dp(12), paint);
+        paint.setStyle(Paint.Style.FILL);
         Path crystal = new Path();
         crystal.moveTo(centerX, centerY - dp(15));
         crystal.lineTo(centerX + dp(11), centerY - dp(2));
@@ -9580,6 +9610,8 @@ public class GameView extends View {
         }
         if (level.crystalCoreCount > 0) {
             goalText += "  糖晶塔芯 " + level.crystalCoreCount;
+            // 开场说明塔芯收益，让玩家知道这类后期奖励格值得优先打开。
+            goalText += "  开芯造爆炸";
         }
         if (level.musicBoxCount > 0) {
             goalText += "  音乐盒 " + level.musicBoxCount;
@@ -9634,6 +9666,8 @@ public class GameView extends View {
             return "策略 火箭/罗盘优先抢钥匙";
         } else if (level.musicBoxCount > 0) {
             return "策略 优先开音乐盒铺连击";
+        } else if (level.crystalCoreCount > 0) {
+            return "策略 火箭/罗盘优先开塔芯";
         } else if (getRewardCellCount() >= 3) {
             // 奖励格密集时优先提示精准道具，帮助玩家把额外收益转成通关优势。
             return "策略 火箭/罗盘优先收奖励";
@@ -10097,6 +10131,10 @@ public class GameView extends View {
             // 失败复盘也显示音乐盒剩余，提醒下局优先拿星弦琴储备。
             appendFailureProgressPart(text, "音乐盒剩", getMusicBoxRemainingCount());
         }
+        if (level.crystalCoreCount > 0) {
+            // 塔芯剩余量单独复盘，避免玩家把爆炸棋来源错当普通奖励格。
+            appendFailureProgressPart(text, "塔芯剩", getCrystalCoreRemainingCount());
+        }
         if (level.moveLimitGoal > 0 && !isMoveLimitGoalCleared(level)) {
             appendFailureProgressPart(text, "步限超", movesUsed - getMoveLimitGoal(level));
         }
@@ -10151,6 +10189,18 @@ public class GameView extends View {
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
                 if (musicBox[row][col] > 0) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    private int getCrystalCoreRemainingCount() {
+        int count = 0;
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (crystalCore[row][col] > 0) {
                     count++;
                 }
             }
