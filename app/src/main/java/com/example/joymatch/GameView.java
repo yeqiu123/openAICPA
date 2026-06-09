@@ -9356,6 +9356,8 @@ public class GameView extends View {
             text = "彩虹拱桥 能量+" + lastRainbowArcReward;
         } else if (lastCrystalCoreReward > 0 && age < 900) {
             text = "糖晶塔芯 爆炸+" + lastCrystalCoreReward;
+        } else if (lastTaskRewardType == 25 && age < 900) {
+            text = "音乐盒全开 星弦琴+" + lastMusicBoxMilestoneReward;
         } else if (lastMusicBoxReward > 0 && age < 900) {
             text = "音乐盒 星弦琴+" + lastMusicBoxReward;
         } else if (lastCountdownBombReward > 0 && age < 900) {
@@ -9408,8 +9410,6 @@ public class GameView extends View {
             text = "购买道具 -" + feedbackCleared + "币";
         } else if (lastTaskRewardType == 24 && age < 900) {
             text = "拆弹奖励 护盾+1";
-        } else if (lastTaskRewardType == 25 && age < 900) {
-            text = "音乐盒全开 星弦琴+" + lastMusicBoxMilestoneReward;
         }
 
         textPaint.setTextAlign(Paint.Align.CENTER);
