@@ -10203,6 +10203,9 @@ public class GameView extends View {
         if (dailyChallengeMode) {
             return "下一目标 回到主线继续推进";
         }
+        if (lastMusicBoxMilestoneReward > 0) {
+            return "下一目标 全开星弦琴已入储备";
+        }
         if (!dailyGoalClaimed && dailyGoalProgress >= 6) {
             return "下一目标 每日目标可领取";
         }
@@ -10221,9 +10224,6 @@ public class GameView extends View {
         if (rewardBombMilestone > 0) {
             // 拆弹奖励后提示护盾用途，把高压关奖励接到下一局策略。
             return "下一目标 护盾留给高压炸弹关";
-        }
-        if (lastMusicBoxMilestoneReward > 0) {
-            return "下一目标 全开星弦琴已入储备";
         }
         if (lastMusicBoxReward > 0) {
             // 音乐盒奖励后提示星弦琴用途，把奖励转成下一局主动连击目标。
