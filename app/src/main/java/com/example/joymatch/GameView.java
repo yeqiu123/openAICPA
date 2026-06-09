@@ -9550,6 +9550,7 @@ public class GameView extends View {
             goalText += "  音乐盒 " + level.musicBoxCount;
             // 音乐盒会补星弦琴，开场直接说明收益，方便玩家优先规划。
             goalText += "  开盒送星弦";
+            goalText += "  全开再奖";
         }
         if (level.countdownBombCount > 0) {
             goalText += "  炸弹 " + level.countdownBombCount;
