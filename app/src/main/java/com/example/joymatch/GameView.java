@@ -6919,6 +6919,10 @@ public class GameView extends View {
         int missingRank = Math.max(0, 4 - levelRanks[level]);
         int chapterMissingStars = CHAPTER_CHEST_STARS - getChapterStars(getChapterIndex(level));
         int score = missingStars * 45 + missingRank * 12;
+        if (hasUnclearedLevelChallenge(level)) {
+            // 补挑战能同时提升评级和章节奖励进度，推荐优先级略高。
+            score += 24;
+        }
         if (isEliteLevel(level)) {
             score += 18;
         }
