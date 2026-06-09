@@ -2489,6 +2489,10 @@ public class GameView extends View {
         if (moveChest[row][col] > 0) {
             priority += 18;
         }
+        if (ferrisTicket[row][col] > 0) {
+            // 摩天轮票根会补月光票券并扫场，智能提示优先指向可拿翻盘资源的落点。
+            priority += 16;
+        }
         if (meteorTrail[row][col] > 0) {
             // 流星航线会斜向清场并补金币，智能提示优先指向能打开斜线收益的落点。
             priority += 16;
@@ -6033,6 +6037,13 @@ public class GameView extends View {
                 obstacleText += " 全开";
             }
         }
+        if (level.ferrisTicketCount > 0) {
+            // 摩天轮票根能补月光票券，HUD单独显示剩余和本局票券收益。
+            obstacleText += " 票" + getFerrisTicketRemainingCount();
+            if (lastFerrisTicketReward > 0) {
+                obstacleText += " 月+" + lastFerrisTicketReward;
+            }
+        }
         if (level.meteorTrailCount > 0) {
             // 流星航线会带来斜线清除和金币收益，HUD单独显示剩余和已收金币。
             obstacleText += " 航" + getMeteorTrailRemainingCount();
@@ -8021,6 +8032,9 @@ public class GameView extends View {
         } else if (getMusicBoxRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 开音乐盒拿星弦";
+        } else if (getFerrisTicketRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            return "推荐 " + getPropName(prop) + " 拿票券补月票";
         } else if (getMeteorTrailRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 开航线扫斜线";
@@ -8106,6 +8120,11 @@ public class GameView extends View {
             // 音乐盒能转成可储备星弦琴，推荐精准道具优先开盒。
             return true;
         }
+        if (getFerrisTicketRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            // 摩天轮票根能补月光票券，推荐精准道具提前拿翻盘资源。
+            return true;
+        }
         if (getMeteorTrailRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             // 流星航线能扫开斜线并补金币，推荐精准道具优先打出收益。
@@ -8166,6 +8185,10 @@ public class GameView extends View {
         if (getMusicBoxRemainingCount() > 0) {
             // 音乐盒关失败时直接提示资源目标，帮助下局优先规划星弦琴储备。
             return "建议下局优先开音乐盒";
+        }
+        if (getFerrisTicketRemainingCount() > 0) {
+            // 摩天轮票根失败后提示优先拿票，让下局更早获得续步翻盘资源。
+            return "建议下局优先拿摩天轮票根";
         }
         if (getMeteorTrailRemainingCount() > 0) {
             // 流星航线失败后提示优先打开，把斜线清场和金币收益前置。
@@ -9151,6 +9174,13 @@ public class GameView extends View {
 
         float centerX = rect.right - dp(18);
         float centerY = rect.bottom - dp(18);
+        float pulse = 0.55f + 0.45f * (float) Math.sin(System.currentTimeMillis() / 205.0);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(2 + pulse * 2));
+        paint.setColor(Color.argb((int) (90 + pulse * 95), 255, 236, 118));
+        canvas.drawRoundRect(new RectF(rect.left + dp(5), rect.top + dp(5),
+                rect.right - dp(5), rect.bottom - dp(5)), dp(13), dp(13), paint);
+        paint.setStyle(Paint.Style.FILL);
         RectF ticket = new RectF(centerX - dp(14), centerY - dp(9), centerX + dp(14), centerY + dp(9));
         paint.setColor(Color.argb(230, 255, 236, 118));
         canvas.drawRoundRect(ticket, dp(4), dp(4), paint);
@@ -9709,6 +9739,8 @@ public class GameView extends View {
         }
         if (level.ferrisTicketCount > 0) {
             goalText += "  摩天轮票根 " + level.ferrisTicketCount;
+            // 开场说明票根收益，提醒玩家优先拿月光票券。
+            goalText += "  收票补月票";
         }
         if (level.fireworksBarrelCount > 0) {
             goalText += "  烟花桶 " + level.fireworksBarrelCount;
@@ -9798,6 +9830,8 @@ public class GameView extends View {
             return "策略 火箭/罗盘优先点烟花";
         } else if (level.meteorTrailCount > 0) {
             return "策略 火箭/罗盘优先开航线";
+        } else if (level.ferrisTicketCount > 0) {
+            return "策略 火箭/罗盘优先拿票根";
         } else if (getRewardCellCount() >= 3) {
             // 奖励格密集时优先提示精准道具，帮助玩家把额外收益转成通关优势。
             return "策略 火箭/罗盘优先收奖励";
@@ -10261,6 +10295,10 @@ public class GameView extends View {
             // 失败复盘也显示音乐盒剩余，提醒下局优先拿星弦琴储备。
             appendFailureProgressPart(text, "音乐盒剩", getMusicBoxRemainingCount());
         }
+        if (level.ferrisTicketCount > 0) {
+            // 摩天轮票根剩余量单独复盘，提示下局优先拿续步票券。
+            appendFailureProgressPart(text, "票根剩", getFerrisTicketRemainingCount());
+        }
         if (level.meteorTrailCount > 0) {
             // 流星航线剩余量单独复盘，提示下局优先打开斜线清场收益。
             appendFailureProgressPart(text, "航线剩", getMeteorTrailRemainingCount());
@@ -10335,6 +10373,18 @@ public class GameView extends View {
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
                 if (musicBox[row][col] > 0) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    private int getFerrisTicketRemainingCount() {
+        int count = 0;
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (ferrisTicket[row][col] > 0) {
                     count++;
                 }
             }
