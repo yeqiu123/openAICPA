@@ -40,6 +40,7 @@ public class GameView extends View {
     private static final String KEY_CHAPTER_ELITE_PREFIX = "chapter_elite_";
     private static final String KEY_CHAPTER_RANK_PREFIX = "chapter_rank_";
     private static final String KEY_CHAPTER_HIDDEN_PREFIX = "chapter_hidden_";
+    private static final String KEY_CHAPTER_PERFECT_PREFIX = "chapter_perfect_";
     private static final String KEY_ACHIEVEMENT_PREFIX = "achievement_";
     private static final String KEY_FAIL_STREAK_PREFIX = "fail_streak_";
     private static final String KEY_WIN_STREAK = "win_streak";
@@ -189,6 +190,7 @@ public class GameView extends View {
     private final boolean[] chapterEliteClaimed = new boolean[CHAPTER_COUNT];
     private final boolean[] chapterRankClaimed = new boolean[CHAPTER_COUNT];
     private final boolean[] chapterHiddenClaimed = new boolean[CHAPTER_COUNT];
+    private final boolean[] chapterPerfectClaimed = new boolean[CHAPTER_COUNT];
     private final boolean[] achievementsClaimed = new boolean[ACHIEVEMENT_COUNT];
     private final List<Particle> particles = new ArrayList<>();
     private final List<Level> levels = new ArrayList<>();
@@ -329,6 +331,7 @@ public class GameView extends View {
     private int lastChapterEliteReward;
     private int lastChapterRankReward;
     private int lastChapterHiddenReward;
+    private int lastChapterPerfectReward;
     private int lastGiftReward;
     private int lastMoveChestReward;
     private int lastCloudReward;
@@ -832,6 +835,7 @@ public class GameView extends View {
         lastChapterEliteReward = 0;
         lastChapterRankReward = 0;
         lastChapterHiddenReward = 0;
+        lastChapterPerfectReward = 0;
         lastChestNoticeType = 0;
         lastBoardActionTime = System.currentTimeMillis();
         lastGiftReward = 0;
@@ -3003,6 +3007,7 @@ public class GameView extends View {
             chapterEliteClaimed[i] = prefs.getBoolean(KEY_CHAPTER_ELITE_PREFIX + i, false);
             chapterRankClaimed[i] = prefs.getBoolean(KEY_CHAPTER_RANK_PREFIX + i, false);
             chapterHiddenClaimed[i] = prefs.getBoolean(KEY_CHAPTER_HIDDEN_PREFIX + i, false);
+            chapterPerfectClaimed[i] = prefs.getBoolean(KEY_CHAPTER_PERFECT_PREFIX + i, false);
         }
         for (int i = 0; i < achievementsClaimed.length; i++) {
             achievementsClaimed[i] = prefs.getBoolean(KEY_ACHIEVEMENT_PREFIX + i, false);
@@ -3051,6 +3056,7 @@ public class GameView extends View {
         grantChapterEliteReward();
         grantChapterRankReward();
         grantChapterHiddenReward();
+        grantChapterPerfectReward();
         grantChapterMasteryReward();
         updateDailyGoalProgress();
         prefs.edit()
@@ -3373,6 +3379,25 @@ public class GameView extends View {
         addReserveProp(PROP_STAR_COMPASS, 1);
         prefs.edit()
                 .putBoolean(KEY_CHAPTER_HIDDEN_PREFIX + chapter, true)
+                .putInt(KEY_COINS, coins)
+                .apply();
+    }
+
+    private void grantChapterPerfectReward() {
+        int chapter = getChapterIndex(levelIndex);
+        if (chapterPerfectClaimed[chapter] || getChapterUnlockedCount(chapter) < CHAPTER_SIZE
+                || getChapterPerfectClearCount(chapter) < getChapterUnlockedCount(chapter)) {
+            return;
+        }
+
+        // 全章完美通关给高手向一次性奖励，让极限回访也有明确回报。
+        chapterPerfectClaimed[chapter] = true;
+        lastChapterPerfectReward = 140 + chapter * 28;
+        coins += lastChapterPerfectReward;
+        addReserveProp(PROP_STAR_HARP, 1);
+        addReserveProp(PROP_STAR_COMPASS, 1);
+        prefs.edit()
+                .putBoolean(KEY_CHAPTER_PERFECT_PREFIX + chapter, true)
                 .putInt(KEY_COINS, coins)
                 .apply();
     }
@@ -6560,8 +6585,12 @@ public class GameView extends View {
         if (perfectCount <= 0 && getChapterUnlockedCount(chapter) < CHAPTER_SIZE) {
             return "";
         }
-        // 完美进度展示高手向回访目标，不绑定奖励，保持纯收集追求。
-        return "  完美 " + perfectCount + "/" + getChapterUnlockedCount(chapter);
+        String hint = "";
+        if (perfectCount >= getChapterUnlockedCount(chapter) && getChapterUnlockedCount(chapter) >= CHAPTER_SIZE) {
+            hint = chapterPerfectClaimed[chapter] ? " 已领" : " 奖励";
+        }
+        // 完美进度展示高手向回访目标，并提示整章完美奖励状态。
+        return "  完美 " + perfectCount + "/" + getChapterUnlockedCount(chapter) + hint;
     }
 
     private boolean shouldPulseChapterProgressGoal(int chapter) {
@@ -9315,6 +9344,8 @@ public class GameView extends View {
                 lastChapterRankReward > 0 ? " 潮汐+1" + buildChapterRankPropRewardText() : "");
         addRewardLine(lines, "章节隐藏", lastChapterHiddenReward,
                 lastChapterHiddenReward > 0 ? " 时钟+1 罗盘+1" : "");
+        addRewardLine(lines, "章节完美", lastChapterPerfectReward,
+                lastChapterPerfectReward > 0 ? " 星弦琴+1 罗盘+1" : "");
         if (lastDailyChallengeMilestoneProp != NONE) {
             lines.add("每日连胜 " + getPropName(lastDailyChallengeMilestoneProp) + "+" + lastDailyChallengeMilestoneAmount);
         }
@@ -9386,7 +9417,7 @@ public class GameView extends View {
                 || lastEliteReward > 0 || lastFirstClearReward > 0 || lastFullStarReward > 0
                 || lastReplayReward > 0
                 || lastChapterMasteryReward > 0 || lastChapterEliteReward > 0 || lastChapterRankReward > 0
-                || lastChapterHiddenReward > 0
+                || lastChapterHiddenReward > 0 || lastChapterPerfectReward > 0
                 || lastSeasonReward > 0 || lastDailyChallengeMilestoneProp != NONE)) {
             drawRewardSparkles(canvas, getWidth() / 2f, getHeight() * 0.42f - dp(12));
         }
@@ -9432,6 +9463,9 @@ public class GameView extends View {
             }
             if (lastChapterHiddenReward > 0) {
                 bonusText += "  章节隐藏";
+            }
+            if (lastChapterPerfectReward > 0) {
+                bonusText += "  章节完美";
             }
             if (lastSeasonReward > 0) {
                 bonusText += "  赛季任务";
