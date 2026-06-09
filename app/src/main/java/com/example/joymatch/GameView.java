@@ -9751,6 +9751,10 @@ public class GameView extends View {
         if (winStreakGoalText.length() > 0) {
             return winStreakGoalText;
         }
+        String achievementGoalText = buildAchievementNextGoalText();
+        if (achievementGoalText.length() > 0) {
+            return achievementGoalText;
+        }
         String seasonGoalText = buildSeasonNextGoalText();
         if (seasonGoalText.length() > 0) {
             return seasonGoalText;
@@ -9836,6 +9840,20 @@ public class GameView extends View {
         int prop = getWinStreakMilestoneProp(nextStreak);
         // 结算页提示临近连胜节点，让连续闯关的稀有道具奖励更可见。
         return "下一目标 连胜差" + missingStreak + "奖" + getPropName(prop);
+    }
+
+    private String buildAchievementNextGoalText() {
+        int nextIndex = getNextAchievementRewardIndex();
+        if (nextIndex == NONE) {
+            return "";
+        }
+
+        int missing = nextIndex - getClaimedAchievementCount();
+        if (missing > 0 && missing <= 2) {
+            // 结算页提示临近的高价值成就节点，延长满星和评级后的追求。
+            return "下一目标 成就差" + missing + "奖" + getPropName(getAchievementRewardProp(nextIndex));
+        }
+        return "";
     }
 
     private String buildChapterChestNextGoalText(int chapter) {
