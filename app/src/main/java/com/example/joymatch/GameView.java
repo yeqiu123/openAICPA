@@ -393,6 +393,7 @@ public class GameView extends View {
     private int rewardKeyMilestone;
     private int rewardCellClearedCount;
     private int rewardCellMilestone;
+    private int rewardBombMilestone;
     private int lastShieldReward;
     private int lastTaskRewardType;
     private long feedbackStartTime;
@@ -894,6 +895,7 @@ public class GameView extends View {
         rewardKeyMilestone = 0;
         rewardCellClearedCount = 0;
         rewardCellMilestone = 0;
+        rewardBombMilestone = 0;
         lastShieldReward = 0;
         lastTaskRewardType = 0;
         targetKind = level.targetKind;
@@ -5449,6 +5451,35 @@ public class GameView extends View {
             showFeedback(1, level.keyCount);
         }
 
+        if (level.countdownBombCount > 0 && getCountdownBombRemainingCount() <= 0 && rewardBombMilestone == 0) {
+            // 全部拆弹后返还护盾，让高压关卡的关键处理有一次明确补给。
+            addProp(PROP_SHIELD, 1);
+            rewardBombMilestone = 1;
+            lastTaskRewardType = 24;
+            lastGiftReward = 0;
+            honeySpreadCount = 0;
+            lastMoveChestReward = 0;
+            lastCloudReward = 0;
+            lastFlowerReward = 0;
+            lastRainbowBottleReward = 0;
+            lastEnergyPotionReward = 0;
+            lastButterflyReward = 0;
+            lastMysteryRewardType = 0;
+            lastMysteryRewardAmount = 0;
+            lastMysteryRewardProp = NONE;
+            lastPearlReward = 0;
+            lastFerrisTicketReward = 0;
+            lastFireworksBarrelReward = 0;
+            lastStarportBeaconReward = 0;
+            lastMeteorTrailReward = 0;
+            lastRainbowArcReward = 0;
+            lastCrystalCoreReward = 0;
+            lastMusicBoxReward = 0;
+            lastCountdownBombReward = 0;
+            lastEnergyRewardProp = NONE;
+            showFeedback(1, level.countdownBombCount);
+        }
+
         int rewardCellMilestoneNow = rewardCellClearedCount / 3;
         if (rewardCellMilestoneNow > rewardCellMilestone) {
             // 奖励格形成独立的局内累计目标，鼓励玩家主动规划高收益格。
@@ -9203,6 +9234,8 @@ public class GameView extends View {
             text = "金币不足 还差" + feedbackCleared;
         } else if (lastTaskRewardType == 22 && age < 900) {
             text = "购买道具 -" + feedbackCleared + "币";
+        } else if (lastTaskRewardType == 24 && age < 900) {
+            text = "拆弹奖励 护盾+1";
         }
 
         textPaint.setTextAlign(Paint.Align.CENTER);
