@@ -10187,6 +10187,9 @@ public class GameView extends View {
             // 拆弹奖励后提示护盾用途，把高压关奖励接到下一局策略。
             return "下一目标 护盾留给高压炸弹关";
         }
+        if (lastMusicBoxMilestoneReward > 0) {
+            return "下一目标 全开星弦琴已入储备";
+        }
         if (lastMusicBoxReward > 0) {
             // 音乐盒奖励后提示星弦琴用途，把奖励转成下一局主动连击目标。
             return "下一目标 星弦琴已入储备";
