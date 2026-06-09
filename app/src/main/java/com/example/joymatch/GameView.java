@@ -9435,6 +9435,8 @@ public class GameView extends View {
         }
         if (level.musicBoxCount > 0) {
             goalText += "  音乐盒 " + level.musicBoxCount;
+            // 音乐盒会补星弦琴，开场直接说明收益，方便玩家优先规划。
+            goalText += "  开盒送星弦";
         }
         if (level.countdownBombCount > 0) {
             goalText += "  炸弹 " + level.countdownBombCount;
@@ -9481,6 +9483,8 @@ public class GameView extends View {
             return "策略 先拆炸弹拿护盾";
         } else if (level.keyCount > 0) {
             return "策略 火箭/罗盘优先抢钥匙";
+        } else if (level.musicBoxCount > 0) {
+            return "策略 优先开音乐盒铺连击";
         } else if (getRewardCellCount() >= 3) {
             // 奖励格密集时优先提示精准道具，帮助玩家把额外收益转成通关优势。
             return "策略 火箭/罗盘优先收奖励";
@@ -9723,6 +9727,10 @@ public class GameView extends View {
             // 拆弹护盾属于局内阶段奖励，也显示到结算明细里。
             lines.add("拆弹奖励 护盾+1");
         }
+        if (lastMusicBoxReward > 0) {
+            // 终章音乐盒的星弦琴补给也显示到奖励明细，避免被普通消除反馈吞掉。
+            lines.add("音乐盒 星弦琴+" + lastMusicBoxReward);
+        }
         if (lastDailyChallengeMilestoneProp != NONE) {
             lines.add("每日连胜 " + getPropName(lastDailyChallengeMilestoneProp) + "+" + lastDailyChallengeMilestoneAmount);
         }
@@ -9857,6 +9865,10 @@ public class GameView extends View {
             if (rewardBombMilestone > 0) {
                 // 拆完炸弹的护盾奖励也进入结算摘要，强化高压关卡正反馈。
                 bonusText += "  拆弹护盾";
+            }
+            if (lastMusicBoxReward > 0) {
+                // 音乐盒带来的星弦琴补给进入结算摘要，强化终章奖励格追求。
+                bonusText += "  音乐盒" + lastMusicBoxReward;
             }
             drawTextFit(canvas, bonusText, new RectF(dp(24), getHeight() * 0.475f,
                     getWidth() - dp(24), getHeight() * 0.505f), 16, Color.WHITE);
@@ -10036,6 +10048,10 @@ public class GameView extends View {
         if (rewardBombMilestone > 0) {
             // 拆弹奖励后提示护盾用途，把高压关奖励接到下一局策略。
             return "下一目标 护盾留给高压炸弹关";
+        }
+        if (lastMusicBoxReward > 0) {
+            // 音乐盒奖励后提示星弦琴用途，把奖励转成下一局主动连击目标。
+            return "下一目标 用星弦琴铺连击";
         }
         String rewardCellGoalText = buildRewardCellNextGoalText();
         if (rewardCellGoalText.length() > 0) {
