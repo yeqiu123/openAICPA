@@ -7176,13 +7176,20 @@ public class GameView extends View {
             textPaint.setColor(Color.WHITE);
             String label = propInventory[prop] > 0
                     ? getPropName(prop) + " x" + propInventory[prop]
-                    : getPropName(prop) + " " + PROP_COSTS[prop] + "币";
+                    : buildPropPurchaseLabel(prop);
             if (propReserve[prop] > 0) {
                 drawReservePropBadge(canvas, rect, propReserve[prop]);
             }
             canvas.drawText(label, rect.centerX(), rect.bottom - dp(7), textPaint);
         }
         drawRecommendedPropTip(canvas, top);
+    }
+
+    private String buildPropPurchaseLabel(int prop) {
+        if (coins < PROP_COSTS[prop]) {
+            return getPropName(prop) + " 差" + (PROP_COSTS[prop] - coins) + "币";
+        }
+        return getPropName(prop) + " " + PROP_COSTS[prop] + "币";
     }
 
     private void drawRecommendedPropTip(Canvas canvas, float propBarTop) {
