@@ -9731,6 +9731,10 @@ public class GameView extends View {
         if (getAvailableRankChests() > 0) {
             return "下一目标 评级宝箱可领取";
         }
+        String seasonGoalText = buildSeasonNextGoalText();
+        if (seasonGoalText.length() > 0) {
+            return seasonGoalText;
+        }
         String masteryGoalText = buildChapterMasteryNextGoalText(chapter);
         if (masteryGoalText.length() > 0) {
             return masteryGoalText;
@@ -9762,6 +9766,20 @@ public class GameView extends View {
         }
         // 通关页给一个明确的下一步，减少玩家在主线和补星之间的选择成本。
         return "下一目标 收集满星和高评级";
+    }
+
+    private String buildSeasonNextGoalText() {
+        int levelMissing = getNextSeasonLevelTarget() - seasonLevels;
+        int starMissing = getNextSeasonStarTarget() - seasonStars;
+        if (levelMissing <= 0 || starMissing <= 0) {
+            return "下一目标 赛季奖励可冲";
+        }
+        if (levelMissing <= 2 || starMissing <= 6) {
+            // 通关后提示赛季差额，把日常推进和补星都接到长期奖励。
+            return starMissing <= levelMissing * 3 ? "下一目标 赛季差" + starMissing + "星"
+                    : "下一目标 赛季差" + levelMissing + "关";
+        }
+        return "";
     }
 
     private String buildChapterMasteryNextGoalText(int chapter) {
