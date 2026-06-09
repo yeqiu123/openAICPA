@@ -9478,7 +9478,7 @@ public class GameView extends View {
         if (!dailyChallengeMode && levelRanks[levelIndex] >= 4 && !levelPerfectCleared[levelIndex]) {
             return "策略 控步数留爆炸冲完美";
         } else if (level.countdownBombCount > 0) {
-            return "策略 护盾/时钟稳住炸弹";
+            return "策略 先拆炸弹拿护盾";
         } else if (level.keyCount > 0) {
             return "策略 火箭/罗盘优先抢钥匙";
         } else if (getRewardCellCount() >= 3) {
