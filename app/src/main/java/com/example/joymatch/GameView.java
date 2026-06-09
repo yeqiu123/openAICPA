@@ -7185,7 +7185,8 @@ public class GameView extends View {
 
     private String buildActivePropTip() {
         String name = getPropName(activeProp);
-        String prefix = selectedRow == NONE ? name + " 先点棋盘预览 " : name + " 再点同格确认 ";
+        String previewText = buildActivePropPreviewCountText();
+        String prefix = selectedRow == NONE ? name + " 先点棋盘预览 " : name + " 再点同格确认" + previewText + " ";
         if (activeProp == PROP_HAMMER) {
             return prefix + "单格清除";
         } else if (activeProp == PROP_BOMB) {
@@ -7214,6 +7215,14 @@ public class GameView extends View {
             return prefix + "剪开锁链藤蔓";
         }
         return prefix + "使用";
+    }
+
+    private String buildActivePropPreviewCountText() {
+        if (selectedRow == NONE || selectedCol == NONE) {
+            return "";
+        }
+        int count = buildActivePropPreviewCells(selectedRow, selectedCol).size();
+        return count > 1 ? " " + count + "格" : "";
     }
 
     private int getFirstRecommendedProp() {
