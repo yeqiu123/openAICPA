@@ -6138,7 +6138,7 @@ public class GameView extends View {
         if (claimable) {
             text += " " + getPropName(getChapterChestRewardProp(chapter));
         }
-        canvas.drawText(text, chapterChestRect.centerX(), chapterChestRect.centerY() + dp(5), textPaint);
+        drawTextFit(canvas, text, chapterChestRect, 14, claimable ? Color.rgb(33, 37, 56) : Color.WHITE);
         drawChapterChestProgressBar(canvas, chapter, chapterChestRect, claimable);
     }
 
