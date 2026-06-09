@@ -9726,7 +9726,7 @@ public class GameView extends View {
                 || lastChapterMasteryReward > 0 || lastChapterEliteReward > 0 || lastChapterRankReward > 0
                 || lastChapterHiddenReward > 0 || lastChapterPerfectReward > 0
                 || lastSeasonReward > 0 || lastDailyChallengeMilestoneProp != NONE
-                || rewardCellClearedCount >= 3)) {
+                || rewardCellClearedCount >= 3 || rewardBombMilestone > 0)) {
             drawRewardSparkles(canvas, getWidth() / 2f, getHeight() * 0.42f - dp(12));
         }
 
@@ -9783,6 +9783,10 @@ public class GameView extends View {
             if (rewardCellClearedCount >= 3) {
                 // 结算页回看本局奖励格收益，强化主动收奖励格的成就感。
                 bonusText += "  奖励格" + rewardCellClearedCount;
+            }
+            if (rewardBombMilestone > 0) {
+                // 拆完炸弹的护盾奖励也进入结算摘要，强化高压关卡正反馈。
+                bonusText += "  拆弹护盾";
             }
             drawTextFit(canvas, bonusText, new RectF(dp(24), getHeight() * 0.475f,
                     getWidth() - dp(24), getHeight() * 0.505f), 16, Color.WHITE);
