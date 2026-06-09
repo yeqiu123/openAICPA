@@ -7020,7 +7020,8 @@ public class GameView extends View {
 
     private boolean isReplayTargetLevel(int level) {
         return level <= highestUnlockedLevel && levelStars[level] > 0
-                && (levelStars[level] < 3 || levelRanks[level] < 4);
+                && (levelStars[level] < 3 || levelRanks[level] < 4
+                || (isHiddenChallengeLevel(level) && !levelHiddenChallengesCleared[level]));
     }
 
     private int getReplayPriorityScore(int level) {
