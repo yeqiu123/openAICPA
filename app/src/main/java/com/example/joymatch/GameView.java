@@ -9235,6 +9235,9 @@ public class GameView extends View {
             return "策略 护盾/时钟稳住炸弹";
         } else if (level.keyCount > 0) {
             return "策略 火箭/罗盘优先抢钥匙";
+        } else if (getRewardCellCount() >= 3) {
+            // 奖励格密集时优先提示精准道具，帮助玩家把额外收益转成通关优势。
+            return "策略 火箭/罗盘优先收奖励";
         } else if (level.chainCount > 0) {
             return "策略 破锁先开链";
         } else if (level.honeyCount > 0) {
