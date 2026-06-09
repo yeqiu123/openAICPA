@@ -2489,6 +2489,10 @@ public class GameView extends View {
         if (moveChest[row][col] > 0) {
             priority += 18;
         }
+        if (luckyClover[row][col] > 0) {
+            // 幸运草会给多种随机奖励，智能提示优先指向可翻盘的好运点。
+            priority += 15;
+        }
         if (luckyStar[row][col] > 0) {
             // 幸运星会直接给随机道具，智能提示优先指向可补库存的资源点。
             priority += 15;
@@ -6053,6 +6057,13 @@ public class GameView extends View {
                 obstacleText += " 全开";
             }
         }
+        if (level.luckyCloverCount > 0) {
+            // 幸运草会随机补金币、步数、能量或道具，HUD显示剩余和最新好运。
+            obstacleText += " 草" + getLuckyCloverRemainingCount();
+            if (lastLuckyCloverRewardType > 0) {
+                obstacleText += " 好运";
+            }
+        }
         if (level.luckyStarCount > 0) {
             // 幸运星直接补随机道具，HUD显示剩余和本局最新道具。
             obstacleText += " 星" + getLuckyStarRemainingCount();
@@ -8076,6 +8087,9 @@ public class GameView extends View {
         } else if (getMusicBoxRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 开音乐盒拿星弦";
+        } else if (getLuckyCloverRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            return "推荐 " + getPropName(prop) + " 收幸运草拿好运";
         } else if (getLuckyStarRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 收幸运星拿道具";
@@ -8176,6 +8190,11 @@ public class GameView extends View {
             // 音乐盒能转成可储备星弦琴，推荐精准道具优先开盒。
             return true;
         }
+        if (getLuckyCloverRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            // 幸运草奖励覆盖金币、步数、能量和道具，推荐精准道具优先收好运。
+            return true;
+        }
         if (getLuckyStarRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             // 幸运星会直接补随机道具，推荐精准道具优先拿库存收益。
@@ -8261,6 +8280,10 @@ public class GameView extends View {
         if (getMusicBoxRemainingCount() > 0) {
             // 音乐盒关失败时直接提示资源目标，帮助下局优先规划星弦琴储备。
             return "建议下局优先开音乐盒";
+        }
+        if (getLuckyCloverRemainingCount() > 0) {
+            // 幸运草失败后提示优先收集，让随机好运更早进入下局节奏。
+            return "建议下局优先收幸运草";
         }
         if (getLuckyStarRemainingCount() > 0) {
             // 幸运星失败后提示优先收集，让随机道具更早加入下局库存。
@@ -9199,6 +9222,13 @@ public class GameView extends View {
 
         float centerX = rect.left + rect.width() * 0.28f;
         float centerY = rect.bottom - dp(18);
+        float pulse = 0.55f + 0.45f * (float) Math.sin(System.currentTimeMillis() / 215.0);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(2 + pulse * 2));
+        paint.setColor(Color.argb((int) (90 + pulse * 95), 80, 198, 126));
+        canvas.drawRoundRect(new RectF(rect.left + dp(5), rect.top + dp(5),
+                rect.right - dp(5), rect.bottom - dp(5)), dp(13), dp(13), paint);
+        paint.setStyle(Paint.Style.FILL);
         paint.setColor(Color.argb(225, 80, 198, 126));
         canvas.drawCircle(centerX - dp(6), centerY - dp(5), dp(7), paint);
         canvas.drawCircle(centerX + dp(6), centerY - dp(5), dp(7), paint);
@@ -9847,6 +9877,8 @@ public class GameView extends View {
         }
         if (level.luckyCloverCount > 0) {
             goalText += "  幸运草 " + level.luckyCloverCount;
+            // 开场说明幸运草收益，提醒玩家优先收集随机好运。
+            goalText += "  收草拿好运";
         }
         if (level.mysteryBoxCount > 0) {
             goalText += "  神秘盒 " + level.mysteryBoxCount;
@@ -9966,6 +9998,8 @@ public class GameView extends View {
             return "策略 火箭/罗盘优先开神秘盒";
         } else if (level.luckyStarCount > 0) {
             return "策略 火箭/罗盘优先收幸运星";
+        } else if (level.luckyCloverCount > 0) {
+            return "策略 火箭/罗盘优先收幸运草";
         } else if (getRewardCellCount() >= 3) {
             // 奖励格密集时优先提示精准道具，帮助玩家把额外收益转成通关优势。
             return "策略 火箭/罗盘优先收奖励";
@@ -10429,6 +10463,10 @@ public class GameView extends View {
             // 失败复盘也显示音乐盒剩余，提醒下局优先拿星弦琴储备。
             appendFailureProgressPart(text, "音乐盒剩", getMusicBoxRemainingCount());
         }
+        if (level.luckyCloverCount > 0) {
+            // 幸运草剩余量单独复盘，提示下局优先拿随机好运。
+            appendFailureProgressPart(text, "幸运草剩", getLuckyCloverRemainingCount());
+        }
         if (level.luckyStarCount > 0) {
             // 幸运星剩余量单独复盘，提示下局优先拿随机道具。
             appendFailureProgressPart(text, "幸运星剩", getLuckyStarRemainingCount());
@@ -10523,6 +10561,18 @@ public class GameView extends View {
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
                 if (musicBox[row][col] > 0) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    private int getLuckyCloverRemainingCount() {
+        int count = 0;
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (luckyClover[row][col] > 0) {
                     count++;
                 }
             }
