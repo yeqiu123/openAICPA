@@ -7782,6 +7782,9 @@ public class GameView extends View {
         } else if (level.countdownBombCount > 0
                 && (prop == PROP_SHIELD || prop == PROP_CLOCK || prop == PROP_SNOW_GLOBE)) {
             return "推荐 " + getPropName(prop) + " 稳住炸弹";
+        } else if (isLastCountdownBombReady()
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            return "推荐 " + getPropName(prop) + " 拆尾弹拿护盾";
         } else if (keyRemaining > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 抢钥匙";
@@ -7835,6 +7838,11 @@ public class GameView extends View {
                 && (prop == PROP_SHIELD || prop == PROP_CLOCK || prop == PROP_SNOW_GLOBE)) {
             return true;
         }
+        if (isLastCountdownBombReady()
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            // 只剩最后一个炸弹时，推荐精准道具收尾并触发护盾奖励。
+            return true;
+        }
         if (keyRemaining > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             // 钥匙关优先推荐可直达关键格的道具，减少后期找不到落点的挫败感。
@@ -7879,6 +7887,11 @@ public class GameView extends View {
 
     private boolean isRewardCellMilestoneNear() {
         return rewardCellClearedCount % 3 == 2 && getRewardCellCount() > 0;
+    }
+
+    private boolean isLastCountdownBombReady() {
+        return levels.get(levelIndex).countdownBombCount > 0 && rewardBombMilestone == 0
+                && getCountdownBombRemainingCount() == 1;
     }
 
     private String buildFailurePropAdviceText() {
