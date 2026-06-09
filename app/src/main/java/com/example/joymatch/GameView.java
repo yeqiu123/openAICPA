@@ -2553,6 +2553,10 @@ public class GameView extends View {
             // 音乐盒能产出可储备星弦琴，智能提示优先指向能开盒的走法。
             priority += 24;
         }
+        if (resonanceDrum[row][col] > 0) {
+            // 共鸣鼓能直接进入爆发节奏，智能提示优先指向可打开连击窗口的落点。
+            priority += 18;
+        }
         if (auroraPrism[row][col] > 0) {
             // 极光棱镜会补能量并制造彩虹棋，智能提示优先指向爆发资源点。
             priority += 18;
@@ -6186,6 +6190,13 @@ public class GameView extends View {
                 obstacleText += " 极+" + lastAuroraPrismReward;
             }
         }
+        if (level.resonanceDrumCount > 0) {
+            // 共鸣鼓会开启爆发节奏，HUD单独显示剩余和本局爆发收益。
+            obstacleText += " 鼓" + getResonanceDrumRemainingCount();
+            if (lastResonanceDrumReward > 0) {
+                obstacleText += " 爆+" + lastResonanceDrumReward;
+            }
+        }
         if (level.crystalCoreCount > 0) {
             // 糖晶塔芯会生成爆炸棋，HUD单独露出剩余数量，避免淹没在奖励格总数里。
             obstacleText += " 晶" + getCrystalCoreRemainingCount();
@@ -8198,6 +8209,9 @@ public class GameView extends View {
         } else if (getAuroraPrismRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 开极光攒爆发";
+        } else if (getResonanceDrumRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            return "推荐 " + getPropName(prop) + " 敲共鸣鼓进爆发";
         } else if (getCrystalCoreRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 开塔芯造爆炸";
@@ -8349,6 +8363,11 @@ public class GameView extends View {
             // 极光棱镜能补能量和彩虹棋，推荐精准道具优先触发爆发资源。
             return true;
         }
+        if (getResonanceDrumRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            // 共鸣鼓会立刻开启爆发节奏，推荐精准道具优先打出连击窗口。
+            return true;
+        }
         if (getCrystalCoreRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             // 糖晶塔芯打开后会补爆炸棋，推荐精准道具优先触发连锁。
@@ -8454,6 +8473,10 @@ public class GameView extends View {
         if (getAuroraPrismRemainingCount() > 0) {
             // 极光棱镜失败后提示优先打开，让能量和彩虹棋更早进入爆发节奏。
             return "建议下局优先开极光棱镜";
+        }
+        if (getResonanceDrumRemainingCount() > 0) {
+            // 共鸣鼓失败后提示优先敲响，把爆发窗口提前打出来。
+            return "建议下局优先敲共鸣鼓";
         }
         if (getCrystalCoreRemainingCount() > 0) {
             // 糖晶塔芯失败后提示精准开芯，帮助下局把爆炸棋收益提前打出来。
@@ -9208,6 +9231,13 @@ public class GameView extends View {
 
         float centerX = rect.right - dp(18);
         float centerY = rect.top + dp(19);
+        float pulse = 0.55f + 0.45f * (float) Math.sin(System.currentTimeMillis() / 205.0);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(2 + pulse * 2));
+        paint.setColor(Color.argb((int) (90 + pulse * 95), 255, 159, 64));
+        canvas.drawRoundRect(new RectF(rect.left + dp(5), rect.top + dp(5),
+                rect.right - dp(5), rect.bottom - dp(5)), dp(13), dp(13), paint);
+        paint.setStyle(Paint.Style.FILL);
         paint.setColor(Color.argb(225, 255, 159, 64));
         canvas.drawOval(new RectF(centerX - dp(13), centerY - dp(8), centerX + dp(13), centerY + dp(8)), paint);
         paint.setColor(Color.argb(230, 255, 236, 118));
@@ -9219,6 +9249,7 @@ public class GameView extends View {
         paint.setColor(Color.argb(210, 33, 37, 56));
         canvas.drawLine(centerX - dp(16), centerY - dp(12), centerX - dp(6), centerY - dp(5), paint);
         canvas.drawLine(centerX + dp(16), centerY - dp(12), centerX + dp(6), centerY - dp(5), paint);
+        postInvalidateOnAnimation();
     }
 
     private void drawAuroraPrism(Canvas canvas, int row, int col, RectF rect) {
@@ -10031,6 +10062,8 @@ public class GameView extends View {
         }
         if (level.resonanceDrumCount > 0) {
             goalText += "  共鸣鼓 " + level.resonanceDrumCount;
+            // 开场说明共鸣鼓收益，提醒玩家优先打开爆发窗口。
+            goalText += "  敲鼓进爆发";
         }
         if (level.auroraPrismCount > 0) {
             goalText += "  极光棱镜 " + level.auroraPrismCount;
@@ -10178,6 +10211,8 @@ public class GameView extends View {
             return "策略 火箭/罗盘优先开信标";
         } else if (level.auroraPrismCount > 0) {
             return "策略 火箭/罗盘优先开极光";
+        } else if (level.resonanceDrumCount > 0) {
+            return "策略 火箭/罗盘优先敲共鸣";
         } else if (level.fireworksBarrelCount > 0) {
             return "策略 火箭/罗盘优先点烟花";
         } else if (level.meteorTrailCount > 0) {
@@ -10727,6 +10762,10 @@ public class GameView extends View {
             // 极光棱镜剩余量单独复盘，提示下局优先积攒能量和彩虹棋。
             appendFailureProgressPart(text, "极光剩", getAuroraPrismRemainingCount());
         }
+        if (level.resonanceDrumCount > 0) {
+            // 共鸣鼓剩余量单独复盘，提示下局优先开启爆发节奏。
+            appendFailureProgressPart(text, "共鸣剩", getResonanceDrumRemainingCount());
+        }
         if (level.crystalCoreCount > 0) {
             // 塔芯剩余量单独复盘，避免玩家把爆炸棋来源错当普通奖励格。
             appendFailureProgressPart(text, "塔芯剩", getCrystalCoreRemainingCount());
@@ -10969,6 +11008,18 @@ public class GameView extends View {
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
                 if (auroraPrism[row][col] > 0) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    private int getResonanceDrumRemainingCount() {
+        int count = 0;
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (resonanceDrum[row][col] > 0) {
                     count++;
                 }
             }
