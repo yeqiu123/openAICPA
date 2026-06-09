@@ -2478,6 +2478,10 @@ public class GameView extends View {
         }
         if (hasRewardCell(row, col)) {
             priority += 14;
+            if (isRewardCellMilestoneNear()) {
+                // 只差1个奖励格拿罗盘时，智能提示优先指向可收奖励格的走法。
+                priority += 20;
+            }
         }
         return priority;
     }
