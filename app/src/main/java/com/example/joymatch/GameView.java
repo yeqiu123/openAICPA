@@ -5855,6 +5855,9 @@ public class GameView extends View {
         if (level.keyCount > 0) {
             obstacleText += " 钥" + keyRemaining;
         }
+        if (level.countdownBombCount > 0) {
+            obstacleText += " 炸" + getCountdownBombRemainingCount() + "/" + getLowestCountdownBombTimer();
+        }
         drawTextFitRight(canvas, obstacleText, new RectF(getWidth() * 0.48f, dp(118), getWidth() - dp(18), dp(136)), 15, Color.WHITE);
         textPaint.setTextSize(sp(13));
         String starText = buildStars(getPreviewStars(level));
@@ -9653,6 +9656,31 @@ public class GameView extends View {
             }
         }
         return urgency;
+    }
+
+    private int getCountdownBombRemainingCount() {
+        int count = 0;
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (countdownBomb[row][col] > 0) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    private int getLowestCountdownBombTimer() {
+        int timer = 0;
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (countdownBomb[row][col] > 0) {
+                    // HUD显示最短倒计时，帮助玩家快速判断是否需要立刻处理炸弹。
+                    timer = timer == 0 ? countdownBomb[row][col] : Math.min(timer, countdownBomb[row][col]);
+                }
+            }
+        }
+        return timer;
     }
 
     private void appendFailureProgressPart(StringBuilder text, String label, int amount) {
