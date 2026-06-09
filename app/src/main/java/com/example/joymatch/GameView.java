@@ -5848,12 +5848,15 @@ public class GameView extends View {
 
         // 点选类道具用棋盘预览标出影响范围，减少误点成本。
         float pulse = 0.5f + 0.5f * (float) Math.sin(System.currentTimeMillis() / 160.0);
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(dp(2 + pulse));
-        paint.setColor(Color.argb((int) (145 + pulse * 70), 255, 236, 133));
         for (Cell cell : cells) {
             RectF rect = new RectF(boardLeft + cell.col * tileSize + dp(5), boardTop + cell.row * tileSize + dp(5),
                     boardLeft + (cell.col + 1) * tileSize - dp(5), boardTop + (cell.row + 1) * tileSize - dp(5));
+            paint.setStyle(Paint.Style.FILL);
+            paint.setColor(Color.argb((int) (35 + pulse * 35), 255, 236, 133));
+            canvas.drawRoundRect(rect, dp(10), dp(10), paint);
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(dp(2 + pulse));
+            paint.setColor(Color.argb((int) (145 + pulse * 70), 255, 236, 133));
             canvas.drawRoundRect(rect, dp(10), dp(10), paint);
         }
         paint.setStyle(Paint.Style.FILL);
