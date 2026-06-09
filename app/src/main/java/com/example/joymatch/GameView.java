@@ -2489,6 +2489,10 @@ public class GameView extends View {
         if (moveChest[row][col] > 0) {
             priority += 18;
         }
+        if (starportBeacon[row][col] > 0) {
+            // 星港信标会补方向特效，智能提示优先指向可打开横竖连锁的落点。
+            priority += 17;
+        }
         if (rainbowArc[row][col] > 0) {
             // 彩虹拱桥会生成彩虹棋，智能提示优先指向能启动大连锁的落点。
             priority += 18;
@@ -6021,6 +6025,13 @@ public class GameView extends View {
                 obstacleText += " 全开";
             }
         }
+        if (level.starportBeaconCount > 0) {
+            // 星港信标能制造方向特效，HUD单独显示剩余和本局能量收益。
+            obstacleText += " 港" + getStarportBeaconRemainingCount();
+            if (lastStarportBeaconReward > 0) {
+                obstacleText += " 向+" + lastStarportBeaconReward;
+            }
+        }
         if (level.rainbowArcCount > 0) {
             // 彩虹拱桥是彩虹棋来源，HUD单独显示剩余和本局能量收益。
             obstacleText += " 拱" + getRainbowArcRemainingCount();
@@ -7988,6 +7999,9 @@ public class GameView extends View {
         } else if (getMusicBoxRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 开音乐盒拿星弦";
+        } else if (getStarportBeaconRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            return "推荐 " + getPropName(prop) + " 开信标铺方向";
         } else if (getRainbowArcRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 开拱桥造彩虹";
@@ -8064,6 +8078,11 @@ public class GameView extends View {
             // 音乐盒能转成可储备星弦琴，推荐精准道具优先开盒。
             return true;
         }
+        if (getStarportBeaconRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            // 星港信标打开后会补方向特效，推荐精准道具提前铺开横竖连锁。
+            return true;
+        }
         if (getRainbowArcRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             // 彩虹拱桥打开后会补彩虹棋，推荐精准道具提前引爆连锁。
@@ -8109,6 +8128,10 @@ public class GameView extends View {
         if (getMusicBoxRemainingCount() > 0) {
             // 音乐盒关失败时直接提示资源目标，帮助下局优先规划星弦琴储备。
             return "建议下局优先开音乐盒";
+        }
+        if (getStarportBeaconRemainingCount() > 0) {
+            // 星港信标失败后提示优先开信标，把方向特效收益提前打出来。
+            return "建议下局优先开星港信标";
         }
         if (getRainbowArcRemainingCount() > 0) {
             // 彩虹拱桥失败后提示优先开桥，把彩虹棋收益前置到下局开局节奏里。
@@ -9120,7 +9143,12 @@ public class GameView extends View {
 
         float centerX = rect.right - dp(18);
         float centerY = rect.top + dp(18);
+        float pulse = 0.55f + 0.45f * (float) Math.sin(System.currentTimeMillis() / 200.0);
         paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(2 + pulse * 2));
+        paint.setColor(Color.argb((int) (90 + pulse * 95), 116, 219, 214));
+        canvas.drawRoundRect(new RectF(rect.left + dp(5), rect.top + dp(5),
+                rect.right - dp(5), rect.bottom - dp(5)), dp(13), dp(13), paint);
         paint.setStrokeWidth(dp(2));
         paint.setColor(Color.argb(230, 255, 236, 118));
         canvas.drawCircle(centerX, centerY, dp(13), paint);
@@ -9629,6 +9657,8 @@ public class GameView extends View {
         }
         if (level.starportBeaconCount > 0) {
             goalText += "  星港信标 " + level.starportBeaconCount;
+            // 开场说明信标收益，提醒玩家优先拿方向特效扩大连锁。
+            goalText += "  开标铺方向";
         }
         if (level.meteorTrailCount > 0) {
             goalText += "  流星航线 " + level.meteorTrailCount;
@@ -9700,6 +9730,8 @@ public class GameView extends View {
             return "策略 火箭/罗盘优先开塔芯";
         } else if (level.rainbowArcCount > 0) {
             return "策略 火箭/罗盘优先开拱桥";
+        } else if (level.starportBeaconCount > 0) {
+            return "策略 火箭/罗盘优先开信标";
         } else if (getRewardCellCount() >= 3) {
             // 奖励格密集时优先提示精准道具，帮助玩家把额外收益转成通关优势。
             return "策略 火箭/罗盘优先收奖励";
@@ -10163,6 +10195,10 @@ public class GameView extends View {
             // 失败复盘也显示音乐盒剩余，提醒下局优先拿星弦琴储备。
             appendFailureProgressPart(text, "音乐盒剩", getMusicBoxRemainingCount());
         }
+        if (level.starportBeaconCount > 0) {
+            // 星港信标剩余量单独复盘，提示下局优先拿方向特效爆发点。
+            appendFailureProgressPart(text, "信标剩", getStarportBeaconRemainingCount());
+        }
         if (level.rainbowArcCount > 0) {
             // 彩虹拱桥剩余量单独复盘，提示下局优先拿彩虹棋爆发点。
             appendFailureProgressPart(text, "拱桥剩", getRainbowArcRemainingCount());
@@ -10225,6 +10261,18 @@ public class GameView extends View {
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
                 if (musicBox[row][col] > 0) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    private int getStarportBeaconRemainingCount() {
+        int count = 0;
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (starportBeacon[row][col] > 0) {
                     count++;
                 }
             }
