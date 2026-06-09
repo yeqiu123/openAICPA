@@ -7385,6 +7385,10 @@ public class GameView extends View {
             // 奖励格多的未完成关更适合回访，补评级时也能顺手拿局内补给。
             score += 8;
         }
+        if (levels.get(level).countdownBombCount > 0) {
+            // 炸弹关回访可以顺手拿护盾补给，略微提高推荐优先级。
+            score += 9;
+        }
         return score;
     }
 
@@ -7398,6 +7402,9 @@ public class GameView extends View {
         }
         if (levelRanks[level] >= 4 && !levelPerfectCleared[level]) {
             return "冲完美";
+        }
+        if (levels.get(level).countdownBombCount > 0) {
+            return "拆弹拿护盾";
         }
         if (getLevelRewardCellCount(levels.get(level)) >= 3) {
             return "收奖励格冲评级";
