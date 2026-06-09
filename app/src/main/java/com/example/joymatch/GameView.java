@@ -6068,7 +6068,19 @@ public class GameView extends View {
         if (levelStars[level] < 3) {
             return "星";
         }
-        return buildReplayChallengeReason(level).length() > 0 ? "补" : "评";
+        Level replayLevel = levels.get(level);
+        if (replayLevel.elite && levelRanks[level] < 4) {
+            return "精";
+        } else if (replayLevel.moveLimitGoal > 0 && levelRanks[level] < 4) {
+            return "步";
+        } else if (replayLevel.comboGoal > 0 && levelRanks[level] < 4) {
+            return "连";
+        } else if (replayLevel.scoreGoal > 0 && levelRanks[level] < 4) {
+            return "分";
+        } else if (isHiddenChallengeLevel(level) && levelRanks[level] < 4) {
+            return "隐";
+        }
+        return "评";
     }
 
     private void drawHighRankMapGlow(Canvas canvas, int level, RectF rect) {
