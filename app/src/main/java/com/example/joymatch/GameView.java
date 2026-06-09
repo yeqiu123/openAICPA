@@ -2715,7 +2715,9 @@ public class GameView extends View {
         lastChapterChestReward = 0;
         coins += lastDailyGoalReward;
         // 每日目标奖励进入长期储备，确保回到关卡后仍能使用。
-        addReserveProp(PROP_MOON_TICKET, 1);
+        lastChestRewardProp = getDailyGoalRewardProp();
+        lastChestRewardAmount = getDailyGoalRewardAmount(lastChestRewardProp);
+        addReserveProp(lastChestRewardProp, lastChestRewardAmount);
         dailyGoalClaimed = true;
         prefs.edit()
                 .putLong(KEY_DAILY_GOAL_DAY, getToday())
@@ -2726,6 +2728,22 @@ public class GameView extends View {
         chestNoticeUntilTime = System.currentTimeMillis() + 1800;
         playHaptic(HapticFeedbackConstants.CONFIRM);
         playSuccessTone();
+    }
+
+    private int getDailyGoalRewardProp() {
+        int streak = Math.max(1, dailyStreak);
+        if (streak >= 21) {
+            return PROP_SNOW_GLOBE;
+        } else if (streak >= 14) {
+            return PROP_BUBBLE_WAND;
+        } else if (streak >= 7) {
+            return PROP_STAR_COMPASS;
+        }
+        return PROP_MOON_TICKET;
+    }
+
+    private int getDailyGoalRewardAmount(int prop) {
+        return prop == PROP_SNOW_GLOBE ? 2 : 1;
     }
 
     private void grantWinStreakReward() {
@@ -6167,9 +6185,15 @@ public class GameView extends View {
         }
 
         String text = dailyGoalClaimed ? "每日目标 已领"
-                : (claimable ? "每日目标 领取月票" : "每日目标 " + Math.min(6, dailyGoalProgress) + "/6星");
+                : (claimable ? "每日目标 领取" + getDailyGoalRewardText()
+                : "每日目标 " + Math.min(6, dailyGoalProgress) + "/6星 " + getDailyGoalRewardText());
         drawTextFit(canvas, text, dailyGoalRect, 12, claimable ? Color.rgb(33, 37, 56) : Color.WHITE);
         drawDailyGoalProgressBar(canvas, dailyGoalRect, claimable);
+    }
+
+    private String getDailyGoalRewardText() {
+        int prop = getDailyGoalRewardProp();
+        return getPropName(prop) + "+" + getDailyGoalRewardAmount(prop);
     }
 
     private void drawDailyGoalProgressBar(Canvas canvas, RectF rect, boolean claimable) {
@@ -6601,7 +6625,7 @@ public class GameView extends View {
         } else if (lastRankChestReward > 0) {
             text = "评级宝箱 金币+" + lastRankChestReward + buildChestPropRewardText();
         } else if (lastDailyGoalReward > 0) {
-            text = "每日目标 金币+" + lastDailyGoalReward + " 月票+1";
+            text = "每日目标 金币+" + lastDailyGoalReward + buildChestPropRewardText();
         }
         canvas.drawText(text, getWidth() / 2f, pagerTop - dp(10), textPaint);
         postInvalidateOnAnimation();
