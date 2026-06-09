@@ -2987,7 +2987,8 @@ public class GameView extends View {
             levelBestScores[i] = prefs.getInt(KEY_BEST_SCORE_PREFIX + i, 0);
             levelRanks[i] = prefs.getInt(KEY_RANK_PREFIX + i, 0);
             levelFailStreaks[i] = prefs.getInt(KEY_FAIL_STREAK_PREFIX + i, 0);
-            levelHiddenChallengesCleared[i] = prefs.getBoolean(KEY_HIDDEN_CHALLENGE_PREFIX + i, false);
+            levelHiddenChallengesCleared[i] = prefs.getBoolean(KEY_HIDDEN_CHALLENGE_PREFIX + i,
+                    isHiddenChallengeLevel(i) && levelRanks[i] >= 4);
         }
         for (int i = 0; i < chapterChestClaimed.length; i++) {
             chapterChestClaimed[i] = prefs.getBoolean(KEY_CHAPTER_CHEST_PREFIX + i, false);
