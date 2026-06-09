@@ -7462,7 +7462,7 @@ public class GameView extends View {
             return "拆弹拿护盾";
         }
         if (levels.get(level).musicBoxCount > 0) {
-            return "开音乐盒拿星弦琴";
+            return "刷音乐盒储星弦琴";
         }
         if (getLevelRewardCellCount(levels.get(level)) >= 3) {
             return "收奖励格冲评级";
