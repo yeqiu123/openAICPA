@@ -394,6 +394,8 @@ public class GameView extends View {
     private int rewardCellClearedCount;
     private int rewardCellMilestone;
     private int rewardBombMilestone;
+    private int rewardMusicBoxMilestone;
+    private int lastMusicBoxMilestoneReward;
     private int lastShieldReward;
     private int lastTaskRewardType;
     private long feedbackStartTime;
@@ -880,6 +882,7 @@ public class GameView extends View {
         lastRainbowArcReward = 0;
         lastCrystalCoreReward = 0;
         lastMusicBoxReward = 0;
+        lastMusicBoxMilestoneReward = 0;
         lastCountdownBombReward = 0;
         lastEnergyRewardProp = NONE;
         honeySpreadCount = 0;
@@ -896,6 +899,7 @@ public class GameView extends View {
         rewardCellClearedCount = 0;
         rewardCellMilestone = 0;
         rewardBombMilestone = 0;
+        rewardMusicBoxMilestone = 0;
         lastShieldReward = 0;
         lastTaskRewardType = 0;
         targetKind = level.targetKind;
@@ -5490,6 +5494,35 @@ public class GameView extends View {
             showFeedback(1, level.countdownBombCount);
         }
 
+        if (level.musicBoxCount > 0 && getMusicBoxRemainingCount() <= 0 && rewardMusicBoxMilestone == 0) {
+            // 全开音乐盒后额外储备一枚星弦琴，强化资源关的完整收集目标。
+            addReserveProp(PROP_STAR_HARP, 1);
+            rewardMusicBoxMilestone = 1;
+            lastMusicBoxMilestoneReward = 1;
+            lastTaskRewardType = 25;
+            lastGiftReward = 0;
+            honeySpreadCount = 0;
+            lastMoveChestReward = 0;
+            lastCloudReward = 0;
+            lastFlowerReward = 0;
+            lastRainbowBottleReward = 0;
+            lastEnergyPotionReward = 0;
+            lastButterflyReward = 0;
+            lastMysteryRewardType = 0;
+            lastMysteryRewardAmount = 0;
+            lastMysteryRewardProp = NONE;
+            lastPearlReward = 0;
+            lastFerrisTicketReward = 0;
+            lastFireworksBarrelReward = 0;
+            lastStarportBeaconReward = 0;
+            lastMeteorTrailReward = 0;
+            lastRainbowArcReward = 0;
+            lastCrystalCoreReward = 0;
+            lastCountdownBombReward = 0;
+            lastEnergyRewardProp = NONE;
+            showFeedback(1, level.musicBoxCount);
+        }
+
         int rewardCellMilestoneNow = rewardCellClearedCount / 3;
         if (rewardCellMilestoneNow > rewardCellMilestone) {
             // 奖励格形成独立的局内累计目标，鼓励玩家主动规划高收益格。
@@ -9375,6 +9408,8 @@ public class GameView extends View {
             text = "购买道具 -" + feedbackCleared + "币";
         } else if (lastTaskRewardType == 24 && age < 900) {
             text = "拆弹奖励 护盾+1";
+        } else if (lastTaskRewardType == 25 && age < 900) {
+            text = "音乐盒全开 星弦琴+" + lastMusicBoxMilestoneReward;
         }
 
         textPaint.setTextAlign(Paint.Align.CENTER);
@@ -9806,6 +9841,10 @@ public class GameView extends View {
             // 终章音乐盒的星弦琴补给也显示到奖励明细，避免被普通消除反馈吞掉。
             lines.add("音乐盒 星弦琴+" + lastMusicBoxReward);
         }
+        if (lastMusicBoxMilestoneReward > 0) {
+            // 全开音乐盒的额外储备奖励进入结算明细，形成明确的收集闭环。
+            lines.add("音乐盒全开 星弦琴+" + lastMusicBoxMilestoneReward);
+        }
         if (lastDailyChallengeMilestoneProp != NONE) {
             lines.add("每日连胜 " + getPropName(lastDailyChallengeMilestoneProp) + "+" + lastDailyChallengeMilestoneAmount);
         }
@@ -9879,7 +9918,8 @@ public class GameView extends View {
                 || lastChapterMasteryReward > 0 || lastChapterEliteReward > 0 || lastChapterRankReward > 0
                 || lastChapterHiddenReward > 0 || lastChapterPerfectReward > 0
                 || lastSeasonReward > 0 || lastDailyChallengeMilestoneProp != NONE
-                || rewardCellClearedCount >= 3 || rewardBombMilestone > 0 || lastMusicBoxReward > 0)) {
+                || rewardCellClearedCount >= 3 || rewardBombMilestone > 0 || lastMusicBoxReward > 0
+                || lastMusicBoxMilestoneReward > 0)) {
             drawRewardSparkles(canvas, getWidth() / 2f, getHeight() * 0.42f - dp(12));
         }
 
@@ -9944,6 +9984,9 @@ public class GameView extends View {
             if (lastMusicBoxReward > 0) {
                 // 音乐盒带来的星弦琴补给进入结算摘要，强化终章奖励格追求。
                 bonusText += "  音乐盒" + lastMusicBoxReward;
+            }
+            if (lastMusicBoxMilestoneReward > 0) {
+                bonusText += "  音乐盒全开";
             }
             drawTextFit(canvas, bonusText, new RectF(dp(24), getHeight() * 0.475f,
                     getWidth() - dp(24), getHeight() * 0.505f), 16, Color.WHITE);
