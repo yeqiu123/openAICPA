@@ -6184,6 +6184,11 @@ public class GameView extends View {
         if (getChapterEliteCount(chapter) > 0 && getChapterClearedEliteCount(chapter) >= getChapterEliteCount(chapter)) {
             text += " 精";
         }
+        if (getChapterHiddenChallengeCount(chapter) > 0
+                && getChapterClearedHiddenChallengeCount(chapter) >= getChapterHiddenChallengeCount(chapter)) {
+            // 章节横幅也显示隐藏挑战收集状态，让地图总览更有完成感。
+            text += " 隐";
+        }
         return text;
     }
 
