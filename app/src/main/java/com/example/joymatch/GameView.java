@@ -9899,8 +9899,8 @@ public class GameView extends View {
         if (rewardCellClearedCount <= 0 || rewardCellClearedCount % 3 == 0) {
             return "";
         }
-        // 结算页提示奖励格差额，把局内收奖励格的节奏延续到下一局。
-        return "下一目标 奖励格差" + (3 - rewardCellClearedCount % 3) + "拿罗盘";
+        // 结算页复盘本局奖励格进度，避免误导为跨关累计。
+        return "本局已收" + rewardCellClearedCount + "奖励格 每3给罗盘";
     }
 
     private String buildDailyGoalNextGoalText() {
