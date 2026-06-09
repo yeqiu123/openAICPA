@@ -368,6 +368,7 @@ public class GameView extends View {
     private int lastRainbowArcReward;
     private int lastCrystalCoreReward;
     private int lastMusicBoxReward;
+    private int lastCountdownBombReward;
     private int lastRewardCellMilestoneAmount;
     private int lastEnergyRewardProp = NONE;
     private int lastChestNoticeType;
@@ -1919,6 +1920,7 @@ public class GameView extends View {
         lastRainbowArcReward = 0;
         lastCrystalCoreReward = 0;
         lastMusicBoxReward = 0;
+        lastCountdownBombReward = 0;
         cells = expandSpecialCells(cells);
         score += applyComboFeverScore(bonusScore + cells.size() * 45);
         spawnParticles(cells);
@@ -4815,6 +4817,7 @@ public class GameView extends View {
             if (countdownBomb[cell.row][cell.col] > 0) {
                 countdownBomb[cell.row][cell.col] = 0;
                 score += 180;
+                lastCountdownBombReward++;
             }
             if (hadRewardCell) {
                 rewardCellClearedCount++;
@@ -9141,6 +9144,8 @@ public class GameView extends View {
             text = "糖晶塔芯 爆炸+" + lastCrystalCoreReward;
         } else if (lastMusicBoxReward > 0 && age < 900) {
             text = "音乐盒 星弦琴+" + lastMusicBoxReward;
+        } else if (lastCountdownBombReward > 0 && age < 900) {
+            text = "拆弹 +" + lastCountdownBombReward;
         } else if (honeySpreadCount > 0 && age < 900) {
             text = "蜂蜜蔓延";
         } else if (lastTaskRewardType == 1 && age < 900) {
