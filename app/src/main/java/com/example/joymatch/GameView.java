@@ -6035,7 +6035,14 @@ public class GameView extends View {
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setTextSize(sp(8));
         textPaint.setColor(Color.rgb(33, 37, 56));
-        canvas.drawText(levelStars[level] < 3 ? "星" : "评", badge.centerX(), badge.centerY() + dp(3), textPaint);
+        canvas.drawText(buildReplayTargetMapMarkText(level), badge.centerX(), badge.centerY() + dp(3), textPaint);
+    }
+
+    private String buildReplayTargetMapMarkText(int level) {
+        if (levelStars[level] < 3) {
+            return "星";
+        }
+        return buildReplayChallengeReason(level).length() > 0 ? "补" : "评";
     }
 
     private void drawHighRankMapGlow(Canvas canvas, int level, RectF rect) {
