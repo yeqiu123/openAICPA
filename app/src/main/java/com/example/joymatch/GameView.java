@@ -7172,7 +7172,7 @@ public class GameView extends View {
                     ? getPropName(prop) + " x" + propInventory[prop]
                     : getPropName(prop) + " " + PROP_COSTS[prop] + "币";
             if (propReserve[prop] > 0) {
-                label += " 储" + propReserve[prop];
+                drawReservePropBadge(canvas, rect, propReserve[prop]);
             }
             canvas.drawText(label, rect.centerX(), rect.bottom - dp(7), textPaint);
         }
@@ -7356,6 +7356,17 @@ public class GameView extends View {
         textPaint.setTextSize(sp(8));
         textPaint.setColor(Color.rgb(33, 37, 56));
         canvas.drawText("荐", badge.centerX(), badge.centerY() + dp(3), textPaint);
+    }
+
+    private void drawReservePropBadge(Canvas canvas, RectF rect, int amount) {
+        // 储备角标单独显示，避免道具名、库存和储备数量互相挤压。
+        RectF badge = new RectF(rect.left + dp(4), rect.top + dp(4), rect.left + dp(28), rect.top + dp(18));
+        paint.setColor(Color.argb(225, 116, 219, 214));
+        canvas.drawRoundRect(badge, dp(5), dp(5), paint);
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setTextSize(sp(8));
+        textPaint.setColor(Color.rgb(33, 37, 56));
+        canvas.drawText("储" + amount, badge.centerX(), badge.centerY() + dp(3), textPaint);
     }
 
     private void drawPropIcon(Canvas canvas, int prop, float centerX, float centerY) {
