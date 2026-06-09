@@ -6837,6 +6837,8 @@ public class GameView extends View {
         int hiddenMissing = hiddenCount - clearedHidden;
         int unlockedCount = getChapterUnlockedCount(chapter);
         int perfectMissing = unlockedCount - getChapterPerfectClearCount(chapter);
+        int musicBoxCount = getChapterMusicBoxLevelCount(chapter);
+        int unlockedMusicBox = getChapterUnlockedMusicBoxLevelCount(chapter);
         return (!chapterMasteryClaimed[chapter] && stars >= CHAPTER_CHEST_STARS && fullStarMissing >= 0 && fullStarMissing <= 6)
                 || (!chapterRankClaimed[chapter] && unlockedCount >= CHAPTER_SIZE / 2
                 && rankMissing >= 0 && rankMissing <= 8)
@@ -6847,7 +6849,8 @@ public class GameView extends View {
                 && (clearedHidden > 0 || unlockedCount >= CHAPTER_SIZE)
                 && hiddenMissing >= 0 && hiddenMissing <= 1)
                 || (!chapterPerfectClaimed[chapter] && unlockedCount >= CHAPTER_SIZE
-                && perfectMissing >= 0 && perfectMissing <= 1);
+                && perfectMissing >= 0 && perfectMissing <= 1)
+                || (musicBoxCount > 0 && unlockedMusicBox > 0 && musicBoxCount - unlockedMusicBox <= 1);
     }
 
     private void drawChapterProgressGoalSpark(Canvas canvas, float x, float y) {
