@@ -6481,13 +6481,14 @@ public class GameView extends View {
         String eliteStatus = buildChapterEliteGoalHint(chapter);
         String rankStatus = buildChapterRankGoalHint(chapter);
         String hiddenStatus = buildChapterHiddenProgressText(chapter);
+        String perfectStatus = buildChapterPerfectProgressText(chapter);
         RectF progressTextRect = new RectF(left, top + dp(14), right, top + dp(34));
         RectF rankTextRect = new RectF(left, top + dp(28), right, top + dp(50));
         drawTextFit(canvas, "章节进度 " + getChapterUnlockedCount(chapter) + "/" + CHAPTER_SIZE
                 + "  星 " + getChapterStars(chapter) + status, progressTextRect, 12, Color.WHITE);
         drawTextFit(canvas, "章节评级 " + getChapterRankScore(chapter) + "/" + getChapterRankRewardTarget() + rankStatus
                         + "  精英 " + getChapterClearedEliteCount(chapter) + "/" + getChapterEliteCount(chapter) + eliteStatus
-                        + hiddenStatus,
+                        + hiddenStatus + perfectStatus,
                 rankTextRect, 12, Color.WHITE);
         if (shouldPulseChapterProgressGoal(chapter)) {
             drawChapterProgressGoalSpark(canvas, right - dp(8), top + dp(5));
@@ -6548,6 +6549,15 @@ public class GameView extends View {
         }
         // 章节页补上隐藏挑战进度，给老关回访多一个可见追求。
         return "  隐藏 " + clearedHidden + "/" + hiddenCount + hint;
+    }
+
+    private String buildChapterPerfectProgressText(int chapter) {
+        int perfectCount = getChapterPerfectClearCount(chapter);
+        if (perfectCount <= 0 && getChapterUnlockedCount(chapter) < CHAPTER_SIZE) {
+            return "";
+        }
+        // 完美进度展示高手向回访目标，不绑定奖励，保持纯收集追求。
+        return "  完美 " + perfectCount + "/" + getChapterUnlockedCount(chapter);
     }
 
     private boolean shouldPulseChapterProgressGoal(int chapter) {
@@ -6994,6 +7004,18 @@ public class GameView extends View {
         int end = Math.min(start + CHAPTER_SIZE, levels.size());
         for (int level = start; level < end; level++) {
             if (isHiddenChallengeLevel(level) && levelHiddenChallengesCleared[level]) {
+                total++;
+            }
+        }
+        return total;
+    }
+
+    private int getChapterPerfectClearCount(int chapter) {
+        int total = 0;
+        int start = chapter * CHAPTER_SIZE;
+        int end = Math.min(start + CHAPTER_SIZE, levels.size());
+        for (int level = start; level < end; level++) {
+            if (levelPerfectCleared[level]) {
                 total++;
             }
         }
