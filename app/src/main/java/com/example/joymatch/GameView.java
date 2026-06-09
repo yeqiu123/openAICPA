@@ -6690,6 +6690,7 @@ public class GameView extends View {
         drawTextFit(canvas, "章节评级 " + getChapterRankScore(chapter) + "/" + getChapterRankRewardTarget() + rankStatus
                         + "  精英 " + getChapterClearedEliteCount(chapter) + "/" + getChapterEliteCount(chapter) + eliteStatus
                         + "  奖励关 " + getChapterUnlockedRewardLevelCount(chapter) + "/" + getChapterRewardLevelCount(chapter)
+                        + "  炸弹关 " + getChapterUnlockedBombLevelCount(chapter) + "/" + getChapterBombLevelCount(chapter)
                         + hiddenStatus + perfectStatus,
                 rankTextRect, 12, Color.WHITE);
         if (shouldPulseChapterProgressGoal(chapter)) {
@@ -7295,6 +7296,30 @@ public class GameView extends View {
         int count = 0;
         for (int level = start; level < end; level++) {
             if (level <= highestUnlockedLevel && getLevelRewardCellCount(levels.get(level)) >= 3) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private int getChapterBombLevelCount(int chapter) {
+        int start = chapter * CHAPTER_SIZE;
+        int end = Math.min(start + CHAPTER_SIZE, levels.size());
+        int count = 0;
+        for (int level = start; level < end; level++) {
+            if (levels.get(level).countdownBombCount > 0) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private int getChapterUnlockedBombLevelCount(int chapter) {
+        int start = chapter * CHAPTER_SIZE;
+        int end = Math.min(start + CHAPTER_SIZE, levels.size());
+        int count = 0;
+        for (int level = start; level < end; level++) {
+            if (level <= highestUnlockedLevel && levels.get(level).countdownBombCount > 0) {
                 count++;
             }
         }
