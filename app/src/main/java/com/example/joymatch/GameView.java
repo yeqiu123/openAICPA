@@ -9719,6 +9719,10 @@ public class GameView extends View {
                 lastChapterHiddenReward > 0 ? " 时钟+1 罗盘+1" : "");
         addRewardLine(lines, "章节完美", lastChapterPerfectReward,
                 lastChapterPerfectReward > 0 ? " 星弦琴+1 罗盘+1" : "");
+        if (rewardBombMilestone > 0) {
+            // 拆弹护盾属于局内阶段奖励，也显示到结算明细里。
+            lines.add("拆弹奖励 护盾+1");
+        }
         if (lastDailyChallengeMilestoneProp != NONE) {
             lines.add("每日连胜 " + getPropName(lastDailyChallengeMilestoneProp) + "+" + lastDailyChallengeMilestoneAmount);
         }
