@@ -3650,6 +3650,10 @@ public class GameView extends View {
         lastDailyGoalReward = 0;
         lastChestNoticeType = 3;
         coins += lastChapterChestReward;
+        // 章节宝箱追加一个长期储备道具，让整章刷星奖励更有实用价值。
+        lastChestRewardProp = chapter % 2 == 0 ? PROP_CLEANSE : PROP_BOMB;
+        lastChestRewardAmount = 1;
+        addReserveProp(lastChestRewardProp, lastChestRewardAmount);
         prefs.edit()
                 .putBoolean(KEY_CHAPTER_CHEST_PREFIX + chapter, true)
                 .putInt(KEY_COINS, coins)
@@ -6464,7 +6468,7 @@ public class GameView extends View {
         String text = lastChestReward > 0 ? "星级宝箱 金币+" + lastChestReward + buildChestPropRewardText()
                 : buildChestNoticeFallback();
         if (lastChapterChestReward > 0) {
-            text = "章节宝箱 金币+" + lastChapterChestReward;
+            text = "章节宝箱 金币+" + lastChapterChestReward + buildChestPropRewardText();
         } else if (lastRankChestReward > 0) {
             text = "评级宝箱 金币+" + lastRankChestReward + buildChestPropRewardText();
         } else if (lastDailyGoalReward > 0) {
