@@ -9438,7 +9438,7 @@ public class GameView extends View {
         if (level.scoreGoal > 0 && !isScoreGoalCleared(level)) {
             appendFailureProgressPart(text, "高分差", level.scoreGoal - score);
         }
-        if (isHiddenChallengeLevel() && !hiddenChallengeCleared) {
+        if (isHiddenChallengeLevel() && !hiddenChallengeCleared && !levelHiddenChallengesCleared[levelIndex]) {
             appendFailureProgressPart(text, "隐藏超", movesUsed - Math.max(7, level.moves - 4));
         }
         // 失败页给出最短追踪目标，帮助玩家判断下局优先用哪类道具。
