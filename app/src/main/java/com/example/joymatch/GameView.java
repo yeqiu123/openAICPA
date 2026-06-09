@@ -30,6 +30,7 @@ public class GameView extends View {
     private static final String KEY_BEST_SCORE_PREFIX = "best_score_";
     private static final String KEY_RANK_PREFIX = "rank_";
     private static final String KEY_HIDDEN_CHALLENGE_PREFIX = "hidden_challenge_";
+    private static final String KEY_PERFECT_CLEAR_PREFIX = "perfect_clear_";
     private static final String KEY_COINS = "coins";
     private static final String KEY_PROP_RESERVE_PREFIX = "prop_reserve_";
     private static final String KEY_STAR_CHEST_CLAIMED = "star_chest_claimed";
@@ -182,6 +183,7 @@ public class GameView extends View {
     private final int[] levelRanks = new int[LEVEL_COUNT];
     private final int[] levelFailStreaks = new int[LEVEL_COUNT];
     private final boolean[] levelHiddenChallengesCleared = new boolean[LEVEL_COUNT];
+    private final boolean[] levelPerfectCleared = new boolean[LEVEL_COUNT];
     private final boolean[] chapterChestClaimed = new boolean[CHAPTER_COUNT];
     private final boolean[] chapterMasteryClaimed = new boolean[CHAPTER_COUNT];
     private final boolean[] chapterEliteClaimed = new boolean[CHAPTER_COUNT];
@@ -2640,11 +2642,15 @@ public class GameView extends View {
         return "-";
     }
 
-    private void grantPerfectClearReward(Level level) {
+    private void grantPerfectClearReward(Level level, boolean oldPerfectCleared) {
         if (dailyChallengeMode || usedContinueThisLevel || movesUsed > Math.max(6, level.moves / 2) || lastRank < 5) {
             return;
         }
 
+        levelPerfectCleared[levelIndex] = true;
+        if (oldPerfectCleared) {
+            return;
+        }
         // 完美通关奖励少步数、高评级的打法，给重玩提供更明确的冲刺目标。
         lastPerfectReward = 18 + lastRank * 4;
         coins += lastPerfectReward;
@@ -2989,6 +2995,7 @@ public class GameView extends View {
             levelFailStreaks[i] = prefs.getInt(KEY_FAIL_STREAK_PREFIX + i, 0);
             levelHiddenChallengesCleared[i] = prefs.getBoolean(KEY_HIDDEN_CHALLENGE_PREFIX + i,
                     isHiddenChallengeLevel(i) && levelRanks[i] >= 4);
+            levelPerfectCleared[i] = prefs.getBoolean(KEY_PERFECT_CLEAR_PREFIX + i, false);
         }
         for (int i = 0; i < chapterChestClaimed.length; i++) {
             chapterChestClaimed[i] = prefs.getBoolean(KEY_CHAPTER_CHEST_PREFIX + i, false);
@@ -3007,6 +3014,7 @@ public class GameView extends View {
         int oldStars = levelStars[levelIndex];
         int oldRank = levelRanks[levelIndex];
         boolean oldHiddenCleared = levelHiddenChallengesCleared[levelIndex];
+        boolean oldPerfectCleared = levelPerfectCleared[levelIndex];
         levelStars[levelIndex] = Math.max(levelStars[levelIndex], lastStars);
         levelBestScores[levelIndex] = Math.max(levelBestScores[levelIndex], score);
         levelRanks[levelIndex] = Math.max(levelRanks[levelIndex], lastRank);
@@ -3037,7 +3045,7 @@ public class GameView extends View {
         }
         grantFirstClearReward(level, oldStars);
         grantEliteLevelReward(level);
-        grantPerfectClearReward(level);
+        grantPerfectClearReward(level, oldPerfectCleared);
         grantAchievementRewards();
         updateSeasonQuestProgress();
         grantChapterEliteReward();
@@ -3051,6 +3059,7 @@ public class GameView extends View {
                 .putInt(KEY_BEST_SCORE_PREFIX + levelIndex, levelBestScores[levelIndex])
                 .putInt(KEY_RANK_PREFIX + levelIndex, levelRanks[levelIndex])
                 .putBoolean(KEY_HIDDEN_CHALLENGE_PREFIX + levelIndex, levelHiddenChallengesCleared[levelIndex])
+                .putBoolean(KEY_PERFECT_CLEAR_PREFIX + levelIndex, levelPerfectCleared[levelIndex])
                 .putInt(KEY_FAIL_STREAK_PREFIX + levelIndex, 0)
                 .putInt(KEY_COINS, coins)
                 .putInt(KEY_STAR_CHEST_CLAIMED, starChestClaimed)
@@ -6057,6 +6066,7 @@ public class GameView extends View {
             drawLevelTypeMark(canvas, level, rect);
             drawFailAssistMark(canvas, level, rect, unlocked);
             drawFullStarMapMark(canvas, level, rect, unlocked);
+            drawPerfectMapMark(canvas, level, rect, unlocked);
         }
 
         drawLevelMapPager(canvas);
@@ -6118,6 +6128,21 @@ public class GameView extends View {
         crown.lineTo(rect.right - dp(6), rect.bottom - dp(8));
         crown.close();
         canvas.drawPath(crown, paint);
+    }
+
+    private void drawPerfectMapMark(Canvas canvas, int level, RectF rect, boolean unlocked) {
+        if (!unlocked || !levelPerfectCleared[level]) {
+            return;
+        }
+
+        // 完美通关记录在地图上常驻显示，强化高手回访后的收藏感。
+        RectF badge = new RectF(rect.left + dp(4), rect.top + dp(20), rect.left + dp(26), rect.top + dp(34));
+        paint.setColor(Color.argb(225, 116, 219, 214));
+        canvas.drawRoundRect(badge, dp(5), dp(5), paint);
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setTextSize(sp(8));
+        textPaint.setColor(Color.rgb(33, 37, 56));
+        canvas.drawText("完", badge.centerX(), badge.centerY() + dp(3), textPaint);
     }
 
     private void drawFailAssistMark(Canvas canvas, int level, RectF rect, boolean unlocked) {
