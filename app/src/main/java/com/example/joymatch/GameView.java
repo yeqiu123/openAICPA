@@ -2489,6 +2489,10 @@ public class GameView extends View {
         if (moveChest[row][col] > 0) {
             priority += 18;
         }
+        if (portal[row][col] > 0) {
+            // 传送门能重排局面，智能提示优先指向可打开新落点的机会。
+            priority += 16;
+        }
         if (hourglass[row][col] > 0) {
             // 沙漏会直接补步数，智能提示优先指向关键翻盘资源。
             priority += 17;
@@ -6061,6 +6065,13 @@ public class GameView extends View {
                 obstacleText += " 全开";
             }
         }
+        if (level.portalCount > 0) {
+            // 传送门能重排局面，HUD显示剩余和已触发次数。
+            obstacleText += " 门" + getPortalRemainingCount();
+            if (lastPortalReward > 0) {
+                obstacleText += " 换局+" + lastPortalReward;
+            }
+        }
         if (level.hourglassCount > 0) {
             // 沙漏会补步数，HUD单独显示剩余和本局补步收益。
             obstacleText += " 沙" + getHourglassRemainingCount();
@@ -8098,6 +8109,9 @@ public class GameView extends View {
         } else if (getMusicBoxRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 开音乐盒拿星弦";
+        } else if (getPortalRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            return "推荐 " + getPropName(prop) + " 开传送门换局面";
         } else if (getHourglassRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 收沙漏补步数";
@@ -8204,6 +8218,11 @@ public class GameView extends View {
             // 音乐盒能转成可储备星弦琴，推荐精准道具优先开盒。
             return true;
         }
+        if (getPortalRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            // 传送门会重排棋盘机会，推荐精准道具优先打开新局面。
+            return true;
+        }
         if (getHourglassRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             // 沙漏能直接补步数，推荐精准道具优先拿翻盘余量。
@@ -8299,6 +8318,10 @@ public class GameView extends View {
         if (getMusicBoxRemainingCount() > 0) {
             // 音乐盒关失败时直接提示资源目标，帮助下局优先规划星弦琴储备。
             return "建议下局优先开音乐盒";
+        }
+        if (getPortalRemainingCount() > 0) {
+            // 传送门失败后提示优先打开，让下局更早重排局面。
+            return "建议下局优先开传送门";
         }
         if (getHourglassRemainingCount() > 0) {
             // 沙漏失败后提示优先收集，让下局更早获得补步余量。
@@ -9176,7 +9199,12 @@ public class GameView extends View {
 
         float centerX = rect.right - dp(18);
         float centerY = rect.bottom - dp(18);
+        float pulse = 0.55f + 0.45f * (float) Math.sin(System.currentTimeMillis() / 205.0);
         paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(2 + pulse * 2));
+        paint.setColor(Color.argb((int) (90 + pulse * 95), 153, 102, 255));
+        canvas.drawRoundRect(new RectF(rect.left + dp(5), rect.top + dp(5),
+                rect.right - dp(5), rect.bottom - dp(5)), dp(13), dp(13), paint);
         paint.setStrokeWidth(dp(3));
         paint.setColor(Color.argb(220, 153, 102, 255));
         canvas.drawCircle(centerX, centerY, dp(12), paint);
@@ -9896,6 +9924,8 @@ public class GameView extends View {
         }
         if (level.portalCount > 0) {
             goalText += "  传送门 " + level.portalCount;
+            // 开场说明传送门收益，提醒玩家优先打开新局面。
+            goalText += "  开门换局面";
         }
         if (level.hourglassCount > 0) {
             goalText += "  沙漏 " + level.hourglassCount;
@@ -10034,6 +10064,8 @@ public class GameView extends View {
             return "策略 火箭/罗盘优先收幸运草";
         } else if (level.hourglassCount > 0) {
             return "策略 火箭/罗盘优先收沙漏";
+        } else if (level.portalCount > 0) {
+            return "策略 火箭/罗盘优先开传送门";
         } else if (getRewardCellCount() >= 3) {
             // 奖励格密集时优先提示精准道具，帮助玩家把额外收益转成通关优势。
             return "策略 火箭/罗盘优先收奖励";
@@ -10497,6 +10529,10 @@ public class GameView extends View {
             // 失败复盘也显示音乐盒剩余，提醒下局优先拿星弦琴储备。
             appendFailureProgressPart(text, "音乐盒剩", getMusicBoxRemainingCount());
         }
+        if (level.portalCount > 0) {
+            // 传送门剩余量单独复盘，提示下局优先打开新局面。
+            appendFailureProgressPart(text, "传送门剩", getPortalRemainingCount());
+        }
         if (level.hourglassCount > 0) {
             // 沙漏剩余量单独复盘，提示下局优先拿补步资源。
             appendFailureProgressPart(text, "沙漏剩", getHourglassRemainingCount());
@@ -10599,6 +10635,18 @@ public class GameView extends View {
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
                 if (musicBox[row][col] > 0) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    private int getPortalRemainingCount() {
+        int count = 0;
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (portal[row][col] > 0) {
                     count++;
                 }
             }
