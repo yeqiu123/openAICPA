@@ -9733,6 +9733,10 @@ public class GameView extends View {
         if (canClaimChapterChest(chapter)) {
             return "下一目标 " + chapterNames[chapter] + "宝箱可领取";
         }
+        String chapterChestGoalText = buildChapterChestNextGoalText(chapter);
+        if (chapterChestGoalText.length() > 0) {
+            return chapterChestGoalText;
+        }
         if (getAvailableStarChests() > 0) {
             return "下一目标 星级宝箱可领取";
         }
@@ -9814,6 +9818,19 @@ public class GameView extends View {
         }
         if (rankMissing > 0 && rankMissing <= 8) {
             return "下一目标 评级箱差" + rankMissing;
+        }
+        return "";
+    }
+
+    private String buildChapterChestNextGoalText(int chapter) {
+        if (chapterChestClaimed[chapter]) {
+            return "";
+        }
+
+        int missingStars = CHAPTER_CHEST_STARS - getChapterStars(chapter);
+        if (missingStars > 0 && missingStars <= 6) {
+            // 章节宝箱临近时在结算页提示，推动玩家回头补齐本章星数。
+            return "下一目标 " + chapterNames[chapter] + "章箱差" + missingStars + "星";
         }
         return "";
     }
