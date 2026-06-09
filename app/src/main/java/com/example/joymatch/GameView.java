@@ -5802,7 +5802,8 @@ public class GameView extends View {
             starText += " 分" + score / 1000 + "k/" + level.scoreGoal / 1000 + "k";
         }
         if (isHiddenChallengeLevel()) {
-            starText += " 隐" + movesUsed + "/" + Math.max(7, level.moves - 4);
+            starText += levelHiddenChallengesCleared[levelIndex] ? " 隐✓"
+                    : " 隐" + movesUsed + "/" + Math.max(7, level.moves - 4);
         }
         if (comboFeverMoves > 0) {
             starText += " 爆发" + comboFeverMoves;
