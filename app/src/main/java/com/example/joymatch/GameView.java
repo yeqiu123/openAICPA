@@ -6450,6 +6450,11 @@ public class GameView extends View {
             // 章节炸弹关全部解锁后也显示，便于提前规划护盾/时钟道具。
             text += " 炸";
         }
+        if (getChapterMusicBoxLevelCount(chapter) > 0
+                && getChapterUnlockedMusicBoxLevelCount(chapter) >= getChapterMusicBoxLevelCount(chapter)) {
+            // 章节音乐盒关全部解锁后显示，强化终章星弦琴补给追求。
+            text += " 乐";
+        }
         return text;
     }
 
@@ -6696,6 +6701,7 @@ public class GameView extends View {
                         + "  精英 " + getChapterClearedEliteCount(chapter) + "/" + getChapterEliteCount(chapter) + eliteStatus
                         + "  奖励关 " + getChapterUnlockedRewardLevelCount(chapter) + "/" + getChapterRewardLevelCount(chapter)
                         + "  炸弹关 " + getChapterUnlockedBombLevelCount(chapter) + "/" + getChapterBombLevelCount(chapter)
+                        + "  音乐盒 " + getChapterUnlockedMusicBoxLevelCount(chapter) + "/" + getChapterMusicBoxLevelCount(chapter)
                         + hiddenStatus + perfectStatus,
                 rankTextRect, 12, Color.WHITE);
         if (shouldPulseChapterProgressGoal(chapter)) {
@@ -7331,6 +7337,30 @@ public class GameView extends View {
         return count;
     }
 
+    private int getChapterMusicBoxLevelCount(int chapter) {
+        int start = chapter * CHAPTER_SIZE;
+        int end = Math.min(start + CHAPTER_SIZE, levels.size());
+        int count = 0;
+        for (int level = start; level < end; level++) {
+            if (levels.get(level).musicBoxCount > 0) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private int getChapterUnlockedMusicBoxLevelCount(int chapter) {
+        int start = chapter * CHAPTER_SIZE;
+        int end = Math.min(start + CHAPTER_SIZE, levels.size());
+        int count = 0;
+        for (int level = start; level < end; level++) {
+            if (level <= highestUnlockedLevel && levels.get(level).musicBoxCount > 0) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     private int findReplayTargetLevel() {
         int bestLevel = NONE;
         int bestScore = 0;
@@ -7394,6 +7424,10 @@ public class GameView extends View {
             // 炸弹关回访可以顺手拿护盾补给，略微提高推荐优先级。
             score += 9;
         }
+        if (levels.get(level).musicBoxCount > 0) {
+            // 音乐盒关能稳定补星弦琴，补评级时更值得被推荐。
+            score += 10;
+        }
         return score;
     }
 
@@ -7410,6 +7444,9 @@ public class GameView extends View {
         }
         if (levels.get(level).countdownBombCount > 0) {
             return "拆弹拿护盾";
+        }
+        if (levels.get(level).musicBoxCount > 0) {
+            return "开音乐盒拿星弦琴";
         }
         if (getLevelRewardCellCount(levels.get(level)) >= 3) {
             return "收奖励格冲评级";
