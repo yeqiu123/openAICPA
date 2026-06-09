@@ -9982,6 +9982,10 @@ public class GameView extends View {
         if (lastChapterPerfectReward > 0) {
             return chapterNames[chapter] + "完美奖励已入账";
         }
+        if (rewardBombMilestone > 0) {
+            // 拆弹奖励后提示护盾用途，把高压关奖励接到下一局策略。
+            return "下一目标 护盾留给高压炸弹关";
+        }
         String rewardCellGoalText = buildRewardCellNextGoalText();
         if (rewardCellGoalText.length() > 0) {
             return rewardCellGoalText;
