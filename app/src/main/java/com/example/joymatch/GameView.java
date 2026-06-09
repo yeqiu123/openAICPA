@@ -7171,6 +7171,9 @@ public class GameView extends View {
             String label = propInventory[prop] > 0
                     ? getPropName(prop) + " x" + propInventory[prop]
                     : getPropName(prop) + " " + PROP_COSTS[prop] + "币";
+            if (propReserve[prop] > 0) {
+                label += " 储" + propReserve[prop];
+            }
             canvas.drawText(label, rect.centerX(), rect.bottom - dp(7), textPaint);
         }
         drawRecommendedPropTip(canvas, top);
