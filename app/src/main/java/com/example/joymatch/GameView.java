@@ -9457,7 +9457,7 @@ public class GameView extends View {
         paint.setColor(levelComplete ? Color.argb(110, 255, 213, 92) : Color.argb(95, 255, 107, 154));
         canvas.drawCircle(getWidth() / 2f, getHeight() * 0.42f - dp(12), dp(92), paint);
         if (levelComplete && (lastAchievementReward > 0 || lastStarUpgradeReward > 0 || lastRankUpgradeReward > 0
-                || lastPerfectReward > 0 || lastHiddenReward > 0 || lastWinStreakReward > 0
+                || lastPerfectReward > 0 || lastPerfectRetained || lastHiddenReward > 0 || lastWinStreakReward > 0
                 || lastEliteReward > 0 || lastFirstClearReward > 0 || lastFullStarReward > 0
                 || lastReplayReward > 0
                 || lastChapterMasteryReward > 0 || lastChapterEliteReward > 0 || lastChapterRankReward > 0
