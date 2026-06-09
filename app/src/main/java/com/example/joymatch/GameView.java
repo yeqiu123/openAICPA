@@ -7106,6 +7106,56 @@ public class GameView extends View {
                     : getPropName(prop) + " " + PROP_COSTS[prop] + "币";
             canvas.drawText(label, rect.centerX(), rect.bottom - dp(7), textPaint);
         }
+        drawRecommendedPropTip(canvas, top);
+    }
+
+    private void drawRecommendedPropTip(Canvas canvas, float propBarTop) {
+        int prop = getFirstRecommendedProp();
+        if (prop == NONE) {
+            return;
+        }
+
+        // 道具栏推荐给出文字解释，帮助玩家理解当前局面的优先选择。
+        RectF rect = new RectF(dp(18), propBarTop - dp(20), getWidth() - dp(18), propBarTop - dp(4));
+        paint.setColor(Color.argb(92, 33, 37, 56));
+        canvas.drawRoundRect(rect, dp(8), dp(8), paint);
+        drawTextFit(canvas, buildRecommendedPropTip(prop), rect, 10, Color.WHITE);
+    }
+
+    private int getFirstRecommendedProp() {
+        for (int prop = 0; prop < PROP_COUNT; prop++) {
+            if (isRecommendedPropForLevel(prop)) {
+                return prop;
+            }
+        }
+        return NONE;
+    }
+
+    private String buildRecommendedPropTip(int prop) {
+        Level level = levels.get(levelIndex);
+        int obstaclePressure = iceRemaining + honeyRemaining + stoneRemaining + vineRemaining
+                + chainRemaining + shellRemaining + coralReefRemaining + flowerRemaining;
+        if (movesLeft <= Math.max(3, level.moves / 5)
+                && (prop == PROP_EXTRA_MOVES || prop == PROP_CLOCK || prop == PROP_MOON_TICKET)) {
+            return "推荐 " + getPropName(prop) + " 补步保星";
+        } else if (level.countdownBombCount > 0
+                && (prop == PROP_SHIELD || prop == PROP_CLOCK || prop == PROP_SNOW_GLOBE)) {
+            return "推荐 " + getPropName(prop) + " 稳住炸弹";
+        } else if (chainRemaining > 0 && prop == PROP_CHAIN_BREAKER) {
+            return "推荐 " + getPropName(prop) + " 破锁开局";
+        } else if (honeyRemaining > 0 && (prop == PROP_FREEZE || prop == PROP_SNOW_GLOBE)) {
+            return "推荐 " + getPropName(prop) + " 压制蜂蜜";
+        } else if (targetRemaining > level.targetAmount / 2 && movesLeft <= level.moves / 2
+                && (prop == PROP_MAGNET || prop == PROP_COLOR_BLAST || prop == PROP_TARGET_BRUSH || prop == PROP_BRUSH)) {
+            return "推荐 " + getPropName(prop) + " 补齐收集";
+        } else if (obstaclePressure >= Math.max(5, getLevelObstacleCount(level) / 3)) {
+            return "推荐 " + getPropName(prop) + " 清障打开局面";
+        } else if (level.comboGoal > 0 && bestCombo < level.comboGoal) {
+            return "推荐 " + getPropName(prop) + " 冲连击";
+        } else if (level.scoreGoal > 0 && score < level.scoreGoal) {
+            return "推荐 " + getPropName(prop) + " 冲高分";
+        }
+        return "推荐 " + getPropName(prop) + " 保留步数";
     }
 
     private boolean isRecommendedPropForLevel(int prop) {
