@@ -2764,6 +2764,26 @@ public class GameView extends View {
         prefs.edit().putInt(KEY_WIN_STREAK, winStreak).apply();
     }
 
+    private String buildNextWinStreakRewardHint() {
+        int prop = getWinStreakMilestoneProp(winStreak + 1);
+        return prop == NONE ? "" : " 奖" + getPropName(prop);
+    }
+
+    private int getWinStreakMilestoneProp(int streak) {
+        if (streak == 5) {
+            return PROP_STAR_COMPASS;
+        } else if (streak == 10) {
+            return PROP_FIREWORK_CANNON;
+        } else if (streak == 12) {
+            return PROP_BUBBLE_WAND;
+        } else if (streak == 20) {
+            return PROP_STAR_HARP;
+        } else if (streak == 25 || (streak > 0 && streak % 15 == 0)) {
+            return PROP_SNOW_GLOBE;
+        }
+        return NONE;
+    }
+
     private void grantAchievementRewards() {
         lastAchievementReward = 0;
         checkAchievement(0, getTotalStars() >= 30, 60);
@@ -5629,7 +5649,7 @@ public class GameView extends View {
             coinText += " 连" + dailyStreak;
         }
         if (!dailyChallengeMode && winStreak > 1) {
-            coinText += " 胜" + winStreak;
+            coinText += " 胜" + winStreak + buildNextWinStreakRewardHint();
         }
         coinText += buildNextDailyLoginRewardHint();
         drawTextFitRight(canvas, coinText, new RectF(getWidth() * 0.48f, dp(92), getWidth() - dp(18), dp(110)), 15, Color.WHITE);
