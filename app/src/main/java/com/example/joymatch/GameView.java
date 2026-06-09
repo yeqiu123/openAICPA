@@ -9747,6 +9747,10 @@ public class GameView extends View {
         if (chestGoalText.length() > 0) {
             return chestGoalText;
         }
+        String winStreakGoalText = buildWinStreakNextGoalText();
+        if (winStreakGoalText.length() > 0) {
+            return winStreakGoalText;
+        }
         String seasonGoalText = buildSeasonNextGoalText();
         if (seasonGoalText.length() > 0) {
             return seasonGoalText;
@@ -9820,6 +9824,18 @@ public class GameView extends View {
             return "下一目标 评级箱差" + rankMissing;
         }
         return "";
+    }
+
+    private String buildWinStreakNextGoalText() {
+        int nextStreak = getNextWinStreakMilestone();
+        int missingStreak = nextStreak - winStreak;
+        if (nextStreak == NONE || missingStreak <= 0 || missingStreak > 2) {
+            return "";
+        }
+
+        int prop = getWinStreakMilestoneProp(nextStreak);
+        // 结算页提示临近连胜节点，让连续闯关的稀有道具奖励更可见。
+        return "下一目标 连胜差" + missingStreak + "奖" + getPropName(prop);
     }
 
     private String buildChapterChestNextGoalText(int chapter) {
