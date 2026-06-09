@@ -9747,9 +9747,9 @@ public class GameView extends View {
         if (hiddenGoalText.length() > 0) {
             return hiddenGoalText;
         }
-        if (!chapterPerfectClaimed[chapter] && getChapterUnlockedCount(chapter) >= CHAPTER_SIZE
-                && getChapterPerfectClearCount(chapter) >= getChapterUnlockedCount(chapter)) {
-            return "下一目标 " + chapterNames[chapter] + "完美奖励";
+        String perfectGoalText = buildChapterPerfectNextGoalText(chapter);
+        if (perfectGoalText.length() > 0) {
+            return perfectGoalText;
         }
         int nextLevel = Math.min(levelIndex + 1, levels.size() - 1);
         int replayLevel = findReplayTargetLevel();
@@ -9826,6 +9826,22 @@ public class GameView extends View {
         if (hiddenCount - clearedHidden <= 1) {
             // 通关后提示章节隐藏挑战差额，把老关回访目标接到结算页。
             return "下一目标 " + chapterNames[chapter] + "隐藏差" + (hiddenCount - clearedHidden);
+        }
+        return "";
+    }
+
+    private String buildChapterPerfectNextGoalText(int chapter) {
+        if (chapterPerfectClaimed[chapter] || getChapterUnlockedCount(chapter) < CHAPTER_SIZE) {
+            return "";
+        }
+
+        int perfectMissing = getChapterUnlockedCount(chapter) - getChapterPerfectClearCount(chapter);
+        if (perfectMissing <= 0) {
+            return "下一目标 " + chapterNames[chapter] + "完美奖励";
+        }
+        if (perfectMissing <= 2) {
+            // 完美差额出现在结算页，给高评级玩家一个更清晰的回访终点。
+            return "下一目标 " + chapterNames[chapter] + "完美差" + perfectMissing;
         }
         return "";
     }
