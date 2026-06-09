@@ -3651,7 +3651,7 @@ public class GameView extends View {
         lastChestNoticeType = 3;
         coins += lastChapterChestReward;
         // 章节宝箱追加一个长期储备道具，让整章刷星奖励更有实用价值。
-        lastChestRewardProp = chapter % 2 == 0 ? PROP_CLEANSE : PROP_BOMB;
+        lastChestRewardProp = getChapterChestRewardProp(chapter);
         lastChestRewardAmount = 1;
         addReserveProp(lastChestRewardProp, lastChestRewardAmount);
         prefs.edit()
@@ -3661,6 +3661,10 @@ public class GameView extends View {
         chestNoticeUntilTime = System.currentTimeMillis() + 1800;
         playHaptic(HapticFeedbackConstants.CONFIRM);
         playSuccessTone();
+    }
+
+    private int getChapterChestRewardProp(int chapter) {
+        return chapter % 2 == 0 ? PROP_CLEANSE : PROP_BOMB;
     }
 
     private void placeIce(int count) {
@@ -6131,6 +6135,9 @@ public class GameView extends View {
         textPaint.setColor(claimable ? Color.rgb(33, 37, 56) : Color.WHITE);
         String text = chapterChestClaimed[chapter] ? chapterNames[chapter] + " 已领"
                 : chapterNames[chapter] + " 宝箱 " + getChapterStars(chapter) + "/" + CHAPTER_CHEST_STARS;
+        if (claimable) {
+            text += " " + getPropName(getChapterChestRewardProp(chapter));
+        }
         canvas.drawText(text, chapterChestRect.centerX(), chapterChestRect.centerY() + dp(5), textPaint);
         drawChapterChestProgressBar(canvas, chapter, chapterChestRect, claimable);
     }
