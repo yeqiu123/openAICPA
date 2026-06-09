@@ -7032,13 +7032,13 @@ public class GameView extends View {
         if (level.elite && levelRanks[levelIndex] < 4) {
             return "补精英评级";
         } else if (level.moveLimitGoal > 0 && levelRanks[levelIndex] < 4) {
-            return "补限步挑战";
+            return "补限步" + getMoveLimitGoal(level);
         } else if (level.comboGoal > 0 && levelRanks[levelIndex] < 4) {
             return "补连击挑战";
         } else if (level.scoreGoal > 0 && levelRanks[levelIndex] < 4) {
             return "补高分挑战";
         } else if (isHiddenChallengeLevel(levelIndex) && levelRanks[levelIndex] < 4) {
-            return "补隐藏步限";
+            return "补隐藏" + Math.max(7, level.moves - 4) + "步";
         }
         return "";
     }
