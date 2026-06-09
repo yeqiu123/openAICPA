@@ -9276,6 +9276,12 @@ public class GameView extends View {
                         getWidth() - dp(34), getHeight() * (assistText.length() > 0 ? 0.63f : 0.598f));
                 drawTextFit(canvas, propAdviceText, propAdviceRect, 13, Color.rgb(255, 236, 133));
             }
+            String replayText = buildFailureReplayText();
+            if (replayText.length() > 0) {
+                RectF replayRect = new RectF(dp(34), getHeight() * (assistText.length() > 0 ? 0.632f : 0.6f),
+                        getWidth() - dp(34), getHeight() * (assistText.length() > 0 ? 0.662f : 0.63f));
+                drawTextFit(canvas, replayText, replayRect, 12, Color.WHITE);
+            }
         }
     }
 
@@ -9317,6 +9323,17 @@ public class GameView extends View {
     private int getCurrentObstacleRemaining(Level level) {
         return iceRemaining + honeyRemaining + stoneRemaining + vineRemaining + chainRemaining
                 + shellRemaining + coralReefRemaining + flowerRemaining + keyRemaining;
+    }
+
+    private String buildFailureReplayText() {
+        if (dailyChallengeMode) {
+            return "";
+        }
+        int replayLevel = findReplayTargetLevel();
+        if (replayLevel < 0 || replayLevel == levelIndex) {
+            return "";
+        }
+        return "回访可补 第" + (replayLevel + 1) + "关 " + buildReplayReason(replayLevel);
     }
 
     private String buildSuccessNextGoalText() {
