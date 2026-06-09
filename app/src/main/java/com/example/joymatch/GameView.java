@@ -9147,6 +9147,10 @@ public class GameView extends View {
         if (level.moveChestCount > 0) {
             goalText += "  步箱 " + level.moveChestCount;
         }
+        if (getLevelRewardCellCount(level) >= 3) {
+            // 开场明确奖励格累计收益，让玩家知道每3格可换一次罗盘补给。
+            goalText += "  奖励格每3给罗盘";
+        }
         if (level.cloudCount > 0) {
             goalText += "  彩云 " + level.cloudCount;
         }
@@ -9330,6 +9334,16 @@ public class GameView extends View {
     private int getLevelObstacleCount(Level level) {
         return level.iceCount + level.honeyCount + level.stoneCount + level.vineCount + level.chainCount
                 + level.shellCount + level.coralReefCount + level.flowerCount;
+    }
+
+    private int getLevelRewardCellCount(Level level) {
+        return level.giftCount + level.cloudCount + level.gemCount + level.goldenEggCount + level.coinPouchCount
+                + level.paintBucketCount + level.windmillCount + level.jewelBowCount + level.stardustJarCount
+                + level.wishLampCount + level.resonanceDrumCount + level.auroraPrismCount + level.rainbowBottleCount
+                + level.energyPotionCount + level.butterflyCount + level.portalCount + level.hourglassCount
+                + level.luckyStarCount + level.luckyCloverCount + level.mysteryBoxCount + level.pearlCount
+                + level.carouselCount + level.ferrisTicketCount + level.fireworksBarrelCount + level.starportBeaconCount
+                + level.meteorTrailCount + level.rainbowArcCount + level.crystalCoreCount + level.musicBoxCount;
     }
 
     private void showFeedback(int combo, int cleared) {
