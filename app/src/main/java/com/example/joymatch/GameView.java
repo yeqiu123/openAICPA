@@ -7394,6 +7394,9 @@ public class GameView extends View {
             postInvalidateOnAnimation();
         }
 
+        if (hasRewardCell(row, col)) {
+            drawRewardCellPulse(canvas, rect);
+        }
         drawSpecialGlow(canvas, specialOf(piece), rect, centerX, centerY);
         drawTileIcon(canvas, colorOf(piece), centerX, centerY);
         drawSpecialMark(canvas, specialOf(piece), centerX, centerY);
@@ -7455,6 +7458,18 @@ public class GameView extends View {
             paint.setColor(Color.argb((int) (95 + pulse * 75), 255, 236, 118));
             canvas.drawCircle(centerX, centerY, tileSize * (0.31f + pulse * 0.04f), paint);
         }
+        paint.setStyle(Paint.Style.FILL);
+        postInvalidateOnAnimation();
+    }
+
+    private void drawRewardCellPulse(Canvas canvas, RectF rect) {
+        // 奖励格用金色脉冲描边提示，避免在复杂棋盘里被普通棋子盖过辨识度。
+        float pulse = 0.58f + 0.42f * (float) Math.sin(System.currentTimeMillis() / 210.0);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(2 + pulse * 1.5f));
+        paint.setColor(Color.argb((int) (95 + pulse * 85), 255, 225, 92));
+        canvas.drawRoundRect(new RectF(rect.left + dp(3), rect.top + dp(3),
+                rect.right - dp(3), rect.bottom - dp(3)), dp(12), dp(12), paint);
         paint.setStyle(Paint.Style.FILL);
         postInvalidateOnAnimation();
     }
