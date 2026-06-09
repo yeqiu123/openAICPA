@@ -9748,6 +9748,10 @@ public class GameView extends View {
         appendFailureProgressPart(text, "清障差", getCurrentObstacleRemaining(level));
         appendFailureProgressPart(text, "分数差", Math.max(0, level.targetScore - score));
         appendFailureProgressPart(text, "奖励剩", getRewardCellCount());
+        if (isRewardCellMilestoneNear()) {
+            // 失败页标出奖励格里程碑只差1格，方便下局优先补拿罗盘。
+            appendFailureProgressPart(text, "罗盘差", 1);
+        }
         if (level.countdownBombCount > 0) {
             appendFailureProgressPart(text, "炸弹急", getCountdownBombUrgency());
         }
