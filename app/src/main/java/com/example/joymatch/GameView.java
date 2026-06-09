@@ -8823,7 +8823,8 @@ public class GameView extends View {
             if (lastSeasonReward > 0) {
                 bonusText += "  赛季任务";
             }
-            canvas.drawText(bonusText, getWidth() / 2f, getHeight() * 0.49f, textPaint);
+            drawTextFit(canvas, bonusText, new RectF(dp(24), getHeight() * 0.475f,
+                    getWidth() - dp(24), getHeight() * 0.505f), 16, Color.WHITE);
             drawChallengeBadges(canvas, getWidth() / 2f, getHeight() * 0.515f);
             String scoreText = dailyChallengeMode ? "挑战分 " + score : "最佳分 " + levelBestScores[levelIndex];
             canvas.drawText(scoreText, getWidth() / 2f, getHeight() * 0.55f, textPaint);
