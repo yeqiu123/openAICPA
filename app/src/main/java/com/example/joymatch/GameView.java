@@ -2799,7 +2799,7 @@ public class GameView extends View {
         }
 
         // 每日目标按通关星数累积，给主线和补星都提供轻量回访奖励。
-        dailyGoalProgress = Math.min(6, dailyGoalProgress + lastStars);
+        dailyGoalProgress = Math.min(6, dailyGoalProgress + lastStars + lastMusicBoxMilestoneReward);
         prefs.edit()
                 .putLong(KEY_DAILY_GOAL_DAY, getToday())
                 .putInt(KEY_DAILY_GOAL_PROGRESS, dailyGoalProgress)
