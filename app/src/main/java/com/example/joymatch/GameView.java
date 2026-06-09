@@ -532,6 +532,10 @@ public class GameView extends View {
         int col = (int) ((event.getX() - boardLeft) / tileSize);
         int row = (int) ((event.getY() - boardTop) / tileSize);
         if (!isInside(row, col)) {
+            if (activeProp != NONE) {
+                // 道具预览状态下点击棋盘外可取消，避免误选后必须使用。
+                activeProp = NONE;
+            }
             selectedRow = NONE;
             selectedCol = NONE;
             invalidate();
