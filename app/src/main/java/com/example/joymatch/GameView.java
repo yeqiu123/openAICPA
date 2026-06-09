@@ -879,6 +879,7 @@ public class GameView extends View {
         lastRainbowArcReward = 0;
         lastCrystalCoreReward = 0;
         lastMusicBoxReward = 0;
+        lastCountdownBombReward = 0;
         lastEnergyRewardProp = NONE;
         honeySpreadCount = 0;
         challengeCleared = false;
@@ -9452,6 +9453,7 @@ public class GameView extends View {
     private void showNormalFeedback(int combo, int cleared) {
         lastTaskRewardType = 0;
         lastEnergyRewardProp = NONE;
+        lastCountdownBombReward = 0;
         showFeedback(combo, cleared);
     }
 
