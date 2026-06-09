@@ -5628,6 +5628,9 @@ public class GameView extends View {
         if (dailyStreak > 1) {
             coinText += " 连" + dailyStreak;
         }
+        if (!dailyChallengeMode && winStreak > 1) {
+            coinText += " 胜" + winStreak;
+        }
         coinText += buildNextDailyLoginRewardHint();
         drawTextFitRight(canvas, coinText, new RectF(getWidth() * 0.48f, dp(92), getWidth() - dp(18), dp(110)), 15, Color.WHITE);
         String obstacleText = "冰" + iceRemaining + " 蜜" + honeyRemaining + " 石" + stoneRemaining
