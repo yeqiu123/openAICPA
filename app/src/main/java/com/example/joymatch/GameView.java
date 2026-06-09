@@ -6927,7 +6927,27 @@ public class GameView extends View {
         if (levelStars[level] < 3) {
             return "差" + (3 - levelStars[level]) + "星";
         }
+        String challenge = buildReplayChallengeReason(level);
+        if (challenge.length() > 0) {
+            return challenge;
+        }
         return "冲" + buildRankText(4);
+    }
+
+    private String buildReplayChallengeReason(int levelIndex) {
+        Level level = levels.get(levelIndex);
+        if (level.elite && levelRanks[levelIndex] < 4) {
+            return "补精英评级";
+        } else if (level.moveLimitGoal > 0 && levelRanks[levelIndex] < 4) {
+            return "补限步挑战";
+        } else if (level.comboGoal > 0 && levelRanks[levelIndex] < 4) {
+            return "补连击挑战";
+        } else if (level.scoreGoal > 0 && levelRanks[levelIndex] < 4) {
+            return "补高分挑战";
+        } else if (isHiddenChallengeLevel(levelIndex) && levelRanks[levelIndex] < 4) {
+            return "补隐藏步限";
+        }
+        return "";
     }
 
     private void focusReplayLevel() {
