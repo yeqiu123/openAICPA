@@ -2489,6 +2489,10 @@ public class GameView extends View {
         if (moveChest[row][col] > 0) {
             priority += 18;
         }
+        if (fireworksBarrel[row][col] > 0) {
+            // 烟花桶能直接点燃爆点，智能提示优先指向可制造爆发的落点。
+            priority += 17;
+        }
         if (starportBeacon[row][col] > 0) {
             // 星港信标会补方向特效，智能提示优先指向可打开横竖连锁的落点。
             priority += 17;
@@ -6025,6 +6029,13 @@ public class GameView extends View {
                 obstacleText += " 全开";
             }
         }
+        if (level.fireworksBarrelCount > 0) {
+            // 烟花桶是直接爆发点，HUD单独显示剩余和本局能量收益。
+            obstacleText += " 烟" + getFireworksBarrelRemainingCount();
+            if (lastFireworksBarrelReward > 0) {
+                obstacleText += " 爆发+" + lastFireworksBarrelReward;
+            }
+        }
         if (level.starportBeaconCount > 0) {
             // 星港信标能制造方向特效，HUD单独显示剩余和本局能量收益。
             obstacleText += " 港" + getStarportBeaconRemainingCount();
@@ -7999,6 +8010,9 @@ public class GameView extends View {
         } else if (getMusicBoxRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 开音乐盒拿星弦";
+        } else if (getFireworksBarrelRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            return "推荐 " + getPropName(prop) + " 点烟花开爆发";
         } else if (getStarportBeaconRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 开信标铺方向";
@@ -8078,6 +8092,11 @@ public class GameView extends View {
             // 音乐盒能转成可储备星弦琴，推荐精准道具优先开盒。
             return true;
         }
+        if (getFireworksBarrelRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            // 烟花桶能直接触发爆点，推荐精准道具提前打开爆发节奏。
+            return true;
+        }
         if (getStarportBeaconRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             // 星港信标打开后会补方向特效，推荐精准道具提前铺开横竖连锁。
@@ -8128,6 +8147,10 @@ public class GameView extends View {
         if (getMusicBoxRemainingCount() > 0) {
             // 音乐盒关失败时直接提示资源目标，帮助下局优先规划星弦琴储备。
             return "建议下局优先开音乐盒";
+        }
+        if (getFireworksBarrelRemainingCount() > 0) {
+            // 烟花桶失败后提示优先点燃，把爆发收益尽早打出来。
+            return "建议下局优先点烟花桶";
         }
         if (getStarportBeaconRemainingCount() > 0) {
             // 星港信标失败后提示优先开信标，把方向特效收益提前打出来。
@@ -9125,6 +9148,13 @@ public class GameView extends View {
 
         float centerX = rect.left + rect.width() * 0.26f;
         float centerY = rect.bottom - dp(18);
+        float pulse = 0.55f + 0.45f * (float) Math.sin(System.currentTimeMillis() / 185.0);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(2 + pulse * 2));
+        paint.setColor(Color.argb((int) (90 + pulse * 95), 255, 99, 132));
+        canvas.drawRoundRect(new RectF(rect.left + dp(5), rect.top + dp(5),
+                rect.right - dp(5), rect.bottom - dp(5)), dp(13), dp(13), paint);
+        paint.setStyle(Paint.Style.FILL);
         RectF body = new RectF(centerX - dp(10), centerY - dp(10), centerX + dp(10), centerY + dp(12));
         paint.setColor(Color.argb(230, 255, 99, 132));
         canvas.drawRoundRect(body, dp(5), dp(5), paint);
@@ -9654,6 +9684,8 @@ public class GameView extends View {
         }
         if (level.fireworksBarrelCount > 0) {
             goalText += "  烟花桶 " + level.fireworksBarrelCount;
+            // 开场说明烟花桶收益，提醒玩家优先点燃爆发点。
+            goalText += "  点燃开爆发";
         }
         if (level.starportBeaconCount > 0) {
             goalText += "  星港信标 " + level.starportBeaconCount;
@@ -9732,6 +9764,8 @@ public class GameView extends View {
             return "策略 火箭/罗盘优先开拱桥";
         } else if (level.starportBeaconCount > 0) {
             return "策略 火箭/罗盘优先开信标";
+        } else if (level.fireworksBarrelCount > 0) {
+            return "策略 火箭/罗盘优先点烟花";
         } else if (getRewardCellCount() >= 3) {
             // 奖励格密集时优先提示精准道具，帮助玩家把额外收益转成通关优势。
             return "策略 火箭/罗盘优先收奖励";
@@ -10195,6 +10229,10 @@ public class GameView extends View {
             // 失败复盘也显示音乐盒剩余，提醒下局优先拿星弦琴储备。
             appendFailureProgressPart(text, "音乐盒剩", getMusicBoxRemainingCount());
         }
+        if (level.fireworksBarrelCount > 0) {
+            // 烟花桶剩余量单独复盘，提示下局优先打开爆发点。
+            appendFailureProgressPart(text, "烟花剩", getFireworksBarrelRemainingCount());
+        }
         if (level.starportBeaconCount > 0) {
             // 星港信标剩余量单独复盘，提示下局优先拿方向特效爆发点。
             appendFailureProgressPart(text, "信标剩", getStarportBeaconRemainingCount());
@@ -10261,6 +10299,18 @@ public class GameView extends View {
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
                 if (musicBox[row][col] > 0) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    private int getFireworksBarrelRemainingCount() {
+        int count = 0;
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (fireworksBarrel[row][col] > 0) {
                     count++;
                 }
             }
