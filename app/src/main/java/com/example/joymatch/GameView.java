@@ -6149,6 +6149,13 @@ public class GameView extends View {
             paint.setColor(Color.argb(230, 255, 236, 133));
             canvas.drawRoundRect(badge, dp(5), dp(5), paint);
             paint.setStyle(Paint.Style.FILL);
+        } else if (isHiddenChallengeLevel(levelIndex) && levelHiddenChallengesCleared[levelIndex]) {
+            // 已完成隐藏挑战用冷色描边，和待补挑战形成区分。
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(dp(1.4f));
+            paint.setColor(Color.argb(220, 116, 219, 214));
+            canvas.drawRoundRect(badge, dp(5), dp(5), paint);
+            paint.setStyle(Paint.Style.FILL);
         }
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setTextSize(sp(8));
