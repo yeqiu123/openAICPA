@@ -6751,7 +6751,7 @@ public class GameView extends View {
                         + "  精英 " + getChapterClearedEliteCount(chapter) + "/" + getChapterEliteCount(chapter) + eliteStatus
                         + "  奖励关 " + getChapterUnlockedRewardLevelCount(chapter) + "/" + getChapterRewardLevelCount(chapter)
                         + "  炸弹关 " + getChapterUnlockedBombLevelCount(chapter) + "/" + getChapterBombLevelCount(chapter)
-                        + "  音乐盒 " + getChapterUnlockedMusicBoxLevelCount(chapter) + "/" + getChapterMusicBoxLevelCount(chapter)
+                        + buildChapterMusicBoxProgressText(chapter)
                         + hiddenStatus + perfectStatus,
                 rankTextRect, 12, Color.WHITE);
         if (shouldPulseChapterProgressGoal(chapter)) {
@@ -6826,6 +6826,15 @@ public class GameView extends View {
         }
         // 完美进度展示高手向回访目标，并提示整章完美奖励状态。
         return "  完美 " + perfectCount + "/" + getChapterUnlockedCount(chapter) + hint;
+    }
+
+    private String buildChapterMusicBoxProgressText(int chapter) {
+        int musicBoxCount = getChapterMusicBoxLevelCount(chapter);
+        if (musicBoxCount <= 0) {
+            return "";
+        }
+        // 只有存在音乐盒资源关的章节才显示进度，避免普通章节出现无意义的0/0。
+        return "  音乐盒 " + getChapterUnlockedMusicBoxLevelCount(chapter) + "/" + musicBoxCount;
     }
 
     private boolean shouldPulseChapterProgressGoal(int chapter) {
