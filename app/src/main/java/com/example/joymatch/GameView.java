@@ -10138,7 +10138,7 @@ public class GameView extends View {
         }
         if (lastMusicBoxReward > 0) {
             // 音乐盒奖励后提示星弦琴用途，把奖励转成下一局主动连击目标。
-            return "下一目标 用星弦琴铺连击";
+            return "下一目标 星弦琴已入储备";
         }
         String rewardCellGoalText = buildRewardCellNextGoalText();
         if (rewardCellGoalText.length() > 0) {
