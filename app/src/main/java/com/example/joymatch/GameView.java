@@ -6635,6 +6635,7 @@ public class GameView extends View {
                 + "  星 " + getChapterStars(chapter) + status, progressTextRect, 12, Color.WHITE);
         drawTextFit(canvas, "章节评级 " + getChapterRankScore(chapter) + "/" + getChapterRankRewardTarget() + rankStatus
                         + "  精英 " + getChapterClearedEliteCount(chapter) + "/" + getChapterEliteCount(chapter) + eliteStatus
+                        + "  奖励关 " + getChapterUnlockedRewardLevelCount(chapter) + "/" + getChapterRewardLevelCount(chapter)
                         + hiddenStatus + perfectStatus,
                 rankTextRect, 12, Color.WHITE);
         if (shouldPulseChapterProgressGoal(chapter)) {
@@ -7220,6 +7221,30 @@ public class GameView extends View {
             }
         }
         return unlocked;
+    }
+
+    private int getChapterRewardLevelCount(int chapter) {
+        int start = chapter * CHAPTER_SIZE;
+        int end = Math.min(start + CHAPTER_SIZE, levels.size());
+        int count = 0;
+        for (int level = start; level < end; level++) {
+            if (getLevelRewardCellCount(levels.get(level)) >= 3) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private int getChapterUnlockedRewardLevelCount(int chapter) {
+        int start = chapter * CHAPTER_SIZE;
+        int end = Math.min(start + CHAPTER_SIZE, levels.size());
+        int count = 0;
+        for (int level = start; level < end; level++) {
+            if (level <= highestUnlockedLevel && getLevelRewardCellCount(levels.get(level)) >= 3) {
+                count++;
+            }
+        }
+        return count;
     }
 
     private int findReplayTargetLevel() {
