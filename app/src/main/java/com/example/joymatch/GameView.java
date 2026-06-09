@@ -2490,6 +2490,18 @@ public class GameView extends View {
                 || crystalCore[row][col] > 0 || musicBox[row][col] > 0;
     }
 
+    private int getRewardCellCount() {
+        int count = 0;
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (hasRewardCell(row, col)) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
     private boolean hasAdjacentObstacle(int row, int col) {
         for (int nearRow = row - 1; nearRow <= row + 1; nearRow++) {
             for (int nearCol = col - 1; nearCol <= col + 1; nearCol++) {
@@ -7618,6 +7630,9 @@ public class GameView extends View {
         } else if (targetRemaining > level.targetAmount / 2 && movesLeft <= level.moves / 2
                 && (prop == PROP_MAGNET || prop == PROP_COLOR_BLAST || prop == PROP_TARGET_BRUSH || prop == PROP_BRUSH)) {
             return "推荐 " + getPropName(prop) + " 补齐收集";
+        } else if (getRewardCellCount() >= 3 && movesLeft <= level.moves / 2
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            return "推荐 " + getPropName(prop) + " 收奖励格";
         } else if (obstaclePressure >= Math.max(5, getLevelObstacleCount(level) / 3)) {
             return "推荐 " + getPropName(prop) + " 清障打开局面";
         } else if (level.comboGoal > 0 && bestCombo < level.comboGoal) {
@@ -7668,6 +7683,11 @@ public class GameView extends View {
         }
         if (targetRemaining > level.targetAmount / 2 && movesLeft <= level.moves / 2
                 && (prop == PROP_MAGNET || prop == PROP_COLOR_BLAST || prop == PROP_TARGET_BRUSH || prop == PROP_BRUSH)) {
+            return true;
+        }
+        if (getRewardCellCount() >= 3 && movesLeft <= level.moves / 2
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            // 奖励格密集且步数吃紧时，推荐能精准打到关键格的道具。
             return true;
         }
         if (obstaclePressure >= Math.max(5, getLevelObstacleCount(level) / 3) && movesLeft <= level.moves * 2 / 3
