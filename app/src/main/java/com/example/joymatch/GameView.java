@@ -9870,6 +9870,7 @@ public class GameView extends View {
             appendFailureProgressPart(text, "罗盘差", 1);
         }
         if (level.countdownBombCount > 0) {
+            appendFailureProgressPart(text, "炸弹剩", getCountdownBombRemainingCount());
             appendFailureProgressPart(text, "炸弹急", getCountdownBombUrgency());
         }
         if (level.moveLimitGoal > 0 && !isMoveLimitGoalCleared(level)) {
