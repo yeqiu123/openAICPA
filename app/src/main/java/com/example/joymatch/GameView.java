@@ -29,6 +29,7 @@ public class GameView extends View {
     private static final String KEY_STARS_PREFIX = "stars_";
     private static final String KEY_BEST_SCORE_PREFIX = "best_score_";
     private static final String KEY_RANK_PREFIX = "rank_";
+    private static final String KEY_HIDDEN_CHALLENGE_PREFIX = "hidden_challenge_";
     private static final String KEY_COINS = "coins";
     private static final String KEY_PROP_RESERVE_PREFIX = "prop_reserve_";
     private static final String KEY_STAR_CHEST_CLAIMED = "star_chest_claimed";
@@ -180,6 +181,7 @@ public class GameView extends View {
     private final int[] levelBestScores = new int[LEVEL_COUNT];
     private final int[] levelRanks = new int[LEVEL_COUNT];
     private final int[] levelFailStreaks = new int[LEVEL_COUNT];
+    private final boolean[] levelHiddenChallengesCleared = new boolean[LEVEL_COUNT];
     private final boolean[] chapterChestClaimed = new boolean[CHAPTER_COUNT];
     private final boolean[] chapterMasteryClaimed = new boolean[CHAPTER_COUNT];
     private final boolean[] chapterEliteClaimed = new boolean[CHAPTER_COUNT];
@@ -2985,6 +2987,7 @@ public class GameView extends View {
             levelBestScores[i] = prefs.getInt(KEY_BEST_SCORE_PREFIX + i, 0);
             levelRanks[i] = prefs.getInt(KEY_RANK_PREFIX + i, 0);
             levelFailStreaks[i] = prefs.getInt(KEY_FAIL_STREAK_PREFIX + i, 0);
+            levelHiddenChallengesCleared[i] = prefs.getBoolean(KEY_HIDDEN_CHALLENGE_PREFIX + i, false);
         }
         for (int i = 0; i < chapterChestClaimed.length; i++) {
             chapterChestClaimed[i] = prefs.getBoolean(KEY_CHAPTER_CHEST_PREFIX + i, false);
@@ -3022,6 +3025,7 @@ public class GameView extends View {
         }
         grantReplayImprovementReward(oldStars, oldRank);
         if (hiddenChallengeCleared) {
+            levelHiddenChallengesCleared[levelIndex] = true;
             lastHiddenReward = 20;
             coins += lastHiddenReward;
             lastHiddenRewardProp = PROP_BOMB;
@@ -3043,6 +3047,7 @@ public class GameView extends View {
                 .putInt(KEY_STARS_PREFIX + levelIndex, levelStars[levelIndex])
                 .putInt(KEY_BEST_SCORE_PREFIX + levelIndex, levelBestScores[levelIndex])
                 .putInt(KEY_RANK_PREFIX + levelIndex, levelRanks[levelIndex])
+                .putBoolean(KEY_HIDDEN_CHALLENGE_PREFIX + levelIndex, levelHiddenChallengesCleared[levelIndex])
                 .putInt(KEY_FAIL_STREAK_PREFIX + levelIndex, 0)
                 .putInt(KEY_COINS, coins)
                 .putInt(KEY_STAR_CHEST_CLAIMED, starChestClaimed)
@@ -6077,7 +6082,7 @@ public class GameView extends View {
             return "连";
         } else if (replayLevel.scoreGoal > 0 && levelRanks[level] < 4) {
             return "分";
-        } else if (isHiddenChallengeLevel(level) && levelRanks[level] < 4) {
+        } else if (isHiddenChallengeLevel(level) && !levelHiddenChallengesCleared[level]) {
             return "隐";
         }
         return "评";
@@ -6159,7 +6164,7 @@ public class GameView extends View {
                 || (level.comboGoal > 0 && levelRanks[levelIndex] < 4)
                 || (level.scoreGoal > 0 && levelRanks[levelIndex] < 4)
                 || (level.elite && levelRanks[levelIndex] < 4)
-                || (isHiddenChallengeLevel(levelIndex) && levelRanks[levelIndex] < 4);
+                || (isHiddenChallengeLevel(levelIndex) && !levelHiddenChallengesCleared[levelIndex]);
     }
 
     private void drawMapChapterBanner(Canvas canvas) {
@@ -6950,7 +6955,7 @@ public class GameView extends View {
         int start = chapter * CHAPTER_SIZE;
         int end = Math.min(start + CHAPTER_SIZE, levels.size());
         for (int level = start; level < end; level++) {
-            if (isHiddenChallengeLevel(level) && levelRanks[level] >= 4) {
+            if (isHiddenChallengeLevel(level) && levelHiddenChallengesCleared[level]) {
                 total++;
             }
         }
@@ -7049,7 +7054,7 @@ public class GameView extends View {
             return "补连击挑战";
         } else if (level.scoreGoal > 0 && levelRanks[levelIndex] < 4) {
             return "补高分挑战";
-        } else if (isHiddenChallengeLevel(levelIndex) && levelRanks[levelIndex] < 4) {
+        } else if (isHiddenChallengeLevel(levelIndex) && !levelHiddenChallengesCleared[levelIndex]) {
             return "补隐藏" + Math.max(7, level.moves - 4) + "步";
         }
         return "";
