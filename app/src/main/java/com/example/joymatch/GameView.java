@@ -2653,11 +2653,7 @@ public class GameView extends View {
         lastDailyChallengeMilestoneProp = NONE;
         lastDailyChallengeMilestoneAmount = 0;
         lastDailyChallengeMilestoneProp = getDailyChallengeMilestoneProp(dailyChallengeStreak);
-        if (lastDailyChallengeMilestoneProp == PROP_MOON_TICKET || lastDailyChallengeMilestoneProp == PROP_SNOW_GLOBE) {
-            lastDailyChallengeMilestoneAmount = 2;
-        } else if (lastDailyChallengeMilestoneProp != NONE) {
-            lastDailyChallengeMilestoneAmount = 1;
-        }
+        lastDailyChallengeMilestoneAmount = getDailyChallengeMilestoneAmount(lastDailyChallengeMilestoneProp);
         if (lastDailyChallengeMilestoneProp != NONE) {
             // 每日挑战连胜节点给稀有道具，强化持续回访动力。
             addReserveProp(lastDailyChallengeMilestoneProp, lastDailyChallengeMilestoneAmount);
@@ -2679,6 +2675,13 @@ public class GameView extends View {
             return PROP_SNOW_GLOBE;
         }
         return NONE;
+    }
+
+    private int getDailyChallengeMilestoneAmount(int prop) {
+        if (prop == PROP_MOON_TICKET || prop == PROP_SNOW_GLOBE) {
+            return 2;
+        }
+        return prop == NONE ? 0 : 1;
     }
 
     private void updateDailyGoalProgress() {
@@ -2780,7 +2783,8 @@ public class GameView extends View {
     private String buildNextWinStreakRewardHint() {
         int nextStreak = getNextWinStreakMilestone();
         int prop = getWinStreakMilestoneProp(nextStreak);
-        return prop == NONE ? "" : " 到" + nextStreak + "奖" + getPropName(prop);
+        return prop == NONE ? "" : " 到" + nextStreak + "奖" + getPropName(prop)
+                + "+" + getWinStreakMilestoneAmount(nextStreak, prop);
     }
 
     private int getNextWinStreakMilestone() {
@@ -3466,11 +3470,7 @@ public class GameView extends View {
         lastDailyRewardProp = NONE;
         lastDailyRewardPropAmount = 0;
         lastDailyRewardProp = getDailyLoginRewardProp(dailyStreak);
-        if (lastDailyRewardProp == PROP_SNOW_GLOBE) {
-            lastDailyRewardPropAmount = 2;
-        } else if (lastDailyRewardProp != NONE) {
-            lastDailyRewardPropAmount = 1;
-        }
+        lastDailyRewardPropAmount = getDailyLoginRewardAmount(lastDailyRewardProp);
         if (lastDailyRewardProp != NONE) {
             // 连签节点送稀有道具，给每日回访一个更明确的期待。
             addReserveProp(lastDailyRewardProp, lastDailyRewardPropAmount);
@@ -3480,7 +3480,8 @@ public class GameView extends View {
     private String buildNextDailyLoginRewardHint() {
         int nextStreak = getNextDailyLoginMilestone();
         int prop = getDailyLoginRewardProp(nextStreak);
-        return prop == NONE ? "" : " 到" + nextStreak + "奖" + getPropName(prop);
+        return prop == NONE ? "" : " 到" + nextStreak + "奖" + getPropName(prop)
+                + "+" + getDailyLoginRewardAmount(prop);
     }
 
     private int getNextDailyLoginMilestone() {
@@ -3508,6 +3509,10 @@ public class GameView extends View {
             return PROP_SNOW_GLOBE;
         }
         return NONE;
+    }
+
+    private int getDailyLoginRewardAmount(int prop) {
+        return prop == PROP_SNOW_GLOBE ? 2 : (prop == NONE ? 0 : 1);
     }
 
     private void loadDailyGoal() {
@@ -6159,7 +6164,8 @@ public class GameView extends View {
     private String buildNextDailyChallengeRewardHint() {
         int nextStreak = getNextDailyChallengeMilestone();
         int prop = getDailyChallengeMilestoneProp(nextStreak);
-        return prop == NONE ? "" : " 到" + nextStreak + "奖" + getPropName(prop);
+        return prop == NONE ? "" : " 到" + nextStreak + "奖" + getPropName(prop)
+                + "+" + getDailyChallengeMilestoneAmount(prop);
     }
 
     private int getNextDailyChallengeMilestone() {
