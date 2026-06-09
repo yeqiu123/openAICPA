@@ -2730,25 +2730,8 @@ public class GameView extends View {
     private void grantWinStreakPropReward() {
         lastWinStreakRewardProp = NONE;
         lastWinStreakRewardAmount = 0;
-        if (winStreak == 5) {
-            lastWinStreakRewardProp = PROP_STAR_COMPASS;
-            lastWinStreakRewardAmount = 1;
-        } else if (winStreak == 10) {
-            lastWinStreakRewardProp = PROP_FIREWORK_CANNON;
-            lastWinStreakRewardAmount = 2;
-        } else if (winStreak == 12) {
-            lastWinStreakRewardProp = PROP_BUBBLE_WAND;
-            lastWinStreakRewardAmount = 1;
-        } else if (winStreak == 20) {
-            lastWinStreakRewardProp = PROP_STAR_HARP;
-            lastWinStreakRewardAmount = 1;
-        } else if (winStreak == 25) {
-            lastWinStreakRewardProp = PROP_SNOW_GLOBE;
-            lastWinStreakRewardAmount = 3;
-        } else if (winStreak > 0 && winStreak % 15 == 0) {
-            lastWinStreakRewardProp = PROP_SNOW_GLOBE;
-            lastWinStreakRewardAmount = 2;
-        }
+        lastWinStreakRewardProp = getWinStreakMilestoneProp(winStreak);
+        lastWinStreakRewardAmount = getWinStreakMilestoneAmount(winStreak, lastWinStreakRewardProp);
         if (lastWinStreakRewardProp != NONE) {
             // 连胜节点补给稀有道具，鼓励玩家连续冲关和反复挑战。
             addReserveProp(lastWinStreakRewardProp, lastWinStreakRewardAmount);
@@ -2782,6 +2765,17 @@ public class GameView extends View {
             return PROP_SNOW_GLOBE;
         }
         return NONE;
+    }
+
+    private int getWinStreakMilestoneAmount(int streak, int prop) {
+        if (prop == NONE) {
+            return 0;
+        } else if (streak == 10 || (streak > 0 && streak % 15 == 0)) {
+            return 2;
+        } else if (streak == 25) {
+            return 3;
+        }
+        return 1;
     }
 
     private void grantAchievementRewards() {
