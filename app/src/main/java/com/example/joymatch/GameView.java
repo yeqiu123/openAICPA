@@ -2477,6 +2477,10 @@ public class GameView extends View {
         if (countdownBomb[row][col] > 0) {
             // 提示优先救临近爆炸的炸弹，避免复杂后期关卡里错过关键步。
             priority += 28 + Math.max(0, 5 - countdownBomb[row][col]) * 8;
+            if (isLastCountdownBombReady()) {
+                // 只剩最后一个炸弹时，智能提示优先收尾拿护盾奖励。
+                priority += 18;
+            }
         }
         if (moveChest[row][col] > 0) {
             priority += 18;
