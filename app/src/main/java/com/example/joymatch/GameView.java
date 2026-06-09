@@ -5801,6 +5801,7 @@ public class GameView extends View {
                 drawTile(canvas, row, col);
             }
         }
+        drawActivePropPreview(canvas);
         drawPropBar(canvas);
     }
 
@@ -5826,6 +5827,46 @@ public class GameView extends View {
         drawFeverSparks(canvas, boardRect);
         paint.setStyle(Paint.Style.FILL);
         postInvalidateOnAnimation();
+    }
+
+    private void drawActivePropPreview(Canvas canvas) {
+        if (activeProp == NONE || selectedRow == NONE || selectedCol == NONE) {
+            return;
+        }
+        Set<Cell> cells = buildActivePropPreviewCells(selectedRow, selectedCol);
+        if (cells.isEmpty()) {
+            return;
+        }
+
+        // 点选类道具用棋盘预览标出影响范围，减少误点成本。
+        float pulse = 0.5f + 0.5f * (float) Math.sin(System.currentTimeMillis() / 160.0);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(2 + pulse));
+        paint.setColor(Color.argb((int) (145 + pulse * 70), 255, 236, 133));
+        for (Cell cell : cells) {
+            RectF rect = new RectF(boardLeft + cell.col * tileSize + dp(5), boardTop + cell.row * tileSize + dp(5),
+                    boardLeft + (cell.col + 1) * tileSize - dp(5), boardTop + (cell.row + 1) * tileSize - dp(5));
+            canvas.drawRoundRect(rect, dp(10), dp(10), paint);
+        }
+        paint.setStyle(Paint.Style.FILL);
+        postInvalidateOnAnimation();
+    }
+
+    private Set<Cell> buildActivePropPreviewCells(int row, int col) {
+        if (activeProp == PROP_BOMB || activeProp == PROP_CLEANSE || activeProp == PROP_CHAIN_BREAKER) {
+            return buildBombCells(row, col);
+        } else if (activeProp == PROP_ROW_BLAST) {
+            return buildCrossCells(row, col);
+        } else if (activeProp == PROP_COLOR_BLAST) {
+            return buildColorCells(colorOf(board[row][col]));
+        } else if (activeProp == PROP_ROCKET) {
+            return buildRocketCells(row, col);
+        } else if (activeProp == PROP_LIGHTNING) {
+            return buildDiagonalCells(row, col);
+        } else if (activeProp == PROP_STAR_COMPASS) {
+            return buildStarCompassCells(row, col);
+        }
+        return buildSingleCell(row, col);
     }
 
     private void drawFeverSparks(Canvas canvas, RectF boardRect) {
