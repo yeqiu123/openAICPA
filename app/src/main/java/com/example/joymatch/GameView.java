@@ -5961,6 +5961,14 @@ public class GameView extends View {
             // 显示本局已收奖励格数量，和每3格一次的罗盘补给形成清晰目标。
             obstacleText += " 收奖" + rewardCellClearedCount;
         }
+        int musicBoxCount = getMusicBoxRemainingCount();
+        if (level.musicBoxCount > 0) {
+            // 音乐盒是可储备星弦琴的资源点，HUD显示剩余和已收数量。
+            obstacleText += " 乐" + musicBoxCount;
+            if (lastMusicBoxReward > 0) {
+                obstacleText += " 收乐" + lastMusicBoxReward;
+            }
+        }
         drawTextFitRight(canvas, obstacleText, new RectF(getWidth() * 0.48f, dp(118), getWidth() - dp(18), dp(136)), 15, Color.WHITE);
         textPaint.setTextSize(sp(13));
         String starText = buildStars(getPreviewStars(level));
@@ -10018,6 +10026,18 @@ public class GameView extends View {
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
                 if (countdownBomb[row][col] > 0) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    private int getMusicBoxRemainingCount() {
+        int count = 0;
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (musicBox[row][col] > 0) {
                     count++;
                 }
             }
