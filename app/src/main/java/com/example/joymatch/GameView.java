@@ -9879,7 +9879,7 @@ public class GameView extends View {
                 || lastChapterMasteryReward > 0 || lastChapterEliteReward > 0 || lastChapterRankReward > 0
                 || lastChapterHiddenReward > 0 || lastChapterPerfectReward > 0
                 || lastSeasonReward > 0 || lastDailyChallengeMilestoneProp != NONE
-                || rewardCellClearedCount >= 3 || rewardBombMilestone > 0)) {
+                || rewardCellClearedCount >= 3 || rewardBombMilestone > 0 || lastMusicBoxReward > 0)) {
             drawRewardSparkles(canvas, getWidth() / 2f, getHeight() * 0.42f - dp(12));
         }
 
