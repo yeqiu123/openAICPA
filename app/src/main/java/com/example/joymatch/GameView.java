@@ -9567,8 +9567,17 @@ public class GameView extends View {
         if (isHiddenChallengeLevel() && !hiddenChallengeCleared && !levelHiddenChallengesCleared[levelIndex]) {
             appendFailureProgressPart(text, "隐藏超", movesUsed - Math.max(7, level.moves - 4));
         }
+        if (!dailyChallengeMode && levelRanks[levelIndex] >= 4 && !levelPerfectCleared[levelIndex]) {
+            appendFailureProgressPart(text, "完美差", getPerfectFailureGap(level));
+        }
         // 失败页给出最短追踪目标，帮助玩家判断下局优先用哪类道具。
         return text.length() == 0 ? "已接近通关，续步可冲过" : text.toString();
+    }
+
+    private int getPerfectFailureGap(Level level) {
+        int moveGap = Math.max(0, movesUsed - Math.max(6, level.moves / 2));
+        int rankGap = Math.max(0, 5 - lastRank);
+        return Math.max(1, moveGap + rankGap);
     }
 
     private void appendFailureProgressPart(StringBuilder text, String label, int amount) {
