@@ -7180,8 +7180,10 @@ public class GameView extends View {
             if (propReserve[prop] > 0) {
                 drawReservePropBadge(canvas, rect, propReserve[prop]);
             }
+            int labelColor = propInventory[prop] <= 0 && coins < PROP_COSTS[prop]
+                    ? Color.rgb(255, 236, 133) : Color.WHITE;
             drawTextFit(canvas, label, new RectF(rect.left + dp(2), rect.bottom - dp(16), rect.right - dp(2),
-                    rect.bottom - dp(2)), 9, Color.WHITE);
+                    rect.bottom - dp(2)), 9, labelColor);
         }
         drawRecommendedPropTip(canvas, top);
     }
