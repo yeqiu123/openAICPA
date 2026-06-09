@@ -6523,24 +6523,46 @@ public class GameView extends View {
         if (getAvailableStarChests() > 0) {
             return "宝箱+" + (25 + (starChestClaimed + 1) * 5) + buildNextStarChestPropHint();
         }
-        return "星 " + getTotalStars() + "/" + getNextStarChestTarget();
+        return "星 " + getTotalStars() + "/" + getNextStarChestTarget() + buildNextStarChestPropHint();
     }
 
     private String buildRankChestLabel() {
         if (getAvailableRankChests() > 0) {
             return "评级+" + (40 + (rankChestClaimed + 1) * 8) + buildNextRankChestPropHint();
         }
-        return "评 " + getTotalRankScore() + "/" + getNextRankChestTarget();
+        return "评 " + getTotalRankScore() + "/" + getNextRankChestTarget() + buildNextRankChestPropHint();
     }
 
     private String buildNextStarChestPropHint() {
-        int prop = getStarChestRewardProp(starChestClaimed + 1);
-        return prop == NONE ? "" : " " + getPropName(prop);
+        int nextChest = getNextStarChestPropStep();
+        int prop = getStarChestRewardProp(nextChest);
+        return prop == NONE ? "" : " 到" + nextChest + "箱" + getPropName(prop);
     }
 
     private String buildNextRankChestPropHint() {
-        int prop = getRankChestRewardProp(rankChestClaimed + 1);
-        return prop == NONE ? "" : " " + getPropName(prop);
+        int nextChest = getNextRankChestPropStep();
+        int prop = getRankChestRewardProp(nextChest);
+        return prop == NONE ? "" : " 到" + nextChest + "箱" + getPropName(prop);
+    }
+
+    private int getNextStarChestPropStep() {
+        // 宝箱道具节点间隔较长，显示最近节点能强化补星追求。
+        for (int claimed = starChestClaimed + 1; claimed <= starChestClaimed + 16; claimed++) {
+            if (getStarChestRewardProp(claimed) != NONE) {
+                return claimed;
+            }
+        }
+        return NONE;
+    }
+
+    private int getNextRankChestPropStep() {
+        // 评级宝箱同样预告最近道具节点，引导玩家重玩冲高评级。
+        for (int claimed = rankChestClaimed + 1; claimed <= rankChestClaimed + 8; claimed++) {
+            if (getRankChestRewardProp(claimed) != NONE) {
+                return claimed;
+            }
+        }
+        return NONE;
     }
 
     private void drawStarChestNotice(Canvas canvas, float pagerTop) {
