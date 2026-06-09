@@ -9731,6 +9731,10 @@ public class GameView extends View {
         if (getAvailableRankChests() > 0) {
             return "下一目标 评级宝箱可领取";
         }
+        String masteryGoalText = buildChapterMasteryNextGoalText(chapter);
+        if (masteryGoalText.length() > 0) {
+            return masteryGoalText;
+        }
         String rankGoalText = buildChapterRankNextGoalText(chapter);
         if (rankGoalText.length() > 0) {
             return rankGoalText;
@@ -9754,6 +9758,22 @@ public class GameView extends View {
         }
         // 通关页给一个明确的下一步，减少玩家在主线和补星之间的选择成本。
         return "下一目标 收集满星和高评级";
+    }
+
+    private String buildChapterMasteryNextGoalText(int chapter) {
+        if (chapterMasteryClaimed[chapter] || getChapterUnlockedCount(chapter) < CHAPTER_SIZE) {
+            return "";
+        }
+
+        int starMissing = CHAPTER_SIZE * 3 - getChapterStars(chapter);
+        if (starMissing <= 0) {
+            return "下一目标 " + chapterNames[chapter] + "满星大师";
+        }
+        if (starMissing <= 6) {
+            // 结算页补上章节满星差额，让补星目标和大师奖励更容易衔接。
+            return "下一目标 " + chapterNames[chapter] + "满星差" + starMissing;
+        }
+        return "";
     }
 
     private String buildChapterRankNextGoalText(int chapter) {
