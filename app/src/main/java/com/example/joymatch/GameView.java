@@ -6120,7 +6120,8 @@ public class GameView extends View {
         return (level.moveLimitGoal > 0 && levelRanks[levelIndex] < 4)
                 || (level.comboGoal > 0 && levelRanks[levelIndex] < 4)
                 || (level.scoreGoal > 0 && levelRanks[levelIndex] < 4)
-                || (level.elite && levelRanks[levelIndex] < 4);
+                || (level.elite && levelRanks[levelIndex] < 4)
+                || (isHiddenChallengeLevel(levelIndex) && levelRanks[levelIndex] < 4);
     }
 
     private void drawMapChapterBanner(Canvas canvas) {
