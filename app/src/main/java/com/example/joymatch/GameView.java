@@ -9599,6 +9599,10 @@ public class GameView extends View {
         if (getAvailableRankChests() > 0) {
             return "下一目标 评级宝箱可领取";
         }
+        if (!chapterPerfectClaimed[chapter] && getChapterUnlockedCount(chapter) >= CHAPTER_SIZE
+                && getChapterPerfectClearCount(chapter) >= getChapterUnlockedCount(chapter)) {
+            return "下一目标 " + chapterNames[chapter] + "完美奖励";
+        }
         int nextLevel = Math.min(levelIndex + 1, levels.size() - 1);
         int replayLevel = findReplayTargetLevel();
         if (levelIndex < levels.size() - 1 && nextLevel <= highestUnlockedLevel) {
