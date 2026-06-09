@@ -3444,8 +3444,19 @@ public class GameView extends View {
     }
 
     private String buildNextDailyLoginRewardHint() {
-        int prop = getDailyLoginRewardProp(dailyStreak + 1);
-        return prop == NONE ? "" : " 奖" + getPropName(prop);
+        int nextStreak = getNextDailyLoginMilestone();
+        int prop = getDailyLoginRewardProp(nextStreak);
+        return prop == NONE ? "" : " 到" + nextStreak + "奖" + getPropName(prop);
+    }
+
+    private int getNextDailyLoginMilestone() {
+        // 预告最近的连签奖励节点，让长期登录目标更清楚。
+        for (int streak = dailyStreak + 1; streak <= dailyStreak + 30; streak++) {
+            if (getDailyLoginRewardProp(streak) != NONE) {
+                return streak;
+            }
+        }
+        return NONE;
     }
 
     private int getDailyLoginRewardProp(int streak) {
