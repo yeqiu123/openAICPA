@@ -6353,8 +6353,19 @@ public class GameView extends View {
     }
 
     private String buildNextSeasonRewardHint() {
-        int prop = getSeasonRewardProp(seasonRewardStep + 1);
-        return prop == NONE ? "" : " 奖" + getPropName(prop);
+        int nextStep = getNextSeasonRewardStep();
+        int prop = getSeasonRewardProp(nextStep);
+        return prop == NONE ? "" : " 到" + nextStep + "季奖" + getPropName(prop);
+    }
+
+    private int getNextSeasonRewardStep() {
+        // 赛季道具不是每档都有，预告最近奖励档位让长线目标更明确。
+        for (int step = seasonRewardStep + 1; step <= seasonRewardStep + 10; step++) {
+            if (getSeasonRewardProp(step) != NONE) {
+                return step;
+            }
+        }
+        return NONE;
     }
 
     private void drawSeasonProgressBar(Canvas canvas, float left, float top, float right) {
