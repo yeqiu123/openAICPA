@@ -5913,6 +5913,10 @@ public class GameView extends View {
         if (rewardCellCount > 0) {
             obstacleText += " 奖" + rewardCellCount;
         }
+        if (rewardCellClearedCount > 0) {
+            // 显示本局已收奖励格数量，和每3格一次的罗盘补给形成清晰目标。
+            obstacleText += " 收奖" + rewardCellClearedCount;
+        }
         drawTextFitRight(canvas, obstacleText, new RectF(getWidth() * 0.48f, dp(118), getWidth() - dp(18), dp(136)), 15, Color.WHITE);
         textPaint.setTextSize(sp(13));
         String starText = buildStars(getPreviewStars(level));
