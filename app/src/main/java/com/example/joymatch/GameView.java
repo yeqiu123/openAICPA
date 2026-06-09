@@ -9134,7 +9134,9 @@ public class GameView extends View {
     }
 
     private String buildLevelStrategyHint(Level level) {
-        if (level.countdownBombCount > 0) {
+        if (!dailyChallengeMode && levelRanks[levelIndex] >= 4 && !levelPerfectCleared[levelIndex]) {
+            return "策略 控步数留爆炸冲完美";
+        } else if (level.countdownBombCount > 0) {
             return "策略 护盾/时钟稳住炸弹";
         } else if (level.chainCount > 0) {
             return "策略 破锁先开链";
