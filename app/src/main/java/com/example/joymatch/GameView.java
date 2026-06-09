@@ -453,6 +453,7 @@ public class GameView extends View {
                 showingLevelMap = true;
             } else if (levelIndex >= levels.size() - 1) {
                 // 最后一关通关后留在地图，方便继续补星和冲评级。
+                levelMapPage = levelIndex / LEVELS_PER_PAGE;
                 showingLevelMap = true;
             } else {
                 startLevel(levelIndex + 1);
