@@ -2485,6 +2485,10 @@ public class GameView extends View {
         if (moveChest[row][col] > 0) {
             priority += 18;
         }
+        if (musicBox[row][col] > 0) {
+            // 音乐盒能产出可储备星弦琴，智能提示优先指向能开盒的走法。
+            priority += 24;
+        }
         if (hasRewardCell(row, col)) {
             priority += 14;
             if (isRewardCellMilestoneNear()) {
