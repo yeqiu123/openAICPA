@@ -6749,8 +6749,8 @@ public class GameView extends View {
                 + "  星 " + getChapterStars(chapter) + status, progressTextRect, 12, Color.WHITE);
         drawTextFit(canvas, "章节评级 " + getChapterRankScore(chapter) + "/" + getChapterRankRewardTarget() + rankStatus
                         + "  精英 " + getChapterClearedEliteCount(chapter) + "/" + getChapterEliteCount(chapter) + eliteStatus
-                        + "  奖励关 " + getChapterUnlockedRewardLevelCount(chapter) + "/" + getChapterRewardLevelCount(chapter)
-                        + "  炸弹关 " + getChapterUnlockedBombLevelCount(chapter) + "/" + getChapterBombLevelCount(chapter)
+                        + buildChapterRewardLevelProgressText(chapter)
+                        + buildChapterBombLevelProgressText(chapter)
                         + buildChapterMusicBoxProgressText(chapter)
                         + hiddenStatus + perfectStatus,
                 rankTextRect, 12, Color.WHITE);
@@ -6835,6 +6835,24 @@ public class GameView extends View {
         }
         // 只有存在音乐盒资源关的章节才显示进度，避免普通章节出现无意义的0/0。
         return "  音乐盒 " + getChapterUnlockedMusicBoxLevelCount(chapter) + "/" + musicBoxCount;
+    }
+
+    private String buildChapterRewardLevelProgressText(int chapter) {
+        int rewardLevelCount = getChapterRewardLevelCount(chapter);
+        if (rewardLevelCount <= 0) {
+            return "";
+        }
+        // 只在有奖励格密集关的章节展示，减少地图行文本噪音。
+        return "  奖励关 " + getChapterUnlockedRewardLevelCount(chapter) + "/" + rewardLevelCount;
+    }
+
+    private String buildChapterBombLevelProgressText(int chapter) {
+        int bombLevelCount = getChapterBombLevelCount(chapter);
+        if (bombLevelCount <= 0) {
+            return "";
+        }
+        // 只在有炸弹关的章节展示，避免早期章节显示无意义的0/0。
+        return "  炸弹关 " + getChapterUnlockedBombLevelCount(chapter) + "/" + bombLevelCount;
     }
 
     private boolean shouldPulseChapterProgressGoal(int chapter) {
