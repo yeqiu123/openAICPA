@@ -9718,6 +9718,10 @@ public class GameView extends View {
         if (!dailyGoalClaimed && dailyGoalProgress >= 6) {
             return "下一目标 每日目标可领取";
         }
+        String dailyChallengeGoalText = buildDailyChallengeNextGoalText();
+        if (dailyChallengeGoalText.length() > 0) {
+            return dailyChallengeGoalText;
+        }
         int chapter = getChapterIndex(levelIndex);
         if (lastChapterPerfectReward > 0) {
             return chapterNames[chapter] + "完美奖励已入账";
@@ -9766,6 +9770,18 @@ public class GameView extends View {
         }
         // 通关页给一个明确的下一步，减少玩家在主线和补星之间的选择成本。
         return "下一目标 收集满星和高评级";
+    }
+
+    private String buildDailyChallengeNextGoalText() {
+        if (prefs.getLong(KEY_DAILY_CHALLENGE_DAY, -1L) == getToday()) {
+            return "";
+        }
+
+        int nextStreak = dailyChallengeStreak <= 0 ? 1 : dailyChallengeStreak + 1;
+        int prop = getDailyChallengeMilestoneProp(nextStreak);
+        // 主线结算提醒今日挑战，把每日回访奖励接到当前游戏循环。
+        return prop == NONE ? "下一目标 每日挑战奖励"
+                : "下一目标 每日挑战奖" + getPropName(prop);
     }
 
     private String buildSeasonNextGoalText() {
