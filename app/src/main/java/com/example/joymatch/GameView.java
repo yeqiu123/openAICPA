@@ -6166,6 +6166,9 @@ public class GameView extends View {
                 paint.setStyle(Paint.Style.FILL);
                 drawReplayTargetMapMark(canvas, level, rect);
             }
+            if (unlocked && getLevelRewardCellCount(levels.get(level)) >= 3) {
+                drawRewardLevelMapMark(canvas, rect);
+            }
             if (levelRanks[level] >= 4) {
                 drawHighRankMapGlow(canvas, level, rect);
             }
@@ -6199,6 +6202,17 @@ public class GameView extends View {
         }
 
         drawLevelMapPager(canvas);
+    }
+
+    private void drawRewardLevelMapMark(Canvas canvas, RectF rect) {
+        // 地图上标出奖励格密集关，方便玩家回访时快速挑选高收益关卡。
+        RectF badge = new RectF(rect.left + dp(4), rect.bottom - dp(18), rect.left + dp(24), rect.bottom - dp(4));
+        paint.setColor(Color.argb(220, 255, 225, 92));
+        canvas.drawRoundRect(badge, dp(5), dp(5), paint);
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        textPaint.setTextSize(sp(8));
+        textPaint.setColor(Color.rgb(33, 37, 56));
+        canvas.drawText("奖", badge.centerX(), badge.centerY() + dp(3), textPaint);
     }
 
     private void drawReplayTargetMapMark(Canvas canvas, int level, RectF rect) {
