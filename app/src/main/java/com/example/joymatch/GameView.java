@@ -9590,6 +9590,9 @@ public class GameView extends View {
             return "下一目标 每日目标可领取";
         }
         int chapter = getChapterIndex(levelIndex);
+        if (lastChapterPerfectReward > 0) {
+            return chapterNames[chapter] + "完美奖励已入账";
+        }
         if (canClaimChapterChest(chapter)) {
             return "下一目标 " + chapterNames[chapter] + "宝箱可领取";
         }
