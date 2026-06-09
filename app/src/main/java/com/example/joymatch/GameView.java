@@ -2489,6 +2489,10 @@ public class GameView extends View {
         if (moveChest[row][col] > 0) {
             priority += 18;
         }
+        if (pearl[row][col] > 0) {
+            // 贝壳珍珠会补金币和海星镐，智能提示优先指向资源收益点。
+            priority += 15;
+        }
         if (carousel[row][col] > 0) {
             // 旋转木马会转动棋盘并补能量，智能提示优先指向可打开环形连锁的落点。
             priority += 15;
@@ -6041,6 +6045,13 @@ public class GameView extends View {
                 obstacleText += " 全开";
             }
         }
+        if (level.pearlCount > 0) {
+            // 贝壳珍珠能补金币和海星镐，HUD单独显示剩余和金币收益。
+            obstacleText += " 珠" + getPearlRemainingCount();
+            if (lastPearlReward > 0) {
+                obstacleText += " 镐+" + lastPearlReward;
+            }
+        }
         if (level.carouselCount > 0) {
             // 旋转木马能转动棋盘并补能量，HUD单独显示剩余和本局能量收益。
             obstacleText += " 转" + getCarouselRemainingCount();
@@ -8043,6 +8054,9 @@ public class GameView extends View {
         } else if (getMusicBoxRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 开音乐盒拿星弦";
+        } else if (getPearlRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            return "推荐 " + getPropName(prop) + " 收珍珠拿海星镐";
         } else if (getCarouselRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 转木马攒能量";
@@ -8134,6 +8148,11 @@ public class GameView extends View {
             // 音乐盒能转成可储备星弦琴，推荐精准道具优先开盒。
             return true;
         }
+        if (getPearlRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            // 贝壳珍珠能补海星镐，推荐精准道具优先拿到后续清障资源。
+            return true;
+        }
         if (getCarouselRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             // 旋转木马能转动棋盘并补能量，推荐精准道具优先打出环形连锁。
@@ -8204,6 +8223,10 @@ public class GameView extends View {
         if (getMusicBoxRemainingCount() > 0) {
             // 音乐盒关失败时直接提示资源目标，帮助下局优先规划星弦琴储备。
             return "建议下局优先开音乐盒";
+        }
+        if (getPearlRemainingCount() > 0) {
+            // 贝壳珍珠失败后提示优先收集，帮助下局更早拿到海星镐资源。
+            return "建议下局优先收贝壳珍珠";
         }
         if (getCarouselRemainingCount() > 0) {
             // 旋转木马失败后提示优先打开，把能量和棋盘旋转收益提前打出来。
@@ -9160,6 +9183,13 @@ public class GameView extends View {
 
         float centerX = rect.right - dp(18);
         float centerY = rect.top + dp(18);
+        float pulse = 0.55f + 0.45f * (float) Math.sin(System.currentTimeMillis() / 220.0);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(2 + pulse * 2));
+        paint.setColor(Color.argb((int) (90 + pulse * 95), 255, 245, 220));
+        canvas.drawRoundRect(new RectF(rect.left + dp(5), rect.top + dp(5),
+                rect.right - dp(5), rect.bottom - dp(5)), dp(13), dp(13), paint);
+        paint.setStyle(Paint.Style.FILL);
         paint.setColor(Color.argb(185, 255, 245, 220));
         canvas.drawOval(new RectF(centerX - dp(13), centerY - dp(9), centerX + dp(13), centerY + dp(10)), paint);
         paint.setColor(Color.argb(235, 255, 255, 255));
@@ -9761,6 +9791,8 @@ public class GameView extends View {
         }
         if (level.pearlCount > 0) {
             goalText += "  贝壳珍珠 " + level.pearlCount;
+            // 开场说明珍珠收益，提醒玩家优先拿清障资源。
+            goalText += "  收珠拿海星镐";
         }
         if (level.carouselCount > 0) {
             goalText += "  旋转木马 " + level.carouselCount;
@@ -9864,6 +9896,8 @@ public class GameView extends View {
             return "策略 火箭/罗盘优先拿票根";
         } else if (level.carouselCount > 0) {
             return "策略 火箭/罗盘优先转木马";
+        } else if (level.pearlCount > 0) {
+            return "策略 火箭/罗盘优先收珍珠";
         } else if (getRewardCellCount() >= 3) {
             // 奖励格密集时优先提示精准道具，帮助玩家把额外收益转成通关优势。
             return "策略 火箭/罗盘优先收奖励";
@@ -10327,6 +10361,10 @@ public class GameView extends View {
             // 失败复盘也显示音乐盒剩余，提醒下局优先拿星弦琴储备。
             appendFailureProgressPart(text, "音乐盒剩", getMusicBoxRemainingCount());
         }
+        if (level.pearlCount > 0) {
+            // 贝壳珍珠剩余量单独复盘，提示下局优先拿金币和海星镐。
+            appendFailureProgressPart(text, "珍珠剩", getPearlRemainingCount());
+        }
         if (level.carouselCount > 0) {
             // 旋转木马剩余量单独复盘，提示下局优先打开能量和转盘收益。
             appendFailureProgressPart(text, "木马剩", getCarouselRemainingCount());
@@ -10409,6 +10447,18 @@ public class GameView extends View {
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
                 if (musicBox[row][col] > 0) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    private int getPearlRemainingCount() {
+        int count = 0;
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (pearl[row][col] > 0) {
                     count++;
                 }
             }
