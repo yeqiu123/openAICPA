@@ -9739,6 +9739,10 @@ public class GameView extends View {
         if (getAvailableRankChests() > 0) {
             return "下一目标 评级宝箱可领取";
         }
+        String chestGoalText = buildChestNextGoalText();
+        if (chestGoalText.length() > 0) {
+            return chestGoalText;
+        }
         String seasonGoalText = buildSeasonNextGoalText();
         if (seasonGoalText.length() > 0) {
             return seasonGoalText;
@@ -9799,6 +9803,19 @@ public class GameView extends View {
         // 主线结算提醒今日挑战，把每日回访奖励接到当前游戏循环。
         return prop == NONE ? "下一目标 每日挑战奖励"
                 : "下一目标 每日挑战奖" + getPropName(prop);
+    }
+
+    private String buildChestNextGoalText() {
+        int starMissing = getNextStarChestTarget() - getTotalStars();
+        int rankMissing = getNextRankChestTarget() - getTotalRankScore();
+        if (starMissing > 0 && starMissing <= 6) {
+            // 结算页提示宝箱差额，把补星和冲评级的短线奖励显示出来。
+            return "下一目标 星箱差" + starMissing + "星";
+        }
+        if (rankMissing > 0 && rankMissing <= 8) {
+            return "下一目标 评级箱差" + rankMissing;
+        }
+        return "";
     }
 
     private String buildSeasonNextGoalText() {
