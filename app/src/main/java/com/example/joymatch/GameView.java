@@ -8991,7 +8991,8 @@ public class GameView extends View {
             goalText += "  高分 " + level.scoreGoal;
         }
         if (isHiddenChallengeLevel()) {
-            goalText += "  隐藏步限 " + Math.max(7, level.moves - 4);
+            goalText += levelHiddenChallengesCleared[levelIndex] ? "  隐藏已达成"
+                    : "  隐藏步限 " + Math.max(7, level.moves - 4);
         }
         if (lastComebackAssistMoves > 0) {
             goalText += "  助力 +" + lastComebackAssistMoves + "步";
