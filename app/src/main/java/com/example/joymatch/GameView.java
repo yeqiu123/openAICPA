@@ -9615,6 +9615,9 @@ public class GameView extends View {
         appendFailureProgressPart(text, "收集差", targetRemaining);
         appendFailureProgressPart(text, "清障差", getCurrentObstacleRemaining(level));
         appendFailureProgressPart(text, "分数差", Math.max(0, level.targetScore - score));
+        if (level.countdownBombCount > 0) {
+            appendFailureProgressPart(text, "炸弹急", getCountdownBombUrgency());
+        }
         if (level.moveLimitGoal > 0 && !isMoveLimitGoalCleared(level)) {
             appendFailureProgressPart(text, "步限超", movesUsed - getMoveLimitGoal(level));
         }
@@ -9637,6 +9640,19 @@ public class GameView extends View {
     private int getPerfectFailureGap(Level level) {
         // 失败时lastRank尚未刷新，完美差只提示步数缺口，避免误导玩家。
         return Math.max(1, movesUsed - Math.max(6, level.moves / 2));
+    }
+
+    private int getCountdownBombUrgency() {
+        int urgency = 0;
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (countdownBomb[row][col] > 0) {
+                    // 数值越大表示越紧急，失败页用于提醒下局优先处理炸弹格。
+                    urgency = Math.max(urgency, 6 - countdownBomb[row][col]);
+                }
+            }
+        }
+        return urgency;
     }
 
     private void appendFailureProgressPart(StringBuilder text, String label, int amount) {
