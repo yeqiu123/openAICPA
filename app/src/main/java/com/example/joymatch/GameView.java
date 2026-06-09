@@ -308,6 +308,7 @@ public class GameView extends View {
     private int lastPerfectReward;
     private int lastPerfectRewardProp = NONE;
     private int lastPerfectRewardAmount;
+    private boolean lastPerfectRetained;
     private int lastHiddenReward;
     private int lastHiddenRewardProp = NONE;
     private int lastHiddenRewardAmount;
@@ -808,6 +809,7 @@ public class GameView extends View {
         lastPerfectReward = 0;
         lastPerfectRewardProp = NONE;
         lastPerfectRewardAmount = 0;
+        lastPerfectRetained = false;
         lastHiddenReward = 0;
         lastHiddenRewardProp = NONE;
         lastHiddenRewardAmount = 0;
@@ -2653,6 +2655,7 @@ public class GameView extends View {
 
         levelPerfectCleared[levelIndex] = true;
         if (oldPerfectCleared) {
+            lastPerfectRetained = true;
             return;
         }
         // 完美通关奖励少步数、高评级的打法，给重玩提供更明确的冲刺目标。
@@ -9477,6 +9480,8 @@ public class GameView extends View {
             }
             if (lastPerfectReward > 0) {
                 bonusText += "  完美通关";
+            } else if (lastPerfectRetained) {
+                bonusText += "  完美保持";
             }
             if (lastChapterEliteReward > 0) {
                 bonusText += "  章节精英";
