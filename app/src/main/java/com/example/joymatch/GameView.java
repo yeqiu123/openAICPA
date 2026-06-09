@@ -7039,6 +7039,10 @@ public class GameView extends View {
         if (isHiddenChallengeLevel(level)) {
             score += 12;
         }
+        if (isHiddenChallengeLevel(level) && !levelHiddenChallengesCleared[level]) {
+            // 隐藏挑战有独立章节奖励，未完成时提高回访推荐优先级。
+            score += 22;
+        }
         if (chapterMissingStars > 0 && chapterMissingStars <= 6) {
             score += 20;
         }
