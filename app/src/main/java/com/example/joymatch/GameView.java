@@ -6098,6 +6098,8 @@ public class GameView extends View {
             return "分";
         } else if (isHiddenChallengeLevel(level) && !levelHiddenChallengesCleared[level]) {
             return "隐";
+        } else if (levelRanks[level] >= 4 && !levelPerfectCleared[level]) {
+            return "完";
         }
         return "评";
     }
@@ -9105,6 +9107,9 @@ public class GameView extends View {
         }
         if (levelRanks[levelIndex] < 4) {
             return "再冲" + buildRankText(4);
+        }
+        if (levelRanks[levelIndex] >= 4 && !levelPerfectCleared[levelIndex]) {
+            return "再冲完美";
         }
         return "";
     }
