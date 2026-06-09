@@ -1098,6 +1098,8 @@ public class GameView extends View {
                         activeProp = NONE;
                         selectedRow = NONE;
                         selectedCol = NONE;
+                        lastTaskRewardType = 21;
+                        showFeedback(1, PROP_COSTS[prop] - coins);
                         playHaptic(HapticFeedbackConstants.REJECT);
                         playRejectTone();
                         return true;
@@ -8677,6 +8679,8 @@ public class GameView extends View {
             text = "雪花球 稳场+" + feedbackCleared;
         } else if (lastTaskRewardType == 20 && age < 900) {
             text = "星弦竖琴 能量+36";
+        } else if (lastTaskRewardType == 21 && age < 900) {
+            text = "金币不足 还差" + feedbackCleared;
         }
 
         textPaint.setTextAlign(Paint.Align.CENTER);
