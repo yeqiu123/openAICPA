@@ -9060,6 +9060,14 @@ public class GameView extends View {
             return;
         }
 
+        float pulse = 0.55f + 0.45f * (float) Math.sin(System.currentTimeMillis() / 190.0);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(2 + pulse * 2));
+        paint.setColor(Color.argb((int) (110 + pulse * 80), 255, 236, 118));
+        canvas.drawRoundRect(new RectF(rect.left + dp(3), rect.top + dp(3), rect.right - dp(3), rect.bottom - dp(3)),
+                dp(13), dp(13), paint);
+        paint.setStyle(Paint.Style.FILL);
+
         float centerX = rect.left + rect.width() * 0.28f;
         float centerY = rect.bottom - dp(18);
         RectF box = new RectF(centerX - dp(13), centerY - dp(9), centerX + dp(13), centerY + dp(12));
@@ -9073,6 +9081,8 @@ public class GameView extends View {
         canvas.drawLine(centerX + dp(5), centerY - dp(18), centerX + dp(5), centerY - dp(3), paint);
         canvas.drawLine(centerX + dp(5), centerY - dp(18), centerX + dp(14), centerY - dp(14), paint);
         canvas.drawCircle(centerX + dp(3), centerY, dp(4), paint);
+        drawPropStar(canvas, rect.right - dp(12), rect.top + dp(12), dp(5 + pulse * 2));
+        postInvalidateOnAnimation();
     }
 
     private void drawCountdownBomb(Canvas canvas, int row, int col, RectF rect) {
