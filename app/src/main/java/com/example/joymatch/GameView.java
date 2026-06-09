@@ -5870,6 +5870,10 @@ public class GameView extends View {
         if (level.countdownBombCount > 0) {
             obstacleText += " 炸" + getCountdownBombRemainingCount() + "/" + getLowestCountdownBombTimer();
         }
+        int rewardCellCount = getRewardCellCount();
+        if (rewardCellCount > 0) {
+            obstacleText += " 奖" + rewardCellCount;
+        }
         drawTextFitRight(canvas, obstacleText, new RectF(getWidth() * 0.48f, dp(118), getWidth() - dp(18), dp(136)), 15, Color.WHITE);
         textPaint.setTextSize(sp(13));
         String starText = buildStars(getPreviewStars(level));
