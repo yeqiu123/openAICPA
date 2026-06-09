@@ -6006,6 +6006,9 @@ public class GameView extends View {
             if (lastMusicBoxReward > 0) {
                 obstacleText += " 收乐" + lastMusicBoxReward;
             }
+            if (rewardMusicBoxMilestone > 0) {
+                obstacleText += " 全开";
+            }
         }
         drawTextFitRight(canvas, obstacleText, new RectF(getWidth() * 0.48f, dp(118), getWidth() - dp(18), dp(136)), 15, Color.WHITE);
         textPaint.setTextSize(sp(13));
