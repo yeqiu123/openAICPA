@@ -6391,6 +6391,11 @@ public class GameView extends View {
                 && getChapterPerfectClearCount(chapter) >= getChapterUnlockedCount(chapter)) {
             text += " 完";
         }
+        if (getChapterRewardLevelCount(chapter) > 0
+                && getChapterUnlockedRewardLevelCount(chapter) >= getChapterRewardLevelCount(chapter)) {
+            // 章节奖励关全部解锁后在横幅展示，方便玩家快速定位高收益章节。
+            text += " 奖";
+        }
         return text;
     }
 
