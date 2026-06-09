@@ -6091,10 +6091,29 @@ public class GameView extends View {
         paint.setColor(Color.argb(190, 33, 37, 56));
         RectF badge = new RectF(rect.left + dp(4), rect.bottom - dp(18), rect.left + dp(22), rect.bottom - dp(4));
         canvas.drawRoundRect(badge, dp(5), dp(5), paint);
+        if (hasUnclearedLevelChallenge(levelIndex)) {
+            // 未完成挑战目标的关卡加亮描边，方便玩家回头补挑战。
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(dp(1.5f));
+            paint.setColor(Color.argb(230, 255, 236, 133));
+            canvas.drawRoundRect(badge, dp(5), dp(5), paint);
+            paint.setStyle(Paint.Style.FILL);
+        }
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setTextSize(sp(8));
         textPaint.setColor(Color.WHITE);
         canvas.drawText(mark, badge.centerX(), badge.centerY() + dp(3), textPaint);
+    }
+
+    private boolean hasUnclearedLevelChallenge(int levelIndex) {
+        if (levelStars[levelIndex] <= 0) {
+            return false;
+        }
+        Level level = levels.get(levelIndex);
+        return (level.moveLimitGoal > 0 && levelRanks[levelIndex] < 4)
+                || (level.comboGoal > 0 && levelRanks[levelIndex] < 4)
+                || (level.scoreGoal > 0 && levelRanks[levelIndex] < 4)
+                || (level.elite && levelRanks[levelIndex] < 4);
     }
 
     private void drawMapChapterBanner(Canvas canvas) {
