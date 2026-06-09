@@ -7259,6 +7259,10 @@ public class GameView extends View {
         if (chapterMissingStars > 0 && chapterMissingStars <= 6) {
             score += 20;
         }
+        if (getLevelRewardCellCount(levels.get(level)) >= 3) {
+            // 奖励格多的未完成关更适合回访，补评级时也能顺手拿局内补给。
+            score += 8;
+        }
         return score;
     }
 
@@ -7272,6 +7276,9 @@ public class GameView extends View {
         }
         if (levelRanks[level] >= 4 && !levelPerfectCleared[level]) {
             return "冲完美";
+        }
+        if (getLevelRewardCellCount(levels.get(level)) >= 3) {
+            return "收奖励格冲评级";
         }
         return "冲" + buildRankText(4);
     }
