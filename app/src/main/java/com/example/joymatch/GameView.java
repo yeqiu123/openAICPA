@@ -7114,7 +7114,9 @@ public class GameView extends View {
     private int getReplayPriorityScore(int level) {
         int missingStars = Math.max(0, 3 - levelStars[level]);
         int missingRank = Math.max(0, 4 - levelRanks[level]);
-        int chapterMissingStars = CHAPTER_CHEST_STARS - getChapterStars(getChapterIndex(level));
+        int chapter = getChapterIndex(level);
+        int chapterMissingStars = CHAPTER_CHEST_STARS - getChapterStars(chapter);
+        int chapterMissingPerfect = getChapterUnlockedCount(chapter) - getChapterPerfectClearCount(chapter);
         int score = missingStars * 45 + missingRank * 12;
         if (hasUnclearedLevelChallenge(level)) {
             // 补挑战能同时提升评级和章节奖励进度，推荐优先级略高。
@@ -7133,6 +7135,11 @@ public class GameView extends View {
         if (levelRanks[level] >= 4 && !levelPerfectCleared[level]) {
             // 已达高评级后继续推荐冲完美，给高手回访目标。
             score += 10;
+        }
+        if (!chapterPerfectClaimed[chapter] && getChapterUnlockedCount(chapter) >= CHAPTER_SIZE
+                && chapterMissingPerfect > 0 && chapterMissingPerfect <= 3 && !levelPerfectCleared[level]) {
+            // 章节完美奖励临近时优先推荐差的几关。
+            score += 18;
         }
         if (chapterMissingStars > 0 && chapterMissingStars <= 6) {
             score += 20;
