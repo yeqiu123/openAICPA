@@ -9593,9 +9593,8 @@ public class GameView extends View {
     }
 
     private int getPerfectFailureGap(Level level) {
-        int moveGap = Math.max(0, movesUsed - Math.max(6, level.moves / 2));
-        int rankGap = Math.max(0, 5 - lastRank);
-        return Math.max(1, moveGap + rankGap);
+        // 失败时lastRank尚未刷新，完美差只提示步数缺口，避免误导玩家。
+        return Math.max(1, movesUsed - Math.max(6, level.moves / 2));
     }
 
     private void appendFailureProgressPart(StringBuilder text, String label, int amount) {
