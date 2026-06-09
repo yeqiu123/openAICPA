@@ -9333,7 +9333,9 @@ public class GameView extends View {
         if (replayLevel < 0 || replayLevel == levelIndex) {
             return "";
         }
-        return "回访可补 第" + (replayLevel + 1) + "关 " + buildReplayReason(replayLevel);
+        // 失败页补关提示带上章节名，方便玩家快速定位要回访的地图区域。
+        return "回访可补 " + chapterNames[getChapterIndex(replayLevel)] + " 第" + (replayLevel + 1)
+                + "关 " + buildReplayReason(replayLevel);
     }
 
     private String buildSuccessNextGoalText() {
