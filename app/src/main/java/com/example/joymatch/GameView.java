@@ -451,8 +451,11 @@ public class GameView extends View {
                 // 通关后若已有可领奖励，优先回地图领取，避免玩家一路跳关错过奖励反馈。
                 levelMapPage = levelIndex / LEVELS_PER_PAGE;
                 showingLevelMap = true;
+            } else if (levelIndex >= levels.size() - 1) {
+                // 最后一关通关后留在地图，方便继续补星和冲评级。
+                showingLevelMap = true;
             } else {
-                startLevel((levelIndex + 1) % levels.size());
+                startLevel(levelIndex + 1);
             }
             invalidate();
             return true;
