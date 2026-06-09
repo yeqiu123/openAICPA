@@ -6315,10 +6315,20 @@ public class GameView extends View {
             return;
         }
 
-        paint.setColor(Color.argb(190, 33, 37, 56));
+        boolean bombLevel = levels.get(levelIndex).countdownBombCount > 0;
+        paint.setColor(bombLevel ? Color.argb(215, 255, 88, 112) : Color.argb(190, 33, 37, 56));
         RectF badge = new RectF(rect.left + dp(4), rect.bottom - dp(18), rect.left + dp(22), rect.bottom - dp(4));
         canvas.drawRoundRect(badge, dp(5), dp(5), paint);
-        if (hasUnclearedLevelChallenge(levelIndex)) {
+        if (bombLevel) {
+            // 炸弹关在地图上用高压色标出，方便玩家提前准备时钟/护盾类道具。
+            float pulse = 0.55f + 0.45f * (float) Math.sin(System.currentTimeMillis() / 220.0);
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(dp(1.4f));
+            paint.setColor(Color.argb((int) (150 + pulse * 80), 255, 236, 133));
+            canvas.drawRoundRect(badge, dp(5), dp(5), paint);
+            paint.setStyle(Paint.Style.FILL);
+            postInvalidateOnAnimation();
+        } else if (hasUnclearedLevelChallenge(levelIndex)) {
             // 未完成挑战目标的关卡加亮描边，方便玩家回头补挑战。
             paint.setStyle(Paint.Style.STROKE);
             paint.setStrokeWidth(dp(1.5f));
