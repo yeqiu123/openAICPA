@@ -540,7 +540,15 @@ public class GameView extends View {
 
         if (activeProp != NONE) {
             refreshBoardActionTime();
-            useActiveProp(row, col);
+            if (selectedRow == row && selectedCol == col) {
+                useActiveProp(row, col);
+            } else {
+                // 点选类道具先预览影响范围，第二次点击同格才确认使用。
+                selectedRow = row;
+                selectedCol = col;
+                playHaptic(HapticFeedbackConstants.CLOCK_TICK);
+                playClickTone();
+            }
             invalidate();
             return true;
         }
@@ -7177,34 +7185,35 @@ public class GameView extends View {
 
     private String buildActivePropTip() {
         String name = getPropName(activeProp);
+        String prefix = selectedRow == NONE ? name + " 先点棋盘预览 " : name + " 再点同格确认 ";
         if (activeProp == PROP_HAMMER) {
-            return name + " 点击单格清除";
+            return prefix + "单格清除";
         } else if (activeProp == PROP_BOMB) {
-            return name + " 点击中心爆破";
+            return prefix + "中心爆破";
         } else if (activeProp == PROP_ROW_BLAST) {
-            return name + " 点击清十字";
+            return prefix + "清十字";
         } else if (activeProp == PROP_COLOR_BLAST) {
-            return name + " 点击同色全清";
+            return prefix + "同色全清";
         } else if (activeProp == PROP_ROCKET) {
-            return name + " 点击发射行列";
+            return prefix + "发射行列";
         } else if (activeProp == PROP_LIGHTNING) {
-            return name + " 点击劈开对角线";
+            return prefix + "劈开对角线";
         } else if (activeProp == PROP_STAR_COMPASS) {
-            return name + " 点击释放星轨";
+            return prefix + "释放星轨";
         } else if (activeProp == PROP_TARGET_BRUSH) {
-            return name + " 点击染成目标色";
+            return prefix + "染成目标色";
         } else if (activeProp == PROP_MAGIC_WAND) {
-            return name + " 点击升级彩虹棋";
+            return prefix + "升级彩虹棋";
         } else if (activeProp == PROP_BRUSH) {
-            return name + " 点击升级方向特效";
+            return prefix + "升级方向特效";
         } else if (activeProp == PROP_STAR_HAMMER) {
-            return name + " 点击升级爆炸棋";
+            return prefix + "升级爆炸棋";
         } else if (activeProp == PROP_CLEANSE) {
-            return name + " 点击净化周围障碍";
+            return prefix + "净化周围障碍";
         } else if (activeProp == PROP_CHAIN_BREAKER) {
-            return name + " 点击剪开锁链藤蔓";
+            return prefix + "剪开锁链藤蔓";
         }
-        return name + " 点击棋盘使用";
+        return prefix + "使用";
     }
 
     private int getFirstRecommendedProp() {
