@@ -9739,6 +9739,10 @@ public class GameView extends View {
         if (rankGoalText.length() > 0) {
             return rankGoalText;
         }
+        String eliteGoalText = buildChapterEliteNextGoalText(chapter);
+        if (eliteGoalText.length() > 0) {
+            return eliteGoalText;
+        }
         String hiddenGoalText = buildChapterHiddenNextGoalText(chapter);
         if (hiddenGoalText.length() > 0) {
             return hiddenGoalText;
@@ -9788,6 +9792,23 @@ public class GameView extends View {
         if (rankMissing <= 8) {
             // 通关后提示章节评级差额，推动玩家回头冲S/SS/SSS。
             return "下一目标 " + chapterNames[chapter] + "评级差" + rankMissing;
+        }
+        return "";
+    }
+
+    private String buildChapterEliteNextGoalText(int chapter) {
+        int eliteCount = getChapterEliteCount(chapter);
+        if (chapterEliteClaimed[chapter] || eliteCount <= 0 || getChapterUnlockedCount(chapter) < CHAPTER_SIZE) {
+            return "";
+        }
+
+        int clearedElite = getChapterClearedEliteCount(chapter);
+        if (clearedElite >= eliteCount) {
+            return "下一目标 " + chapterNames[chapter] + "精英奖励";
+        }
+        if (eliteCount - clearedElite <= 1) {
+            // 通关后提示章节精英差额，让阶段性高难关更容易回访。
+            return "下一目标 " + chapterNames[chapter] + "精英差" + (eliteCount - clearedElite);
         }
         return "";
     }
