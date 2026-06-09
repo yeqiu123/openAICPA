@@ -2438,6 +2438,7 @@ public class GameView extends View {
                 if (colorOf(board[cell.row][cell.col]) == targetKind) {
                     score += 9;
                 }
+                score += getHintCellPriority(cell.row, cell.col);
                 if (hasAdjacentObstacle(cell.row, cell.col)) {
                     score += 7;
                 }
@@ -2456,6 +2457,37 @@ public class GameView extends View {
         }
         swap(rowA, colA, rowB, colB);
         return new Move(rowA, colA, rowB, colB, score);
+    }
+
+    private int getHintCellPriority(int row, int col) {
+        int priority = 0;
+        if (keys[row][col] > 0) {
+            priority += 32;
+        }
+        if (countdownBomb[row][col] > 0) {
+            // 提示优先救临近爆炸的炸弹，避免复杂后期关卡里错过关键步。
+            priority += 28 + Math.max(0, 5 - countdownBomb[row][col]) * 8;
+        }
+        if (moveChest[row][col] > 0) {
+            priority += 18;
+        }
+        if (hasRewardCell(row, col)) {
+            priority += 14;
+        }
+        return priority;
+    }
+
+    private boolean hasRewardCell(int row, int col) {
+        return gift[row][col] > 0 || cloud[row][col] > 0 || gem[row][col] > 0
+                || goldenEgg[row][col] > 0 || coinPouch[row][col] > 0 || paintBucket[row][col] > 0
+                || windmill[row][col] > 0 || jewelBow[row][col] > 0 || stardustJar[row][col] > 0
+                || wishLamp[row][col] > 0 || resonanceDrum[row][col] > 0 || auroraPrism[row][col] > 0
+                || rainbowBottle[row][col] > 0 || energyPotion[row][col] > 0 || butterfly[row][col] > 0
+                || portal[row][col] > 0 || hourglass[row][col] > 0 || luckyStar[row][col] > 0
+                || luckyClover[row][col] > 0 || mysteryBox[row][col] > 0 || pearl[row][col] > 0
+                || carousel[row][col] > 0 || ferrisTicket[row][col] > 0 || fireworksBarrel[row][col] > 0
+                || starportBeacon[row][col] > 0 || meteorTrail[row][col] > 0 || rainbowArc[row][col] > 0
+                || crystalCore[row][col] > 0 || musicBox[row][col] > 0;
     }
 
     private boolean hasAdjacentObstacle(int row, int col) {
