@@ -9037,6 +9037,16 @@ public class GameView extends View {
         int timer = countdownBomb[row][col];
         paint.setColor(timer <= 2 ? Color.argb(230, 255, 88, 112) : Color.argb(220, 33, 37, 56));
         canvas.drawCircle(centerX, centerY, dp(13), paint);
+        if (isLastCountdownBombReady()) {
+            // 最后一枚炸弹用红色脉冲外圈强调，提示拆掉即可拿护盾奖励。
+            float pulse = 0.55f + 0.45f * (float) Math.sin(System.currentTimeMillis() / 180.0);
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(dp(2 + pulse * 2));
+            paint.setColor(Color.argb((int) (135 + pulse * 95), 255, 88, 112));
+            canvas.drawCircle(centerX, centerY, dp(16 + pulse * 4));
+            paint.setStyle(Paint.Style.FILL);
+            postInvalidateOnAnimation();
+        }
         paint.setStrokeWidth(dp(2));
         paint.setColor(Color.argb(220, 255, 236, 118));
         canvas.drawLine(centerX + dp(5), centerY - dp(10), centerX + dp(10), centerY - dp(16), paint);
