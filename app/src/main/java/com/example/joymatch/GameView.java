@@ -3006,6 +3006,7 @@ public class GameView extends View {
         Level level = levels.get(levelIndex);
         int oldStars = levelStars[levelIndex];
         int oldRank = levelRanks[levelIndex];
+        boolean oldHiddenCleared = levelHiddenChallengesCleared[levelIndex];
         levelStars[levelIndex] = Math.max(levelStars[levelIndex], lastStars);
         levelBestScores[levelIndex] = Math.max(levelBestScores[levelIndex], score);
         levelRanks[levelIndex] = Math.max(levelRanks[levelIndex], lastRank);
@@ -3025,7 +3026,8 @@ public class GameView extends View {
             grantRankUpgradePropReward(oldRank);
         }
         grantReplayImprovementReward(oldStars, oldRank);
-        if (hiddenChallengeCleared) {
+        if (hiddenChallengeCleared && !oldHiddenCleared) {
+            // 隐藏挑战奖励只在首次达成时发放，避免回访重复刷奖励。
             levelHiddenChallengesCleared[levelIndex] = true;
             lastHiddenReward = 20;
             coins += lastHiddenReward;
