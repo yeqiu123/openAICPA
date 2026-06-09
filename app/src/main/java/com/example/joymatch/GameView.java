@@ -5529,7 +5529,10 @@ public class GameView extends View {
             addProp(PROP_STAR_COMPASS, rewardCellMilestoneNow - rewardCellMilestone);
             lastRewardCellMilestoneAmount = rewardCellMilestoneNow - rewardCellMilestone;
             rewardCellMilestone = rewardCellMilestoneNow;
-            lastTaskRewardType = 23;
+            if (lastTaskRewardType != 25) {
+                // 音乐盒全开奖励更稀有，避免同一轮被奖励格里程碑浮字覆盖。
+                lastTaskRewardType = 23;
+            }
             lastGiftReward = 0;
             honeySpreadCount = 0;
             lastMoveChestReward = 0;
