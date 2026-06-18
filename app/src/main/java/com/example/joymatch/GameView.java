@@ -8076,17 +8076,17 @@ public class GameView extends View {
         int chestMissing = CHAPTER_CHEST_STARS - getChapterStars(chapter);
         if (!chapterChestClaimed[chapter] && chestMissing > 0 && chestMissing <= 6) {
             // 回访理由带上临近章节宝箱，让失败后补关目标更有奖励感。
-            return " 补章箱";
+            return " 补章箱" + buildChapterChestClaimRewardText(chapter);
         }
         int masteryMissing = CHAPTER_SIZE * 3 - getChapterStars(chapter);
         if (!chapterMasteryClaimed[chapter] && unlockedCount >= CHAPTER_SIZE
                 && masteryMissing > 0 && masteryMissing <= 6) {
-            return " 冲大师";
+            return " 冲大师 净化+1" + buildChapterMasteryPropRewardText();
         }
         int rankMissing = getChapterRankRewardTarget() - getChapterRankScore(chapter);
         if (!chapterRankClaimed[chapter] && unlockedCount >= CHAPTER_SIZE / 2
                 && rankMissing > 0 && rankMissing <= 8) {
-            return " 冲评级奖";
+            return " 冲评级奖 潮汐+1" + buildChapterRankPropRewardText();
         }
         int hiddenMissing = getChapterHiddenChallengeCount(chapter) - getChapterClearedHiddenChallengeCount(chapter);
         if (!chapterHiddenClaimed[chapter] && hiddenMissing > 0 && hiddenMissing <= 1
@@ -8096,7 +8096,7 @@ public class GameView extends View {
         int perfectMissing = unlockedCount - getChapterPerfectClearCount(chapter);
         if (!chapterPerfectClaimed[chapter] && unlockedCount >= CHAPTER_SIZE
                 && perfectMissing > 0 && perfectMissing <= 3 && !levelPerfectCleared[level]) {
-            return " 冲完美奖";
+            return " 冲完美奖 星弦琴+1 罗盘+1";
         }
         return "";
     }
