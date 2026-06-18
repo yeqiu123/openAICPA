@@ -2549,6 +2549,10 @@ public class GameView extends View {
             // 糖晶塔芯能制造爆炸棋，智能提示优先指向可打开连锁的落点。
             priority += 20;
         }
+        if (coinPouch[row][col] > 0) {
+            // 金币袋会补经济资源，智能提示优先指向可拿后续道具余量的奖励点。
+            priority += 15;
+        }
         if (paintBucket[row][col] > 0) {
             // 染色桶会补目标色，智能提示优先指向可制造收集连锁的资源点。
             priority += 17;
@@ -6224,6 +6228,13 @@ public class GameView extends View {
                 obstacleText += " 能+" + lastStardustJarReward;
             }
         }
+        if (level.coinPouchCount > 0) {
+            // 金币袋会补金币资源，HUD单独显示剩余和本局经济收益。
+            obstacleText += " 袋" + getCoinPouchRemainingCount();
+            if (lastCoinPouchReward > 0) {
+                obstacleText += " 金+" + lastCoinPouchReward;
+            }
+        }
         if (level.paintBucketCount > 0) {
             // 染色桶会把周围棋子补成目标色，HUD单独显示剩余和补色收益。
             obstacleText += " 染" + getPaintBucketRemainingCount();
@@ -8267,6 +8278,9 @@ public class GameView extends View {
         } else if (getResonanceDrumRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 敲共鸣鼓进爆发";
+        } else if (getCoinPouchRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            return "推荐 " + getPropName(prop) + " 收金币袋补经济";
         } else if (getPaintBucketRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 开染色桶补目标";
@@ -8438,6 +8452,11 @@ public class GameView extends View {
             // 共鸣鼓会立刻开启爆发节奏，推荐精准道具优先打出连击窗口。
             return true;
         }
+        if (getCoinPouchRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            // 金币袋能补后续道具经济，推荐精准道具优先收取资源。
+            return true;
+        }
         if (getPaintBucketRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             // 染色桶能制造目标色连锁，推荐精准道具优先补齐收集节奏。
@@ -8572,6 +8591,10 @@ public class GameView extends View {
         if (getResonanceDrumRemainingCount() > 0) {
             // 共鸣鼓失败后提示优先敲响，把爆发窗口提前打出来。
             return "建议下局优先敲共鸣鼓";
+        }
+        if (getCoinPouchRemainingCount() > 0) {
+            // 金币袋失败后提示优先收集，帮助下局更早拿到道具经济余量。
+            return "建议下局优先收金币袋";
         }
         if (getPaintBucketRemainingCount() > 0) {
             // 染色桶失败后提示优先打开，帮助下局更早补齐目标色。
@@ -9230,6 +9253,13 @@ public class GameView extends View {
 
         float centerX = rect.right - dp(18);
         float centerY = rect.bottom - dp(18);
+        float pulse = 0.55f + 0.45f * (float) Math.sin(System.currentTimeMillis() / 220.0);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(2 + pulse * 2));
+        paint.setColor(Color.argb((int) (85 + pulse * 90), 255, 186, 82));
+        canvas.drawRoundRect(new RectF(rect.left + dp(5), rect.top + dp(5),
+                rect.right - dp(5), rect.bottom - dp(5)), dp(13), dp(13), paint);
+        paint.setStyle(Paint.Style.FILL);
         paint.setColor(Color.argb(225, 255, 186, 82));
         Path pouch = new Path();
         pouch.moveTo(centerX - dp(11), centerY - dp(3));
@@ -9245,6 +9275,7 @@ public class GameView extends View {
         textPaint.setTextSize(sp(10));
         textPaint.setColor(Color.WHITE);
         canvas.drawText("$", centerX, centerY + dp(8), textPaint);
+        postInvalidateOnAnimation();
     }
 
     private void drawPaintBucket(Canvas canvas, int row, int col, RectF rect) {
@@ -10199,6 +10230,8 @@ public class GameView extends View {
         }
         if (level.coinPouchCount > 0) {
             goalText += "  金币袋 " + level.coinPouchCount;
+            // 开场说明金币袋收益，让玩家知道它能补后续道具经济。
+            goalText += "  收袋补金币";
         }
         if (level.paintBucketCount > 0) {
             goalText += "  染色桶 " + level.paintBucketCount;
@@ -10378,6 +10411,8 @@ public class GameView extends View {
             return "策略 火箭/罗盘优先开极光";
         } else if (level.resonanceDrumCount > 0) {
             return "策略 火箭/罗盘优先敲共鸣";
+        } else if (level.coinPouchCount > 0) {
+            return "策略 火箭/罗盘优先收金币袋";
         } else if (level.paintBucketCount > 0) {
             return "策略 火箭/罗盘优先开染色桶";
         } else if (level.windmillCount > 0) {
@@ -10941,6 +10976,10 @@ public class GameView extends View {
             // 共鸣鼓剩余量单独复盘，提示下局优先开启爆发节奏。
             appendFailureProgressPart(text, "共鸣剩", getResonanceDrumRemainingCount());
         }
+        if (level.coinPouchCount > 0) {
+            // 金币袋剩余量单独复盘，提示下局优先拿经济补给。
+            appendFailureProgressPart(text, "金币袋剩", getCoinPouchRemainingCount());
+        }
         if (level.paintBucketCount > 0) {
             // 染色桶剩余量单独复盘，提示下局优先补齐目标色。
             appendFailureProgressPart(text, "染色桶剩", getPaintBucketRemainingCount());
@@ -11251,6 +11290,18 @@ public class GameView extends View {
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
                 if (paintBucket[row][col] > 0) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    private int getCoinPouchRemainingCount() {
+        int count = 0;
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (coinPouch[row][col] > 0) {
                     count++;
                 }
             }
