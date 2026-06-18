@@ -8667,6 +8667,10 @@ public class GameView extends View {
             // 花苞失败后提示优先打裂，避免双击障碍拖住清障节奏。
             return "建议下局优先打花苞";
         }
+        if (honeyRemaining > 0) {
+            // 蜂蜜会持续蔓延，失败后提示优先冻结或压制动态障碍。
+            return "建议下局优先控蜂蜜";
+        }
         if (getMusicBoxRemainingCount() > 0) {
             // 音乐盒关失败时直接提示资源目标，帮助下局优先规划星弦琴储备。
             return "建议下局优先开音乐盒";
@@ -9220,11 +9224,19 @@ public class GameView extends View {
             return;
         }
 
+        float pulse = 0.55f + 0.45f * (float) Math.sin(System.currentTimeMillis() / 240.0);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(2 + pulse * 2));
+        paint.setColor(Color.argb((int) (70 + pulse * 85), 255, 194, 64));
+        canvas.drawRoundRect(new RectF(rect.left + dp(5), rect.top + dp(5),
+                rect.right - dp(5), rect.bottom - dp(5)), dp(13), dp(13), paint);
+        paint.setStyle(Paint.Style.FILL);
         paint.setColor(Color.argb(105, 255, 194, 64));
         canvas.drawRoundRect(rect, dp(14), dp(14), paint);
         paint.setColor(Color.argb(185, 255, 236, 133));
         canvas.drawCircle(rect.left + rect.width() * 0.3f, rect.top + rect.height() * 0.3f, dp(5), paint);
         canvas.drawCircle(rect.left + rect.width() * 0.68f, rect.top + rect.height() * 0.6f, dp(6), paint);
+        postInvalidateOnAnimation();
     }
 
     private void drawStone(Canvas canvas, int row, int col, RectF rect) {
@@ -10446,6 +10458,11 @@ public class GameView extends View {
             // 开场说明步箱收益，让玩家优先拿补步资源。
             goalText += "  开箱补步";
         }
+        if (level.honeyCount > 0) {
+            goalText += "  蜂蜜 " + level.honeyCount;
+            // 开场说明蜂蜜会蔓延，提醒优先用冻结类道具控场。
+            goalText += "  冻结控蜜";
+        }
         if (level.chainCount > 0) {
             goalText += "  链锁 " + level.chainCount;
             // 开场说明链锁会封住棋盘，提醒优先用破锁钳打开空间。
@@ -11209,6 +11226,10 @@ public class GameView extends View {
         if (level.flowerCount > 0) {
             // 花苞剩余量单独复盘，提示下局优先处理双击清障点。
             appendFailureProgressPart(text, "花苞剩", flowerRemaining);
+        }
+        if (level.honeyCount > 0) {
+            // 蜂蜜剩余量单独复盘，提示下局优先冻结控蔓延。
+            appendFailureProgressPart(text, "蜂蜜剩", honeyRemaining);
         }
         if (level.musicBoxCount > 0) {
             // 失败复盘也显示音乐盒剩余，提醒下局优先拿星弦琴储备。
