@@ -12136,7 +12136,9 @@ public class GameView extends View {
             return rewardCellGoalText;
         }
         if (canClaimChapterChest(chapter)) {
-            return "下一目标 " + chapterNames[chapter] + "宝箱可领取";
+            // 章节宝箱可领时同步展示金币和道具奖励，强化整章补星后的领取动机。
+            return "下一目标 " + chapterNames[chapter] + "宝箱可领 金币+" + (80 + chapter * 20)
+                    + buildChapterChestClaimRewardText(chapter);
         }
         String chapterChestGoalText = buildChapterChestNextGoalText(chapter);
         if (chapterChestGoalText.length() > 0) {
@@ -12216,6 +12218,11 @@ public class GameView extends View {
     private String buildRankChestClaimRewardText() {
         int prop = getRankChestRewardProp(rankChestClaimed + 1);
         return prop == NONE ? "" : " " + getPropName(prop) + "+" + getRankChestRewardAmount(prop);
+    }
+
+    private String buildChapterChestClaimRewardText(int chapter) {
+        int prop = getChapterChestRewardProp(chapter);
+        return prop == NONE ? "" : " " + getPropName(prop) + "+" + getChapterChestRewardAmount(chapter);
     }
 
     private String buildDailyGoalNextGoalText() {
