@@ -8437,7 +8437,7 @@ public class GameView extends View {
         RectF rect = new RectF(dp(18), propBarTop - dp(20), getWidth() - dp(18), propBarTop - dp(4));
         paint.setColor(Color.argb(92, 33, 37, 56));
         canvas.drawRoundRect(rect, dp(8), dp(8), paint);
-        drawTextFit(canvas, buildRecommendedPropTip(prop), rect, 10, Color.WHITE);
+        drawTextFit(canvas, buildRecommendedPropTip(prop) + buildRecommendedPropActionText(prop), rect, 10, Color.WHITE);
     }
 
     private void drawActivePropTip(Canvas canvas, float propBarTop) {
@@ -8646,6 +8646,17 @@ public class GameView extends View {
             return "推荐 " + getPropName(prop) + " 冲高分";
         }
         return "推荐 " + getPropName(prop) + " 保留步数";
+    }
+
+    private String buildRecommendedPropActionText(int prop) {
+        if (propInventory[prop] > 0) {
+            // 局内推荐条补充库存/储备状态，避免玩家反复对照道具栏。
+            return buildRecommendedPropAvailabilityText(prop);
+        }
+        if (coins >= PROP_COSTS[prop]) {
+            return " 可买" + PROP_COSTS[prop] + "币";
+        }
+        return "";
     }
 
     private boolean isRecommendedPropForLevel(int prop) {
