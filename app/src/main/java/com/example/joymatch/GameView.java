@@ -2549,6 +2549,10 @@ public class GameView extends View {
             // 糖晶塔芯能制造爆炸棋，智能提示优先指向可打开连锁的落点。
             priority += 20;
         }
+        if (cloud[row][col] > 0) {
+            // 彩云会给额外分数，智能提示优先指向可补高分目标的奖励点。
+            priority += 15;
+        }
         if (gem[row][col] > 0) {
             // 钻石会补金币收益，智能提示优先指向可拿经济奖励的资源点。
             priority += 15;
@@ -6236,6 +6240,13 @@ public class GameView extends View {
                 obstacleText += " 能+" + lastStardustJarReward;
             }
         }
+        if (level.cloudCount > 0) {
+            // 彩云会补额外分数，HUD单独显示剩余和本局分数收益。
+            obstacleText += " 云" + getCloudRemainingCount();
+            if (lastCloudReward > 0) {
+                obstacleText += " 分+" + lastCloudReward;
+            }
+        }
         if (level.gemCount > 0) {
             // 钻石会补金币收益，HUD单独显示剩余和本局经济收益。
             obstacleText += " 钻" + getGemRemainingCount();
@@ -8300,6 +8311,9 @@ public class GameView extends View {
         } else if (getResonanceDrumRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 敲共鸣鼓进爆发";
+        } else if (getCloudRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            return "推荐 " + getPropName(prop) + " 收彩云补分数";
         } else if (getGemRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 收钻石补经济";
@@ -8480,6 +8494,11 @@ public class GameView extends View {
             // 共鸣鼓会立刻开启爆发节奏，推荐精准道具优先打出连击窗口。
             return true;
         }
+        if (getCloudRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            // 彩云能补额外分数，推荐精准道具优先拿到高分收益。
+            return true;
+        }
         if (getGemRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             // 钻石能补金币经济，推荐精准道具优先收取后续道具余量。
@@ -8629,6 +8648,10 @@ public class GameView extends View {
         if (getResonanceDrumRemainingCount() > 0) {
             // 共鸣鼓失败后提示优先敲响，把爆发窗口提前打出来。
             return "建议下局优先敲共鸣鼓";
+        }
+        if (getCloudRemainingCount() > 0) {
+            // 彩云失败后提示优先收集，帮助下局更早补齐分数缺口。
+            return "建议下局优先收彩云";
         }
         if (getGemRemainingCount() > 0) {
             // 钻石失败后提示优先收集，帮助下局更早拿到金币补给。
@@ -9251,6 +9274,13 @@ public class GameView extends View {
             return;
         }
 
+        float pulse = 0.55f + 0.45f * (float) Math.sin(System.currentTimeMillis() / 225.0);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(2 + pulse * 2));
+        paint.setColor(Color.argb((int) (80 + pulse * 90), 255, 255, 255));
+        canvas.drawRoundRect(new RectF(rect.left + dp(5), rect.top + dp(5),
+                rect.right - dp(5), rect.bottom - dp(5)), dp(13), dp(13), paint);
+        paint.setStyle(Paint.Style.FILL);
         paint.setColor(Color.argb(125, 255, 255, 255));
         float drift = (float) Math.sin(System.currentTimeMillis() / 260.0 + row + col) * dp(2);
         canvas.drawCircle(rect.left + rect.width() * 0.32f + drift, rect.bottom - dp(12), dp(7), paint);
@@ -10277,6 +10307,8 @@ public class GameView extends View {
         }
         if (level.cloudCount > 0) {
             goalText += "  彩云 " + level.cloudCount;
+            // 开场说明彩云收益，让玩家知道它能补分数缺口。
+            goalText += "  收云补分";
         }
         if (level.flowerCount > 0) {
             goalText += "  花苞 " + level.flowerCount;
@@ -10477,6 +10509,8 @@ public class GameView extends View {
             return "策略 火箭/罗盘优先开极光";
         } else if (level.resonanceDrumCount > 0) {
             return "策略 火箭/罗盘优先敲共鸣";
+        } else if (level.cloudCount > 0) {
+            return "策略 火箭/罗盘优先收彩云";
         } else if (level.gemCount > 0) {
             return "策略 火箭/罗盘优先收钻石";
         } else if (level.goldenEggCount > 0) {
@@ -11046,6 +11080,10 @@ public class GameView extends View {
             // 共鸣鼓剩余量单独复盘，提示下局优先开启爆发节奏。
             appendFailureProgressPart(text, "共鸣剩", getResonanceDrumRemainingCount());
         }
+        if (level.cloudCount > 0) {
+            // 彩云剩余量单独复盘，提示下局优先补齐分数缺口。
+            appendFailureProgressPart(text, "彩云剩", getCloudRemainingCount());
+        }
         if (level.gemCount > 0) {
             // 钻石剩余量单独复盘，提示下局优先拿金币补给。
             appendFailureProgressPart(text, "钻石剩", getGemRemainingCount());
@@ -11404,6 +11442,18 @@ public class GameView extends View {
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
                 if (gem[row][col] > 0) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    private int getCloudRemainingCount() {
+        int count = 0;
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (cloud[row][col] > 0) {
                     count++;
                 }
             }
