@@ -6855,6 +6855,9 @@ public class GameView extends View {
             return "隐";
         } else if (levelRanks[level] >= 4 && !levelPerfectCleared[level]) {
             return "完";
+        } else if (isCarnivalResourceLevel(level)) {
+            // 完美后的嘉年华资源关用独立角标，方便玩家识别可回刷补给点。
+            return "嘉";
         }
         return "评";
     }
