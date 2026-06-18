@@ -7140,10 +7140,11 @@ public class GameView extends View {
         int stars = getChapterStars(chapter);
         int fullStarTarget = CHAPTER_SIZE * 3;
         if (stars >= fullStarTarget) {
-            return chapterMasteryClaimed[chapter] ? "  大师已领" : "  大师奖励";
+            return chapterMasteryClaimed[chapter] ? "  大师已领" : "  大师奖净化";
         }
         if (stars >= CHAPTER_CHEST_STARS || getChapterUnlockedCount(chapter) >= CHAPTER_SIZE) {
-            return "  满星差" + (fullStarTarget - stars);
+            // 地图进度直接露出满星奖励核心道具，提升补星目标吸引力。
+            return "  满星差" + (fullStarTarget - stars) + "奖净化";
         }
         return "";
     }
@@ -7152,10 +7153,11 @@ public class GameView extends View {
         int rankScore = getChapterRankScore(chapter);
         int rankTarget = getChapterRankRewardTarget();
         if (rankScore >= rankTarget) {
-            return chapterRankClaimed[chapter] ? " 已领" : " 奖励";
+            return chapterRankClaimed[chapter] ? " 已领" : " 奖潮汐";
         }
         if (getChapterUnlockedCount(chapter) >= CHAPTER_SIZE / 2) {
-            return " 差" + (rankTarget - rankScore);
+            // 评级进度带上潮汐奖励，鼓励玩家回头冲高评级。
+            return " 差" + (rankTarget - rankScore) + "奖潮汐";
         }
         return "";
     }
@@ -7167,10 +7169,11 @@ public class GameView extends View {
             return "";
         }
         if (clearedElite >= eliteCount) {
-            return chapterEliteClaimed[chapter] ? " 已领" : " 奖励";
+            return chapterEliteClaimed[chapter] ? " 已领" : " 奖流星";
         }
         if (clearedElite > 0 || getChapterUnlockedCount(chapter) >= CHAPTER_SIZE) {
-            return " 差" + (eliteCount - clearedElite);
+            // 精英进度显示流星奖励，让高难节点回访收益更明确。
+            return " 差" + (eliteCount - clearedElite) + "奖流星";
         }
         return "";
     }
@@ -7184,9 +7187,9 @@ public class GameView extends View {
         int clearedHidden = getChapterClearedHiddenChallengeCount(chapter);
         String hint = "";
         if (clearedHidden >= hiddenCount) {
-            hint = chapterHiddenClaimed[chapter] ? " 已领" : " 奖励";
+            hint = chapterHiddenClaimed[chapter] ? " 已领" : " 奖时钟";
         } else if (clearedHidden > 0 || getChapterUnlockedCount(chapter) >= CHAPTER_SIZE) {
-            hint = " 差" + (hiddenCount - clearedHidden);
+            hint = " 差" + (hiddenCount - clearedHidden) + "奖时钟";
         }
         // 章节页补上隐藏挑战进度，给老关回访多一个可见追求。
         return "  隐藏 " + clearedHidden + "/" + hiddenCount + hint;
@@ -7199,7 +7202,7 @@ public class GameView extends View {
         }
         String hint = "";
         if (perfectCount >= getChapterUnlockedCount(chapter) && getChapterUnlockedCount(chapter) >= CHAPTER_SIZE) {
-            hint = chapterPerfectClaimed[chapter] ? " 已领" : " 奖励";
+            hint = chapterPerfectClaimed[chapter] ? " 已领" : " 奖星弦";
         }
         // 完美进度展示高手向回访目标，并提示整章完美奖励状态。
         return "  完美 " + perfectCount + "/" + getChapterUnlockedCount(chapter) + hint;
