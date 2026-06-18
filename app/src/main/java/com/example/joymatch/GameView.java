@@ -7503,14 +7503,20 @@ public class GameView extends View {
     private String buildNextStarChestPropHint() {
         int nextChest = getNextStarChestPropStep();
         int prop = getStarChestRewardProp(nextChest);
-        return prop == NONE ? "" : " 到" + nextChest + "箱" + getPropName(prop)
+        int missingStars = Math.max(0, nextChest * STAR_CHEST_STEP - getTotalStars());
+        // 宝箱道具提示显示差额，比只显示箱数更方便玩家规划补星。
+        String prefix = missingStars <= 0 ? " 可领奖" : " 差" + missingStars + "星奖";
+        return prop == NONE ? "" : prefix + getPropName(prop)
                 + "+" + getStarChestRewardAmount(prop);
     }
 
     private String buildNextRankChestPropHint() {
         int nextChest = getNextRankChestPropStep();
         int prop = getRankChestRewardProp(nextChest);
-        return prop == NONE ? "" : " 到" + nextChest + "箱" + getPropName(prop)
+        int missingRank = Math.max(0, nextChest * RANK_CHEST_STEP - getTotalRankScore());
+        // 评级宝箱同样显示差额，推动玩家回访老关冲更高评级。
+        String prefix = missingRank <= 0 ? " 可领奖" : " 差" + missingRank + "评奖";
+        return prop == NONE ? "" : prefix + getPropName(prop)
                 + "+" + getRankChestRewardAmount(prop);
     }
 
