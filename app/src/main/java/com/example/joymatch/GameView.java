@@ -6900,6 +6900,21 @@ public class GameView extends View {
             return "传";
         } else if (level.gemCount > 0) {
             return "钻";
+        } else if (level.chainCount > 0) {
+            // 基础高压障碍也进入地图角标，方便玩家提前准备对应道具。
+            return "锁";
+        } else if (level.vineCount > 0) {
+            return "藤";
+        } else if (level.shellCount > 0) {
+            return "贝";
+        } else if (level.flowerCount > 0) {
+            return "花";
+        } else if (level.stoneCount > 0) {
+            return "石";
+        } else if (level.iceCount > 0) {
+            return "冰";
+        } else if (level.honeyCount > 0) {
+            return "蜜";
         }
         return "";
     }
