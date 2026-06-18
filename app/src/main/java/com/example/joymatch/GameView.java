@@ -12174,7 +12174,7 @@ public class GameView extends View {
         int missingStars = 6 - dailyGoalProgress;
         if (missingStars > 0 && missingStars <= 2) {
             // 每日目标临近完成时优先提示，强化当天继续补星的回访动力。
-            return "下一目标 每日目标差" + missingStars + "星";
+            return "下一目标 每日目标差" + missingStars + "星奖" + getDailyGoalRewardText();
         }
         return "";
     }
@@ -12189,7 +12189,7 @@ public class GameView extends View {
         // 主线结算提醒今日挑战，把每日回访奖励接到当前游戏循环。
         return prop == NONE ? "下一目标 每日挑战奖励"
                 : "下一目标 每日挑战差" + Math.max(1, nextStreak - dailyChallengeStreak)
-                + "连奖" + getPropName(prop);
+                + "连奖" + getPropName(prop) + "+" + getDailyChallengeMilestoneAmount(prop);
     }
 
     private String buildChestNextGoalText() {
