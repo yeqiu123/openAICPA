@@ -8286,6 +8286,9 @@ public class GameView extends View {
         } else if (coralReefRemaining > 0
                 && (prop == PROP_STARFISH_PICK || prop == PROP_CLEANSE || prop == PROP_HAMMER || prop == PROP_LIGHTNING)) {
             return "推荐 " + getPropName(prop) + " 敲珊瑚清障";
+        } else if (flowerRemaining > 0
+                && (prop == PROP_STARFISH_PICK || prop == PROP_CLEANSE || prop == PROP_HAMMER || prop == PROP_LIGHTNING)) {
+            return "推荐 " + getPropName(prop) + " 打花苞清障";
         } else if (honeyRemaining > 0 && (prop == PROP_FREEZE || prop == PROP_SNOW_GLOBE)) {
             return "推荐 " + getPropName(prop) + " 压制蜂蜜";
         } else if (targetRemaining > level.targetAmount / 2 && movesLeft <= level.moves / 2
@@ -8449,6 +8452,11 @@ public class GameView extends View {
         if (coralReefRemaining > 0
                 && (prop == PROP_STARFISH_PICK || prop == PROP_CLEANSE || prop == PROP_HAMMER || prop == PROP_LIGHTNING)) {
             // 珊瑚礁同样需要多次打击，推荐清障道具优先压低障碍压力。
+            return true;
+        }
+        if (flowerRemaining > 0
+                && (prop == PROP_STARFISH_PICK || prop == PROP_CLEANSE || prop == PROP_HAMMER || prop == PROP_LIGHTNING)) {
+            // 花苞需要打裂再绽放，推荐清障道具优先拆掉双击障碍。
             return true;
         }
         if (honeyRemaining > 0 && (prop == PROP_FREEZE || prop == PROP_SNOW_GLOBE)) {
@@ -8650,6 +8658,10 @@ public class GameView extends View {
         if (coralReefRemaining > 0) {
             // 珊瑚礁失败后提示优先清理，避免多层障碍卡住后续连锁。
             return "建议下局优先敲珊瑚礁";
+        }
+        if (flowerRemaining > 0) {
+            // 花苞失败后提示优先打裂，避免双击障碍拖住清障节奏。
+            return "建议下局优先打花苞";
         }
         if (getMusicBoxRemainingCount() > 0) {
             // 音乐盒关失败时直接提示资源目标，帮助下局优先规划星弦琴储备。
@@ -9346,6 +9358,13 @@ public class GameView extends View {
 
         float centerX = rect.centerX();
         float centerY = rect.centerY();
+        float pulse = 0.55f + 0.45f * (float) Math.sin(System.currentTimeMillis() / 232.0);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(2 + pulse * 2));
+        paint.setColor(Color.argb((int) (75 + pulse * 80), 255, 139, 176));
+        canvas.drawRoundRect(new RectF(rect.left + dp(5), rect.top + dp(5),
+                rect.right - dp(5), rect.bottom - dp(5)), dp(13), dp(13), paint);
+        paint.setStyle(Paint.Style.FILL);
         paint.setColor(flower[row][col] > 1 ? Color.argb(185, 255, 139, 176) : Color.argb(165, 255, 186, 82));
         for (int i = 0; i < 5; i++) {
             double angle = -Math.PI / 2 + i * Math.PI * 2 / 5;
@@ -9363,6 +9382,7 @@ public class GameView extends View {
             canvas.drawLine(centerX - dp(8), centerY - dp(12), centerX + dp(9), centerY + dp(12), paint);
             paint.setStyle(Paint.Style.FILL);
         }
+        postInvalidateOnAnimation();
     }
 
     private void drawCloud(Canvas canvas, int row, int col, RectF rect) {
@@ -10442,6 +10462,8 @@ public class GameView extends View {
         }
         if (level.flowerCount > 0) {
             goalText += "  花苞 " + level.flowerCount;
+            // 开场说明花苞需要两段清理，提醒优先用清障道具处理。
+            goalText += "  打花清障";
         }
         if (level.gemCount > 0) {
             goalText += "  钻石 " + level.gemCount;
@@ -10630,6 +10652,8 @@ public class GameView extends View {
             return "策略 海星镐/净化优先破贝壳";
         } else if (level.coralReefCount > 0) {
             return "策略 海星镐/净化优先敲珊瑚";
+        } else if (level.flowerCount > 0) {
+            return "策略 海星镐/净化优先打花苞";
         } else if (level.musicBoxCount > 0) {
             return "策略 优先开音乐盒铺连击";
         } else if (level.crystalCoreCount > 0) {
@@ -11162,6 +11186,10 @@ public class GameView extends View {
         if (level.coralReefCount > 0) {
             // 珊瑚礁剩余量单独复盘，提示下局优先处理多层清障压力。
             appendFailureProgressPart(text, "珊瑚剩", coralReefRemaining);
+        }
+        if (level.flowerCount > 0) {
+            // 花苞剩余量单独复盘，提示下局优先处理双击清障点。
+            appendFailureProgressPart(text, "花苞剩", flowerRemaining);
         }
         if (level.musicBoxCount > 0) {
             // 失败复盘也显示音乐盒剩余，提醒下局优先拿星弦琴储备。
