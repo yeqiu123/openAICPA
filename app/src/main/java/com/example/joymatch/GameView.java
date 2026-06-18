@@ -3013,7 +3013,8 @@ public class GameView extends View {
     private String buildNextWinStreakRewardHint() {
         int nextStreak = getNextWinStreakMilestone();
         int prop = getWinStreakMilestoneProp(nextStreak);
-        return prop == NONE ? "" : " 到" + nextStreak + "奖" + getPropName(prop)
+        int missingStreak = Math.max(1, nextStreak - winStreak);
+        return prop == NONE ? "" : " 差" + missingStreak + "胜奖" + getPropName(prop)
                 + "+" + getWinStreakMilestoneAmount(nextStreak, prop);
     }
 
@@ -12120,7 +12121,8 @@ public class GameView extends View {
 
         int prop = getWinStreakMilestoneProp(nextStreak);
         // 结算页提示临近连胜节点，让连续闯关的稀有道具奖励更可见。
-        return "下一目标 连胜差" + missingStreak + "奖" + getPropName(prop);
+        return "下一目标 连胜差" + missingStreak + "奖" + getPropName(prop)
+                + "+" + getWinStreakMilestoneAmount(nextStreak, prop);
     }
 
     private String buildAchievementNextGoalText() {
