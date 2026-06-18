@@ -8282,6 +8282,9 @@ public class GameView extends View {
             return "推荐 " + getPropName(prop) + " 破锁开局";
         } else if (vineRemaining > 0 && prop == PROP_CHAIN_BREAKER) {
             return "推荐 " + getPropName(prop) + " 剪藤蔓开路";
+        } else if (stoneRemaining > 0
+                && (prop == PROP_STARFISH_PICK || prop == PROP_CLEANSE || prop == PROP_HAMMER || prop == PROP_LIGHTNING)) {
+            return "推荐 " + getPropName(prop) + " 碎石清路";
         } else if (shellRemaining > 0
                 && (prop == PROP_STARFISH_PICK || prop == PROP_CLEANSE || prop == PROP_HAMMER || prop == PROP_LIGHTNING)) {
             return "推荐 " + getPropName(prop) + " 破贝壳清障";
@@ -8448,6 +8451,11 @@ public class GameView extends View {
         }
         if (vineRemaining > 0 && prop == PROP_CHAIN_BREAKER) {
             // 藤蔓会封住棋子移动，推荐破锁钳优先剪开通路。
+            return true;
+        }
+        if (stoneRemaining > 0
+                && (prop == PROP_STARFISH_PICK || prop == PROP_CLEANSE || prop == PROP_HAMMER || prop == PROP_LIGHTNING)) {
+            // 石块有两层耐久，推荐清障道具优先打穿通路。
             return true;
         }
         if (shellRemaining > 0
@@ -8664,6 +8672,10 @@ public class GameView extends View {
         if (vineRemaining > 0) {
             // 藤蔓失败后提示优先剪开，让下局更早恢复棋盘流动。
             return "建议下局优先剪藤蔓";
+        }
+        if (stoneRemaining > 0) {
+            // 石块失败后提示优先碎石，避免厚障碍持续压缩消除空间。
+            return "建议下局优先碎石块";
         }
         if (shellRemaining > 0) {
             // 贝壳失败后提示优先破壳，避免多层障碍拖慢下局节奏。
@@ -9254,6 +9266,13 @@ public class GameView extends View {
             return;
         }
 
+        float pulse = 0.55f + 0.45f * (float) Math.sin(System.currentTimeMillis() / 255.0);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(2 + pulse * 2));
+        paint.setColor(Color.argb((int) (65 + pulse * 75), 122, 130, 154));
+        canvas.drawRoundRect(new RectF(rect.left + dp(5), rect.top + dp(5),
+                rect.right - dp(5), rect.bottom - dp(5)), dp(13), dp(13), paint);
+        paint.setStyle(Paint.Style.FILL);
         paint.setColor(Color.argb(150, 74, 80, 98));
         canvas.drawRoundRect(rect, dp(14), dp(14), paint);
         paint.setColor(Color.argb(140, 255, 255, 255));
@@ -9261,6 +9280,7 @@ public class GameView extends View {
                 rect.right - dp(12), rect.top + rect.height() * 0.22f, paint);
         canvas.drawLine(rect.left + dp(13), rect.top + rect.height() * 0.67f,
                 rect.right - dp(10), rect.top + rect.height() * 0.74f, paint);
+        postInvalidateOnAnimation();
     }
 
     private void drawVine(Canvas canvas, int row, int col, RectF rect) {
@@ -10479,6 +10499,11 @@ public class GameView extends View {
             // 开场说明蜂蜜会蔓延，提醒优先用冻结类道具控场。
             goalText += "  冻结控蜜";
         }
+        if (level.stoneCount > 0) {
+            goalText += "  石块 " + level.stoneCount;
+            // 开场说明石块需要连续打击，提醒优先用清障道具打开通路。
+            goalText += "  碎石开路";
+        }
         if (level.chainCount > 0) {
             goalText += "  链锁 " + level.chainCount;
             // 开场说明链锁会封住棋盘，提醒优先用破锁钳打开空间。
@@ -10705,6 +10730,8 @@ public class GameView extends View {
             return "策略 破锁钳优先开链";
         } else if (level.vineCount > 0) {
             return "策略 破锁钳优先剪藤蔓";
+        } else if (level.stoneCount > 0) {
+            return "策略 海星镐/净化优先碎石";
         } else if (level.shellCount > 0) {
             return "策略 海星镐/净化优先破贝壳";
         } else if (level.coralReefCount > 0) {
@@ -11241,6 +11268,10 @@ public class GameView extends View {
         if (level.vineCount > 0) {
             // 藤蔓剩余量单独复盘，提示下局优先恢复棋盘移动空间。
             appendFailureProgressPart(text, "藤蔓剩", vineRemaining);
+        }
+        if (level.stoneCount > 0) {
+            // 石块剩余量单独复盘，提示下局优先处理厚障碍。
+            appendFailureProgressPart(text, "石块剩", stoneRemaining);
         }
         if (level.shellCount > 0) {
             // 贝壳剩余量单独复盘，提示下局优先处理多层障碍。
