@@ -12188,12 +12188,13 @@ public class GameView extends View {
         }
 
         int starMissing = CHAPTER_SIZE * 3 - getChapterStars(chapter);
+        String rewardText = "奖净化+1" + buildChapterMasteryPropRewardText();
         if (starMissing <= 0) {
-            return "下一目标 " + chapterNames[chapter] + "满星大师";
+            return "下一目标 " + chapterNames[chapter] + "满星大师" + rewardText;
         }
         if (starMissing <= 6) {
             // 结算页补上章节满星差额，让补星目标和大师奖励更容易衔接。
-            return "下一目标 " + chapterNames[chapter] + "满星差" + starMissing;
+            return "下一目标 " + chapterNames[chapter] + "满星差" + starMissing + rewardText;
         }
         return "";
     }
@@ -12222,12 +12223,13 @@ public class GameView extends View {
         }
 
         int clearedElite = getChapterClearedEliteCount(chapter);
+        String rewardText = "奖流星+1" + buildChapterElitePropRewardText();
         if (clearedElite >= eliteCount) {
-            return "下一目标 " + chapterNames[chapter] + "精英奖励";
+            return "下一目标 " + chapterNames[chapter] + "精英奖励" + rewardText;
         }
         if (eliteCount - clearedElite <= 1) {
             // 通关后提示章节精英差额，让阶段性高难关更容易回访。
-            return "下一目标 " + chapterNames[chapter] + "精英差" + (eliteCount - clearedElite);
+            return "下一目标 " + chapterNames[chapter] + "精英差" + (eliteCount - clearedElite) + rewardText;
         }
         return "";
     }
@@ -12239,12 +12241,13 @@ public class GameView extends View {
         }
 
         int clearedHidden = getChapterClearedHiddenChallengeCount(chapter);
+        String rewardText = "奖时钟+1 罗盘+1";
         if (clearedHidden >= hiddenCount) {
-            return "下一目标 " + chapterNames[chapter] + "隐藏奖励";
+            return "下一目标 " + chapterNames[chapter] + "隐藏奖励" + rewardText;
         }
         if (hiddenCount - clearedHidden <= 1) {
             // 通关后提示章节隐藏挑战差额，把老关回访目标接到结算页。
-            return "下一目标 " + chapterNames[chapter] + "隐藏差" + (hiddenCount - clearedHidden);
+            return "下一目标 " + chapterNames[chapter] + "隐藏差" + (hiddenCount - clearedHidden) + rewardText;
         }
         return "";
     }
@@ -12255,12 +12258,13 @@ public class GameView extends View {
         }
 
         int perfectMissing = getChapterUnlockedCount(chapter) - getChapterPerfectClearCount(chapter);
+        String rewardText = "奖星弦琴+1 罗盘+1";
         if (perfectMissing <= 0) {
-            return "下一目标 " + chapterNames[chapter] + "完美奖励";
+            return "下一目标 " + chapterNames[chapter] + "完美奖励" + rewardText;
         }
         if (perfectMissing <= 2) {
             // 完美差额出现在结算页，给高评级玩家一个更清晰的回访终点。
-            return "下一目标 " + chapterNames[chapter] + "完美差" + perfectMissing;
+            return "下一目标 " + chapterNames[chapter] + "完美差" + perfectMissing + rewardText;
         }
         return "";
     }
