@@ -7860,6 +7860,7 @@ public class GameView extends View {
         int chapter = getChapterIndex(level);
         int chapterMissingStars = CHAPTER_CHEST_STARS - getChapterStars(chapter);
         int chapterMissingPerfect = getChapterUnlockedCount(chapter) - getChapterPerfectClearCount(chapter);
+        String rewardSuffix = buildReplayRewardSuffix(level);
         int score = missingStars * 45 + missingRank * 12;
         if (hasUnclearedLevelChallenge(level)) {
             // 补挑战能同时提升评级和章节奖励进度，推荐优先级略高。
@@ -7898,6 +7899,10 @@ public class GameView extends View {
         if (levels.get(level).musicBoxCount > 0) {
             // 音乐盒关能稳定补星弦琴，补评级时更值得被推荐。
             score += 10;
+        }
+        if (rewardSuffix.length() > 0) {
+            // 推荐排序也考虑章节奖励临近度，让可领奖回访目标更容易浮到前面。
+            score += rewardSuffix.contains("章箱") || rewardSuffix.contains("大师") ? 16 : 12;
         }
         return score;
     }
