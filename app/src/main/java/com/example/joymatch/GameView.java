@@ -392,6 +392,8 @@ public class GameView extends View {
     private int rewardObstacleMilestone;
     private int lastObstacleMilestoneReward;
     private int rewardComboMilestone;
+    private int lastComboMilestoneRewardProp = NONE;
+    private int lastComboMilestoneRewardAmount;
     private int rewardKeyMilestone;
     private int rewardCellClearedCount;
     private int rewardCellMilestone;
@@ -899,6 +901,8 @@ public class GameView extends View {
         rewardObstacleMilestone = 0;
         lastObstacleMilestoneReward = 0;
         rewardComboMilestone = 0;
+        lastComboMilestoneRewardProp = NONE;
+        lastComboMilestoneRewardAmount = 0;
         rewardKeyMilestone = 0;
         rewardCellClearedCount = 0;
         rewardCellMilestone = 0;
@@ -5521,7 +5525,9 @@ public class GameView extends View {
         int comboMilestone = bestCombo / 3;
         if (comboMilestone > rewardComboMilestone) {
             // 做出大连击时给随机补给，奖励更有技巧性的消除。
-            addProp(random.nextInt(PROP_COUNT), comboMilestone - rewardComboMilestone);
+            lastComboMilestoneRewardProp = random.nextInt(PROP_COUNT);
+            lastComboMilestoneRewardAmount = comboMilestone - rewardComboMilestone;
+            addProp(lastComboMilestoneRewardProp, lastComboMilestoneRewardAmount);
             rewardComboMilestone = comboMilestone;
             lastTaskRewardType = 3;
             lastGiftReward = 0;
@@ -10456,7 +10462,8 @@ public class GameView extends View {
         } else if (lastTaskRewardType == 2 && age < 900) {
             text = "清障奖励 炸弹+" + Math.max(1, lastObstacleMilestoneReward);
         } else if (lastTaskRewardType == 3 && age < 900) {
-            text = lastEnergyRewardProp == NONE ? "连击奖励" : "能量爆发 " + getPropName(lastEnergyRewardProp);
+            text = lastEnergyRewardProp == NONE ? "连击奖励 " + getComboMilestoneRewardText()
+                    : "能量爆发 " + getPropName(lastEnergyRewardProp);
         } else if (lastTaskRewardType == 4 && age < 900) {
             text = "钥匙奖励";
         } else if (lastTaskRewardType == 5 && age < 900) {
@@ -11061,6 +11068,11 @@ public class GameView extends View {
         return lastHiddenRewardProp == NONE ? "" : " " + getPropName(lastHiddenRewardProp) + "+" + lastHiddenRewardAmount;
     }
 
+    private String getComboMilestoneRewardText() {
+        return lastComboMilestoneRewardProp == NONE ? "" : getPropName(lastComboMilestoneRewardProp)
+                + "+" + lastComboMilestoneRewardAmount;
+    }
+
     private List<String> buildRewardLines() {
         List<String> lines = new ArrayList<>();
         lines.add("金币 +" + lastCoinReward);
@@ -11099,6 +11111,10 @@ public class GameView extends View {
         if (lastObstacleMilestoneReward > 0) {
             // 清障里程碑补给进入结算，鼓励玩家主动处理障碍拿道具。
             lines.add("清障奖励 炸弹+" + lastObstacleMilestoneReward);
+        }
+        if (lastComboMilestoneRewardProp != NONE) {
+            // 连击里程碑补给也写进结算，强化技巧消除带来的即时收益。
+            lines.add("连击奖励 " + getComboMilestoneRewardText());
         }
         if (lastMusicBoxReward > 0) {
             // 终章音乐盒的星弦琴补给也显示到奖励明细，避免被普通消除反馈吞掉。
