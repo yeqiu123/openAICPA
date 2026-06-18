@@ -8185,7 +8185,7 @@ public class GameView extends View {
             paint.setColor(Color.argb(propInventory[prop] > 0 ? 220 : 85, 33, 37, 56));
             drawPropIcon(canvas, prop, rect.centerX(), rect.centerY() - dp(6));
             if (recommended) {
-                drawRecommendedPropBadge(canvas, rect);
+                drawRecommendedPropBadge(canvas, rect, propInventory[prop] <= 0 && coins >= PROP_COSTS[prop]);
             }
 
             textPaint.setTextAlign(Paint.Align.CENTER);
@@ -8208,6 +8208,10 @@ public class GameView extends View {
     private String buildPropPurchaseLabel(int prop) {
         if (coins < PROP_COSTS[prop]) {
             return getPropName(prop) + " 差" + (PROP_COSTS[prop] - coins) + "币";
+        }
+        if (isRecommendedPropForLevel(prop)) {
+            // 推荐道具没库存但金币足够时，直接提示可购买使用。
+            return getPropName(prop) + " 荐买" + PROP_COSTS[prop];
         }
         return getPropName(prop) + " " + PROP_COSTS[prop] + "币";
     }
@@ -8877,14 +8881,14 @@ public class GameView extends View {
         paint.setStyle(Paint.Style.FILL);
     }
 
-    private void drawRecommendedPropBadge(Canvas canvas, RectF rect) {
-        RectF badge = new RectF(rect.right - dp(20), rect.top + dp(4), rect.right - dp(4), rect.top + dp(18));
+    private void drawRecommendedPropBadge(Canvas canvas, RectF rect, boolean purchasable) {
+        RectF badge = new RectF(rect.right - dp(purchasable ? 24 : 20), rect.top + dp(4), rect.right - dp(4), rect.top + dp(18));
         paint.setColor(Color.argb(225, 255, 236, 133));
         canvas.drawRoundRect(badge, dp(5), dp(5), paint);
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setTextSize(sp(8));
         textPaint.setColor(Color.rgb(33, 37, 56));
-        canvas.drawText("荐", badge.centerX(), badge.centerY() + dp(3), textPaint);
+        canvas.drawText(purchasable ? "买" : "荐", badge.centerX(), badge.centerY() + dp(3), textPaint);
     }
 
     private void drawReservePropBadge(Canvas canvas, RectF rect, int amount) {
