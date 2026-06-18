@@ -3866,7 +3866,7 @@ public class GameView extends View {
         int nextStreak = getNextDailyLoginMilestone();
         int prop = getDailyLoginRewardProp(nextStreak);
         return prop == NONE ? "" : " 签差" + Math.max(1, nextStreak - dailyStreak) + "天奖" + getPropName(prop)
-                + "+" + getDailyLoginRewardAmount(prop);
+                + "+" + getDailyLoginRewardAmount(nextStreak, prop);
     }
 
     private void drawDailyLoginProgressBar(Canvas canvas, RectF rect) {
@@ -3907,6 +3907,13 @@ public class GameView extends View {
             return PROP_BUBBLE_WAND;
         } else if (streak == 45) {
             return PROP_STAR_HARP;
+        } else if (streak == 60) {
+            // 420关后追加更长连签目标，给日常回访更多高阶道具期待。
+            return PROP_FIREWORK_CANNON;
+        } else if (streak == 75) {
+            return PROP_STAR_COMPASS;
+        } else if (streak == 90) {
+            return PROP_STAR_HARP;
         } else if (streak > 0 && streak % 30 == 0) {
             return PROP_SNOW_GLOBE;
         }
@@ -3914,7 +3921,15 @@ public class GameView extends View {
     }
 
     private int getDailyLoginRewardAmount(int prop) {
-        return prop == PROP_SNOW_GLOBE ? 2 : (prop == NONE ? 0 : 1);
+        return getDailyLoginRewardAmount(dailyStreak, prop);
+    }
+
+    private int getDailyLoginRewardAmount(int streak, int prop) {
+        if (prop == PROP_STAR_HARP && streak >= 90) {
+            return 3;
+        }
+        return prop == PROP_SNOW_GLOBE || prop == PROP_FIREWORK_CANNON || prop == PROP_STAR_COMPASS
+                ? 2 : (prop == NONE ? 0 : 1);
     }
 
     private void loadDailyGoal() {
