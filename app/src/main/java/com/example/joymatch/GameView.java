@@ -10992,11 +10992,28 @@ public class GameView extends View {
         RectF goalRect = new RectF(dp(42), centerY + dp(18), getWidth() - dp(42), centerY + dp(44));
         drawTextFit(canvas, goalText, goalRect, 15, Color.WHITE);
         String strategyHint = buildLevelStrategyHint(level);
+        String recommendedPropHint = buildLevelIntroRecommendedPropHint();
+        if (strategyHint.length() > 0 && recommendedPropHint.length() > 0) {
+            strategyHint += "  " + recommendedPropHint;
+        } else if (recommendedPropHint.length() > 0) {
+            strategyHint = recommendedPropHint;
+        }
         if (strategyHint.length() > 0) {
             RectF strategyRect = new RectF(dp(42), centerY + dp(44), getWidth() - dp(42), centerY + dp(66));
             drawTextFit(canvas, strategyHint, strategyRect, 13, Color.rgb(255, 236, 133));
         }
         postInvalidateOnAnimation();
+    }
+
+    private String buildLevelIntroRecommendedPropHint() {
+        for (int prop = 0; prop < PROP_COUNT; prop++) {
+            if (isRecommendedPropForLevel(prop)) {
+                // 开场策略补上具体可用道具，减少玩家进入关卡后的选择成本。
+                return propInventory[prop] > 0 ? "推荐" + getPropName(prop) + "x" + propInventory[prop]
+                        : "推荐" + getPropName(prop) + "可买" + PROP_COSTS[prop] + "币";
+            }
+        }
+        return "";
     }
 
     private String buildLevelStrategyHint(Level level) {
