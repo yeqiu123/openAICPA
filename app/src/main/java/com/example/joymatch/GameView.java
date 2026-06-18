@@ -7299,7 +7299,8 @@ public class GameView extends View {
     private String buildNextAchievementRewardHint() {
         int index = getNextAchievementRewardIndex();
         int prop = getAchievementRewardProp(index);
-        return prop == NONE ? "" : " 到" + (index + 1) + "成就奖" + getPropName(prop)
+        int missing = Math.max(1, index + 1 - getClaimedAchievementCount());
+        return prop == NONE ? "" : " 差" + missing + "成就奖" + getPropName(prop)
                 + "+" + getAchievementRewardAmount(index);
     }
 
@@ -12128,10 +12129,11 @@ public class GameView extends View {
             return "";
         }
 
-        int missing = nextIndex - getClaimedAchievementCount();
+        int missing = Math.max(1, nextIndex + 1 - getClaimedAchievementCount());
         if (missing > 0 && missing <= 2) {
             // 结算页提示临近的高价值成就节点，延长满星和评级后的追求。
-            return "下一目标 成就差" + missing + "奖" + getPropName(getAchievementRewardProp(nextIndex));
+            return "下一目标 成就差" + missing + "奖" + getPropName(getAchievementRewardProp(nextIndex))
+                    + "+" + getAchievementRewardAmount(nextIndex);
         }
         return "";
     }
