@@ -2487,6 +2487,7 @@ public class GameView extends View {
             }
         }
         if (moveChest[row][col] > 0) {
+            // 步箱会直接补步数，智能提示优先指向可缓解尾盘步数压力的资源点。
             priority += 18;
         }
         if (butterfly[row][col] > 0) {
@@ -6103,6 +6104,13 @@ public class GameView extends View {
         if (level.keyCount > 0) {
             obstacleText += " 钥" + keyRemaining;
         }
+        if (level.moveChestCount > 0) {
+            // 步箱会直接补步数，HUD单独显示剩余和本局补步收益。
+            obstacleText += " 步箱" + getMoveChestRemainingCount();
+            if (lastMoveChestReward > 0) {
+                obstacleText += " 步+" + lastMoveChestReward;
+            }
+        }
         if (level.countdownBombCount > 0) {
             obstacleText += " 炸" + getCountdownBombRemainingCount() + "/" + getLowestCountdownBombTimer();
         }
@@ -8261,6 +8269,9 @@ public class GameView extends View {
         } else if (keyRemaining > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 抢钥匙";
+        } else if (getMoveChestRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            return "推荐 " + getPropName(prop) + " 开步箱补步数";
         } else if (isRewardCellMilestoneNear()
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 补1格拿罗盘";
@@ -8406,6 +8417,11 @@ public class GameView extends View {
         if (keyRemaining > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             // 钥匙关优先推荐可直达关键格的道具，减少后期找不到落点的挫败感。
+            return true;
+        }
+        if (getMoveChestRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            // 步箱能直接补步数，推荐精准道具优先拿到尾盘余量。
             return true;
         }
         if (isRewardCellMilestoneNear()
@@ -8600,6 +8616,10 @@ public class GameView extends View {
     }
 
     private String buildFailurePropAdviceText() {
+        if (getMoveChestRemainingCount() > 0) {
+            // 步箱失败后提示优先打开，让下局更早拿到补步余量。
+            return "建议下局优先开步箱";
+        }
         if (getMusicBoxRemainingCount() > 0) {
             // 音乐盒关失败时直接提示资源目标，帮助下局优先规划星弦琴储备。
             return "建议下局优先开音乐盒";
@@ -10069,6 +10089,13 @@ public class GameView extends View {
             return;
         }
 
+        float pulse = 0.55f + 0.45f * (float) Math.sin(System.currentTimeMillis() / 220.0);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(2 + pulse * 2));
+        paint.setColor(Color.argb((int) (85 + pulse * 90), 116, 219, 214));
+        canvas.drawRoundRect(new RectF(rect.left + dp(5), rect.top + dp(5),
+                rect.right - dp(5), rect.bottom - dp(5)), dp(13), dp(13), paint);
+        paint.setStyle(Paint.Style.FILL);
         paint.setColor(Color.argb(205, 116, 219, 214));
         RectF box = new RectF(rect.left + dp(10), rect.bottom - dp(24), rect.right - dp(10), rect.bottom - dp(8));
         canvas.drawRoundRect(box, dp(5), dp(5), paint);
@@ -10078,6 +10105,7 @@ public class GameView extends View {
         textPaint.setColor(Color.rgb(33, 37, 56));
         canvas.drawText("+2", box.centerX(), box.centerY() + dp(4), textPaint);
         textPaint.setColor(Color.WHITE);
+        postInvalidateOnAnimation();
     }
 
     private void spawnParticles(Set<Cell> cells) {
@@ -10331,6 +10359,8 @@ public class GameView extends View {
         }
         if (level.moveChestCount > 0) {
             goalText += "  步箱 " + level.moveChestCount;
+            // 开场说明步箱收益，让玩家优先拿补步资源。
+            goalText += "  开箱补步";
         }
         if (getLevelRewardCellCount(level) >= 3) {
             // 开场明确奖励格累计收益，让玩家知道每3格可换一次罗盘补给。
@@ -10533,6 +10563,8 @@ public class GameView extends View {
             return "策略 先拆炸弹拿护盾";
         } else if (level.keyCount > 0) {
             return "策略 火箭/罗盘优先抢钥匙";
+        } else if (level.moveChestCount > 0) {
+            return "策略 火箭/罗盘优先开步箱";
         } else if (level.musicBoxCount > 0) {
             return "策略 优先开音乐盒铺连击";
         } else if (level.crystalCoreCount > 0) {
@@ -11050,6 +11082,10 @@ public class GameView extends View {
             appendFailureProgressPart(text, "炸弹剩", getCountdownBombRemainingCount());
             appendFailureProgressPart(text, "炸弹急", getCountdownBombUrgency());
         }
+        if (level.moveChestCount > 0) {
+            // 步箱剩余量单独复盘，提示下局优先拿补步资源。
+            appendFailureProgressPart(text, "步箱剩", getMoveChestRemainingCount());
+        }
         if (level.musicBoxCount > 0) {
             // 失败复盘也显示音乐盒剩余，提醒下局优先拿星弦琴储备。
             appendFailureProgressPart(text, "音乐盒剩", getMusicBoxRemainingCount());
@@ -11220,6 +11256,18 @@ public class GameView extends View {
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
                 if (musicBox[row][col] > 0) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    private int getMoveChestRemainingCount() {
+        int count = 0;
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (moveChest[row][col] > 0) {
                     count++;
                 }
             }
