@@ -6932,7 +6932,9 @@ public class GameView extends View {
         }
 
         boolean bombLevel = levels.get(levelIndex).countdownBombCount > 0;
-        paint.setColor(bombLevel ? Color.argb(215, 255, 88, 112) : Color.argb(190, 33, 37, 56));
+        boolean carnivalLevel = mark.equals("嘉");
+        paint.setColor(bombLevel ? Color.argb(215, 255, 88, 112)
+                : (carnivalLevel ? Color.argb(225, 255, 213, 92) : Color.argb(190, 33, 37, 56)));
         RectF badge = new RectF(rect.left + dp(4), rect.bottom - dp(18), rect.left + dp(22), rect.bottom - dp(4));
         canvas.drawRoundRect(badge, dp(5), dp(5), paint);
         if (bombLevel) {
@@ -6961,7 +6963,7 @@ public class GameView extends View {
         }
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setTextSize(sp(8));
-        textPaint.setColor(Color.WHITE);
+        textPaint.setColor(carnivalLevel ? Color.rgb(33, 37, 56) : Color.WHITE);
         canvas.drawText(mark, badge.centerX(), badge.centerY() + dp(3), textPaint);
     }
 
@@ -7059,6 +7061,10 @@ public class GameView extends View {
             return "连";
         } else if (level.moveLimitGoal > 0) {
             return "步";
+        } else if (isStarCandyCarnivalChapter(getChapterIndex(levelIndex))
+                && (level.musicBoxCount > 0 || level.fireworksBarrelCount > 0)) {
+            // 嘉年华关卡的复合爆发目标在地图上单独标出，方便玩家提前准备礼炮/星弦琴。
+            return "嘉";
         } else if (level.rainbowArcCount > 0) {
             return "拱";
         } else if (level.crystalCoreCount > 0) {
