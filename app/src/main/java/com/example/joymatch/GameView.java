@@ -8401,7 +8401,7 @@ public class GameView extends View {
                     ? getPropName(prop) + " x" + propInventory[prop]
                     : buildPropPurchaseLabel(prop);
             if (propReserve[prop] > 0) {
-                drawReservePropBadge(canvas, rect, propReserve[prop]);
+                drawReservePropBadge(canvas, rect, propReserve[prop], recommended);
             }
             int labelColor = propInventory[prop] <= 0 && coins < PROP_COSTS[prop]
                     ? Color.rgb(255, 236, 133) : Color.WHITE;
@@ -9112,10 +9112,10 @@ public class GameView extends View {
         canvas.drawText(purchasable ? "买" : "荐", badge.centerX(), badge.centerY() + dp(3), textPaint);
     }
 
-    private void drawReservePropBadge(Canvas canvas, RectF rect, int amount) {
+    private void drawReservePropBadge(Canvas canvas, RectF rect, int amount, boolean recommended) {
         // 储备角标单独显示，避免道具名、库存和储备数量互相挤压。
         RectF badge = new RectF(rect.left + dp(4), rect.top + dp(4), rect.left + dp(28), rect.top + dp(18));
-        paint.setColor(Color.argb(225, 116, 219, 214));
+        paint.setColor(recommended ? Color.argb(235, 255, 213, 92) : Color.argb(225, 116, 219, 214));
         canvas.drawRoundRect(badge, dp(5), dp(5), paint);
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setTextSize(sp(8));
