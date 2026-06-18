@@ -2934,6 +2934,13 @@ public class GameView extends View {
             return PROP_BUBBLE_WAND;
         } else if (streak == 45) {
             return PROP_STAR_HARP;
+        } else if (streak == 60) {
+            // 420关后补充更远的每日挑战节点，强化长期回访。
+            return PROP_FIREWORK_CANNON;
+        } else if (streak == 75) {
+            return PROP_STAR_COMPASS;
+        } else if (streak == 90) {
+            return PROP_STAR_HARP;
         } else if (streak > 0 && streak % 30 == 0) {
             return PROP_SNOW_GLOBE;
         }
@@ -2941,7 +2948,14 @@ public class GameView extends View {
     }
 
     private int getDailyChallengeMilestoneAmount(int prop) {
-        if (prop == PROP_MOON_TICKET || prop == PROP_SNOW_GLOBE) {
+        return getDailyChallengeMilestoneAmount(dailyChallengeStreak, prop);
+    }
+
+    private int getDailyChallengeMilestoneAmount(int streak, int prop) {
+        if (prop == PROP_STAR_HARP && streak >= 90) {
+            return 3;
+        } else if (prop == PROP_MOON_TICKET || prop == PROP_SNOW_GLOBE
+                || prop == PROP_FIREWORK_CANNON || prop == PROP_STAR_COMPASS) {
             return 2;
         }
         return prop == NONE ? 0 : 1;
@@ -7136,7 +7150,7 @@ public class GameView extends View {
         int prop = getDailyChallengeMilestoneProp(nextStreak);
         int missingStreak = Math.max(1, nextStreak - dailyChallengeStreak);
         return prop == NONE ? "" : " 差" + missingStreak + "连奖" + getPropName(prop)
-                + "+" + getDailyChallengeMilestoneAmount(prop);
+                + "+" + getDailyChallengeMilestoneAmount(nextStreak, prop);
     }
 
     private int getNextDailyChallengeMilestone() {
@@ -12472,7 +12486,7 @@ public class GameView extends View {
         // 主线结算提醒今日挑战，把每日回访奖励接到当前游戏循环。
         return prop == NONE ? "下一目标 每日挑战奖励"
                 : "下一目标 每日挑战差" + Math.max(1, nextStreak - dailyChallengeStreak)
-                + "连奖" + getPropName(prop) + "+" + getDailyChallengeMilestoneAmount(prop);
+                + "连奖" + getPropName(prop) + "+" + getDailyChallengeMilestoneAmount(nextStreak, prop);
     }
 
     private String buildChestNextGoalText() {
