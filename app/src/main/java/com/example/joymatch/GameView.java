@@ -2549,6 +2549,10 @@ public class GameView extends View {
             // 糖晶塔芯能制造爆炸棋，智能提示优先指向可打开连锁的落点。
             priority += 20;
         }
+        if (paintBucket[row][col] > 0) {
+            // 染色桶会补目标色，智能提示优先指向可制造收集连锁的资源点。
+            priority += 17;
+        }
         if (windmill[row][col] > 0) {
             // 风车会横竖扫场，智能提示优先指向能打开整线连锁的资源点。
             priority += 17;
@@ -6220,6 +6224,13 @@ public class GameView extends View {
                 obstacleText += " 能+" + lastStardustJarReward;
             }
         }
+        if (level.paintBucketCount > 0) {
+            // 染色桶会把周围棋子补成目标色，HUD单独显示剩余和补色收益。
+            obstacleText += " 染" + getPaintBucketRemainingCount();
+            if (lastPaintBucketReward > 0) {
+                obstacleText += " 染+" + lastPaintBucketReward;
+            }
+        }
         if (level.windmillCount > 0) {
             // 风车会扫开整行或整列，HUD单独显示剩余和本局触发次数。
             obstacleText += " 风" + getWindmillRemainingCount();
@@ -8256,6 +8267,9 @@ public class GameView extends View {
         } else if (getResonanceDrumRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 敲共鸣鼓进爆发";
+        } else if (getPaintBucketRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            return "推荐 " + getPropName(prop) + " 开染色桶补目标";
         } else if (getWindmillRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 转风车扫行列";
@@ -8424,6 +8438,11 @@ public class GameView extends View {
             // 共鸣鼓会立刻开启爆发节奏，推荐精准道具优先打出连击窗口。
             return true;
         }
+        if (getPaintBucketRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            // 染色桶能制造目标色连锁，推荐精准道具优先补齐收集节奏。
+            return true;
+        }
         if (getWindmillRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             // 风车能扫开整行或整列，推荐精准道具优先打开线性连锁。
@@ -8553,6 +8572,10 @@ public class GameView extends View {
         if (getResonanceDrumRemainingCount() > 0) {
             // 共鸣鼓失败后提示优先敲响，把爆发窗口提前打出来。
             return "建议下局优先敲共鸣鼓";
+        }
+        if (getPaintBucketRemainingCount() > 0) {
+            // 染色桶失败后提示优先打开，帮助下局更早补齐目标色。
+            return "建议下局优先开染色桶";
         }
         if (getWindmillRemainingCount() > 0) {
             // 风车失败后提示优先转动，帮助下局更早扫开整线空间。
@@ -9231,6 +9254,14 @@ public class GameView extends View {
 
         float centerX = rect.left + rect.width() * 0.25f;
         float centerY = rect.top + dp(19);
+        float pulse = 0.55f + 0.45f * (float) Math.sin(System.currentTimeMillis() / 215.0);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(2 + pulse * 2));
+        paint.setColor(Color.argb((int) (85 + pulse * 90), Color.red(palette[targetKind]),
+                Color.green(palette[targetKind]), Color.blue(palette[targetKind])));
+        canvas.drawRoundRect(new RectF(rect.left + dp(5), rect.top + dp(5),
+                rect.right - dp(5), rect.bottom - dp(5)), dp(13), dp(13), paint);
+        paint.setStyle(Paint.Style.FILL);
         paint.setColor(Color.argb(220, 255, 255, 255));
         RectF bucket = new RectF(centerX - dp(10), centerY - dp(8), centerX + dp(10), centerY + dp(10));
         canvas.drawRoundRect(bucket, dp(4), dp(4), paint);
@@ -9241,6 +9272,7 @@ public class GameView extends View {
         canvas.drawLine(bucket.left + dp(2), bucket.top, bucket.right - dp(2), bucket.top, paint);
         paint.setColor(palette[targetKind]);
         canvas.drawCircle(centerX + dp(12), centerY + dp(12), dp(4), paint);
+        postInvalidateOnAnimation();
     }
 
     private void drawWindmill(Canvas canvas, int row, int col, RectF rect) {
@@ -10170,6 +10202,8 @@ public class GameView extends View {
         }
         if (level.paintBucketCount > 0) {
             goalText += "  染色桶 " + level.paintBucketCount;
+            // 开场说明染色桶收益，让玩家优先围绕目标色连锁规划。
+            goalText += "  开桶补目标";
         }
         if (level.windmillCount > 0) {
             goalText += "  风车 " + level.windmillCount;
@@ -10344,6 +10378,8 @@ public class GameView extends View {
             return "策略 火箭/罗盘优先开极光";
         } else if (level.resonanceDrumCount > 0) {
             return "策略 火箭/罗盘优先敲共鸣";
+        } else if (level.paintBucketCount > 0) {
+            return "策略 火箭/罗盘优先开染色桶";
         } else if (level.windmillCount > 0) {
             return "策略 火箭/罗盘优先转风车";
         } else if (level.jewelBowCount > 0) {
@@ -10905,6 +10941,10 @@ public class GameView extends View {
             // 共鸣鼓剩余量单独复盘，提示下局优先开启爆发节奏。
             appendFailureProgressPart(text, "共鸣剩", getResonanceDrumRemainingCount());
         }
+        if (level.paintBucketCount > 0) {
+            // 染色桶剩余量单独复盘，提示下局优先补齐目标色。
+            appendFailureProgressPart(text, "染色桶剩", getPaintBucketRemainingCount());
+        }
         if (level.windmillCount > 0) {
             // 风车剩余量单独复盘，提示下局优先打开整线清场点。
             appendFailureProgressPart(text, "风车剩", getWindmillRemainingCount());
@@ -11199,6 +11239,18 @@ public class GameView extends View {
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
                 if (windmill[row][col] > 0) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    private int getPaintBucketRemainingCount() {
+        int count = 0;
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (paintBucket[row][col] > 0) {
                     count++;
                 }
             }
