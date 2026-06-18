@@ -3773,6 +3773,23 @@ public class GameView extends View {
                 + "+" + getDailyLoginRewardAmount(prop);
     }
 
+    private void drawDailyLoginProgressBar(Canvas canvas, RectF rect) {
+        int nextStreak = getNextDailyLoginMilestone();
+        if (nextStreak == NONE) {
+            return;
+        }
+
+        // HUD 连签小进度条强化每日登录奖励的长期目标感。
+        float progress = Math.min(1f, dailyStreak / (float) nextStreak);
+        float right = rect.right - dp(4);
+        float left = Math.max(rect.left, right - dp(112));
+        float top = rect.bottom + dp(1);
+        paint.setColor(Color.argb(70, 33, 37, 56));
+        canvas.drawRoundRect(new RectF(left, top, right, top + dp(3)), dp(1.5f), dp(1.5f), paint);
+        paint.setColor(Color.argb(205, 255, 213, 92));
+        canvas.drawRoundRect(new RectF(left, top, left + (right - left) * progress, top + dp(3)), dp(1.5f), dp(1.5f), paint);
+    }
+
     private int getNextDailyLoginMilestone() {
         // 预告最近的连签奖励节点，让长期登录目标更清楚。
         for (int streak = dailyStreak + 1; streak <= dailyStreak + 30; streak++) {
@@ -6111,7 +6128,9 @@ public class GameView extends View {
             coinText += " 胜" + winStreak + buildNextWinStreakRewardHint();
         }
         coinText += buildNextDailyLoginRewardHint();
-        drawTextFitRight(canvas, coinText, new RectF(getWidth() * 0.48f, dp(92), getWidth() - dp(18), dp(110)), 15, Color.WHITE);
+        RectF coinRect = new RectF(getWidth() * 0.48f, dp(92), getWidth() - dp(18), dp(110));
+        drawTextFitRight(canvas, coinText, coinRect, 15, Color.WHITE);
+        drawDailyLoginProgressBar(canvas, coinRect);
         String obstacleText = "冰" + iceRemaining + " 蜜" + honeyRemaining + " 石" + stoneRemaining
                 + " 藤" + vineRemaining + " 锁" + chainRemaining;
         if (level.shellCount > 0) {
