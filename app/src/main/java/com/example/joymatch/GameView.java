@@ -11153,19 +11153,23 @@ public class GameView extends View {
         if (dailyChallengeMode || levelStars[levelIndex] <= 0) {
             return "";
         }
+        String rewardSuffix = buildReplayRewardSuffix(levelIndex);
         if (levelStars[levelIndex] < 3) {
-            return "再冲" + (3 - levelStars[levelIndex]) + "星";
+            return "再冲" + (3 - levelStars[levelIndex]) + "星" + rewardSuffix;
         }
         String challenge = buildReplayChallengeReason(levelIndex);
         if (challenge.length() > 0) {
-            // 回访开场直接提示具体挑战，避免只看到泛化评级目标。
-            return challenge;
+            // 回访开场直接提示具体挑战和临近奖励，避免只看到泛化评级目标。
+            return challenge + rewardSuffix;
         }
         if (levelRanks[levelIndex] < 4) {
-            return "再冲" + buildRankText(4);
+            return "再冲" + buildRankText(4) + rewardSuffix;
         }
         if (levelRanks[levelIndex] >= 4 && !levelPerfectCleared[levelIndex]) {
-            return "再冲完美";
+            return "再冲完美" + rewardSuffix;
+        }
+        if (isReplayTargetLevel(levelIndex)) {
+            return buildReplayReason(levelIndex);
         }
         return "";
     }
