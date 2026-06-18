@@ -6719,14 +6719,21 @@ public class GameView extends View {
             return;
         }
 
+        String assistText = "助" + Math.min(3, failStreak);
+        if (failStreak >= 2) {
+            // 连续失败后的赠送道具也显示在地图角标里，方便玩家判断下局补偿力度。
+            assistText += failStreak >= 4 ? "琴" : "弹";
+        }
+
         // 地图角标提示下次开局助力，让卡关补偿在地图上也能被玩家看见。
-        RectF badge = new RectF(rect.left + dp(4), rect.top + dp(4), rect.left + dp(26), rect.top + dp(18));
+        RectF badge = new RectF(rect.left + dp(4), rect.top + dp(4),
+                rect.left + dp(failStreak >= 2 ? 34 : 26), rect.top + dp(18));
         paint.setColor(Color.argb(215, 255, 236, 133));
         canvas.drawRoundRect(badge, dp(5), dp(5), paint);
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setTextSize(sp(8));
         textPaint.setColor(Color.rgb(33, 37, 56));
-        canvas.drawText("助" + Math.min(3, failStreak), badge.centerX(), badge.centerY() + dp(3), textPaint);
+        canvas.drawText(assistText, badge.centerX(), badge.centerY() + dp(3), textPaint);
     }
 
     private void drawLevelTypeMark(Canvas canvas, int levelIndex, RectF rect) {
