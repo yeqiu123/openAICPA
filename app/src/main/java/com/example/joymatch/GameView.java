@@ -6802,6 +6802,14 @@ public class GameView extends View {
         String text = "";
         if (getChapterStars(chapter) >= CHAPTER_SIZE * 3) {
             text += " 满";
+        } else if (!chapterChestClaimed[chapter] && getChapterStars(chapter) >= CHAPTER_CHEST_STARS) {
+            // 章节宝箱可领取时直接写进横幅，减少玩家在地图上寻找奖励入口的成本。
+            text += " 箱";
+        } else if (!chapterChestClaimed[chapter] && getChapterUnlockedCount(chapter) >= CHAPTER_SIZE) {
+            int missingStars = Math.max(0, CHAPTER_CHEST_STARS - getChapterStars(chapter));
+            if (missingStars > 0 && missingStars <= 6) {
+                text += " 箱差" + missingStars;
+            }
         }
         if (getChapterRankScore(chapter) >= getChapterRankRewardTarget()) {
             text += " 评";
