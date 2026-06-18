@@ -7316,7 +7316,9 @@ public class GameView extends View {
     private String buildNextSeasonRewardHint() {
         int nextStep = getNextSeasonRewardStep();
         int prop = getSeasonRewardProp(nextStep);
-        return prop == NONE ? "" : " 到" + nextStep + "季奖" + getPropName(prop)
+        int missingLevels = Math.max(0, nextStep * 8 - seasonLevels);
+        int missingStars = Math.max(0, nextStep * 22 - seasonStars);
+        return prop == NONE ? "" : " 差" + missingLevels + "关/" + missingStars + "星奖" + getPropName(prop)
                 + "+" + getSeasonRewardAmount(prop);
     }
 
