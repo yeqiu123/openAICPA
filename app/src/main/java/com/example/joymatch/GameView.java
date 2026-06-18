@@ -6651,12 +6651,22 @@ public class GameView extends View {
     private void drawReplayTargetMapMark(Canvas canvas, int level, RectF rect) {
         // 推荐补星关在地图格上直接标出，方便玩家从章节页快速识别回访目标。
         RectF badge = new RectF(rect.right - dp(24), rect.bottom - dp(18), rect.right - dp(4), rect.bottom - dp(4));
-        paint.setColor(Color.argb(225, 255, 236, 133));
+        String mark = buildReplayTargetMapMarkText(level);
+        boolean rewardGoal = mark.equals("箱") || mark.equals("师") || mark.equals("奖");
+        paint.setColor(rewardGoal ? Color.argb(235, 255, 213, 92) : Color.argb(225, 255, 236, 133));
         canvas.drawRoundRect(badge, dp(5), dp(5), paint);
+        if (rewardGoal) {
+            // 奖励型回访角标加细描边，和普通补星/补评级推荐做出区分。
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(dp(1));
+            paint.setColor(Color.argb(220, 255, 255, 255));
+            canvas.drawRoundRect(badge, dp(5), dp(5), paint);
+            paint.setStyle(Paint.Style.FILL);
+        }
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setTextSize(sp(8));
         textPaint.setColor(Color.rgb(33, 37, 56));
-        canvas.drawText(buildReplayTargetMapMarkText(level), badge.centerX(), badge.centerY() + dp(3), textPaint);
+        canvas.drawText(mark, badge.centerX(), badge.centerY() + dp(3), textPaint);
     }
 
     private String buildReplayTargetMapMarkText(int level) {
