@@ -11191,6 +11191,10 @@ public class GameView extends View {
             return "策略 海星镐/净化优先敲珊瑚";
         } else if (level.flowerCount > 0) {
             return "策略 海星镐/净化优先打花苞";
+        } else if (isStarCandyCarnivalChapter(getChapterIndex(levelIndex))
+                && (level.musicBoxCount > 0 || level.fireworksBarrelCount > 0)) {
+            // 新终章混合音乐盒和烟花桶，开场直接提示用高爆发道具抢节奏。
+            return "策略 星弦琴/礼炮抢嘉年华连锁";
         } else if (level.musicBoxCount > 0) {
             return "策略 优先开音乐盒铺连击";
         } else if (level.crystalCoreCount > 0) {
