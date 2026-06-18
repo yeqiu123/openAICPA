@@ -6090,6 +6090,10 @@ public class GameView extends View {
         if (lastComebackAssistMoves > 0) {
             // 卡关助力在HUD中保留轻提示，避免开场提示淡出后玩家忘记本局补偿。
             moveText += " 助+" + lastComebackAssistMoves;
+            if (lastComebackAssistProp != NONE) {
+                // 赠送道具也显示在步数旁，让本局补偿更直观。
+                moveText += " " + getPropName(lastComebackAssistProp) + "+" + lastComebackAssistAmount;
+            }
         }
         canvas.drawText(moveText, getWidth() - dp(22), dp(78), textPaint);
         String coinText = "金币 " + coins;
