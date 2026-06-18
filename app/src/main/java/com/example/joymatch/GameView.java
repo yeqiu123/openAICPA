@@ -3086,6 +3086,13 @@ public class GameView extends View {
             return PROP_BUBBLE_WAND;
         } else if (streak == 20) {
             return PROP_STAR_HARP;
+        } else if (streak == 30) {
+            // 420关后追加更高连胜节点，给后期连续闯关更多嘉年华补给。
+            return PROP_FIREWORK_CANNON;
+        } else if (streak == 40) {
+            return PROP_STAR_HARP;
+        } else if (streak == 50) {
+            return PROP_STAR_COMPASS;
         } else if (streak == 25 || (streak > 0 && streak % 15 == 0)) {
             return PROP_SNOW_GLOBE;
         }
@@ -3095,7 +3102,9 @@ public class GameView extends View {
     private int getWinStreakMilestoneAmount(int streak, int prop) {
         if (prop == NONE) {
             return 0;
-        } else if (streak == 10 || (streak > 0 && streak % 15 == 0)) {
+        } else if (streak == 40 || streak == 50) {
+            return 3;
+        } else if (streak == 10 || streak == 30 || (streak > 0 && streak % 15 == 0)) {
             return 2;
         } else if (streak == 25) {
             return 3;
