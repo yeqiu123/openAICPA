@@ -12110,10 +12110,15 @@ public class GameView extends View {
         int rankMissing = getNextRankChestTarget() - getTotalRankScore();
         if (starMissing > 0 && starMissing <= 6) {
             // 结算页提示宝箱差额，把补星和冲评级的短线奖励显示出来。
-            return "下一目标 星箱差" + starMissing + "星";
+            int prop = getStarChestRewardProp(starChestClaimed + 1);
+            String rewardText = prop == NONE ? "" : "奖" + getPropName(prop) + "+" + getStarChestRewardAmount(prop);
+            return "下一目标 星箱差" + starMissing + "星" + rewardText;
         }
         if (rankMissing > 0 && rankMissing <= 8) {
-            return "下一目标 评级箱差" + rankMissing;
+            // 评级箱临近时也带上道具奖励，推动玩家回访冲评级。
+            int prop = getRankChestRewardProp(rankChestClaimed + 1);
+            String rewardText = prop == NONE ? "" : "奖" + getPropName(prop) + "+" + getRankChestRewardAmount(prop);
+            return "下一目标 评级箱差" + rankMissing + rewardText;
         }
         return "";
     }
