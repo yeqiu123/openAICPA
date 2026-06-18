@@ -8651,6 +8651,10 @@ public class GameView extends View {
             // 步箱失败后提示优先打开，让下局更早拿到补步余量。
             return "建议下局优先开步箱";
         }
+        if (chainRemaining > 0) {
+            // 链锁失败后提示优先破锁，避免封锁区域拖慢开局节奏。
+            return "建议下局优先破链锁";
+        }
         if (shellRemaining > 0) {
             // 贝壳失败后提示优先破壳，避免多层障碍拖慢下局节奏。
             return "建议下局优先破贝壳";
@@ -9279,12 +9283,18 @@ public class GameView extends View {
             return;
         }
 
+        float pulse = 0.55f + 0.45f * (float) Math.sin(System.currentTimeMillis() / 235.0);
         paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(2 + pulse * 2));
+        paint.setColor(Color.argb((int) (75 + pulse * 80), 245, 245, 255));
+        canvas.drawRoundRect(new RectF(rect.left + dp(5), rect.top + dp(5),
+                rect.right - dp(5), rect.bottom - dp(5)), dp(13), dp(13), paint);
         paint.setStrokeWidth(dp(4));
         paint.setColor(Color.argb(205, 245, 245, 255));
         canvas.drawLine(rect.left + dp(7), rect.top + dp(13), rect.right - dp(7), rect.bottom - dp(13), paint);
         canvas.drawLine(rect.left + dp(7), rect.bottom - dp(13), rect.right - dp(7), rect.top + dp(13), paint);
         paint.setStyle(Paint.Style.FILL);
+        postInvalidateOnAnimation();
     }
 
     private void drawShell(Canvas canvas, int row, int col, RectF rect) {
@@ -10436,6 +10446,11 @@ public class GameView extends View {
             // 开场说明步箱收益，让玩家优先拿补步资源。
             goalText += "  开箱补步";
         }
+        if (level.chainCount > 0) {
+            goalText += "  链锁 " + level.chainCount;
+            // 开场说明链锁会封住棋盘，提醒优先用破锁钳打开空间。
+            goalText += "  破锁开局";
+        }
         if (level.shellCount > 0) {
             goalText += "  贝壳 " + level.shellCount;
             // 开场说明贝壳是多次打击障碍，提醒优先用清障道具破开。
@@ -10648,6 +10663,8 @@ public class GameView extends View {
             return "策略 火箭/罗盘优先抢钥匙";
         } else if (level.moveChestCount > 0) {
             return "策略 火箭/罗盘优先开步箱";
+        } else if (level.chainCount > 0) {
+            return "策略 破锁钳优先开链";
         } else if (level.shellCount > 0) {
             return "策略 海星镐/净化优先破贝壳";
         } else if (level.coralReefCount > 0) {
@@ -10715,8 +10732,6 @@ public class GameView extends View {
         } else if (getRewardCellCount() >= 3) {
             // 奖励格密集时优先提示精准道具，帮助玩家把额外收益转成通关优势。
             return "策略 火箭/罗盘优先收奖励";
-        } else if (level.chainCount > 0) {
-            return "策略 破锁先开链";
         } else if (level.honeyCount > 0) {
             return "策略 冻结/雪花球控蜂蜜";
         } else if (getLevelObstacleCount(level) >= 24) {
@@ -11178,6 +11193,10 @@ public class GameView extends View {
         if (level.moveChestCount > 0) {
             // 步箱剩余量单独复盘，提示下局优先拿补步资源。
             appendFailureProgressPart(text, "步箱剩", getMoveChestRemainingCount());
+        }
+        if (level.chainCount > 0) {
+            // 链锁剩余量单独复盘，提示下局优先打开被封区域。
+            appendFailureProgressPart(text, "链锁剩", chainRemaining);
         }
         if (level.shellCount > 0) {
             // 贝壳剩余量单独复盘，提示下局优先处理多层障碍。
