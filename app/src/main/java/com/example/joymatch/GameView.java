@@ -7214,11 +7214,12 @@ public class GameView extends View {
         int stars = getChapterStars(chapter);
         int fullStarTarget = CHAPTER_SIZE * 3;
         if (stars >= fullStarTarget) {
-            return chapterMasteryClaimed[chapter] ? "  大师已领" : "  大师奖净化";
+            return chapterMasteryClaimed[chapter] ? "  大师已领"
+                    : "  大师奖净化" + buildChapterMasteryPropRewardText(chapter);
         }
         if (stars >= CHAPTER_CHEST_STARS || getChapterUnlockedCount(chapter) >= CHAPTER_SIZE) {
             // 地图进度直接露出满星奖励核心道具，提升补星目标吸引力。
-            return "  满星差" + (fullStarTarget - stars) + "奖净化";
+            return "  满星差" + (fullStarTarget - stars) + "奖净化" + buildChapterMasteryPropRewardText(chapter);
         }
         return "";
     }
@@ -7227,11 +7228,11 @@ public class GameView extends View {
         int rankScore = getChapterRankScore(chapter);
         int rankTarget = getChapterRankRewardTarget();
         if (rankScore >= rankTarget) {
-            return chapterRankClaimed[chapter] ? " 已领" : " 奖潮汐";
+            return chapterRankClaimed[chapter] ? " 已领" : " 奖潮汐" + buildChapterRankPropRewardText(chapter);
         }
         if (getChapterUnlockedCount(chapter) >= CHAPTER_SIZE / 2) {
             // 评级进度带上潮汐奖励，鼓励玩家回头冲高评级。
-            return " 差" + (rankTarget - rankScore) + "奖潮汐";
+            return " 差" + (rankTarget - rankScore) + "奖潮汐" + buildChapterRankPropRewardText(chapter);
         }
         return "";
     }
@@ -7243,11 +7244,11 @@ public class GameView extends View {
             return "";
         }
         if (clearedElite >= eliteCount) {
-            return chapterEliteClaimed[chapter] ? " 已领" : " 奖流星";
+            return chapterEliteClaimed[chapter] ? " 已领" : " 奖流星" + buildChapterElitePropRewardText(chapter);
         }
         if (clearedElite > 0 || getChapterUnlockedCount(chapter) >= CHAPTER_SIZE) {
             // 精英进度显示流星奖励，让高难节点回访收益更明确。
-            return " 差" + (eliteCount - clearedElite) + "奖流星";
+            return " 差" + (eliteCount - clearedElite) + "奖流星" + buildChapterElitePropRewardText(chapter);
         }
         return "";
     }
@@ -7261,9 +7262,10 @@ public class GameView extends View {
         int clearedHidden = getChapterClearedHiddenChallengeCount(chapter);
         String hint = "";
         if (clearedHidden >= hiddenCount) {
-            hint = chapterHiddenClaimed[chapter] ? " 已领" : " 奖时钟";
+            hint = chapterHiddenClaimed[chapter] ? " 已领" : " 奖时钟+1 罗盘+1";
         } else if (clearedHidden > 0 || getChapterUnlockedCount(chapter) >= CHAPTER_SIZE) {
-            hint = " 差" + (hiddenCount - clearedHidden) + "奖时钟";
+            // 隐藏进度也展示完整道具，和回访入口保持一致。
+            hint = " 差" + (hiddenCount - clearedHidden) + "奖时钟+1 罗盘+1";
         }
         // 章节页补上隐藏挑战进度，给老关回访多一个可见追求。
         return "  隐藏 " + clearedHidden + "/" + hiddenCount + hint;
@@ -7276,7 +7278,7 @@ public class GameView extends View {
         }
         String hint = "";
         if (perfectCount >= getChapterUnlockedCount(chapter) && getChapterUnlockedCount(chapter) >= CHAPTER_SIZE) {
-            hint = chapterPerfectClaimed[chapter] ? " 已领" : " 奖星弦";
+            hint = chapterPerfectClaimed[chapter] ? " 已领" : " 奖星弦琴+1 罗盘+1";
         }
         // 完美进度展示高手向回访目标，并提示整章完美奖励状态。
         return "  完美 " + perfectCount + "/" + getChapterUnlockedCount(chapter) + hint;
@@ -8081,12 +8083,12 @@ public class GameView extends View {
         int masteryMissing = CHAPTER_SIZE * 3 - getChapterStars(chapter);
         if (!chapterMasteryClaimed[chapter] && unlockedCount >= CHAPTER_SIZE
                 && masteryMissing > 0 && masteryMissing <= 6) {
-            return " 冲大师 净化+1" + buildChapterMasteryPropRewardText();
+            return " 冲大师 净化+1" + buildChapterMasteryPropRewardText(chapter);
         }
         int rankMissing = getChapterRankRewardTarget() - getChapterRankScore(chapter);
         if (!chapterRankClaimed[chapter] && unlockedCount >= CHAPTER_SIZE / 2
                 && rankMissing > 0 && rankMissing <= 8) {
-            return " 冲评级奖 潮汐+1" + buildChapterRankPropRewardText();
+            return " 冲评级奖 潮汐+1" + buildChapterRankPropRewardText(chapter);
         }
         int hiddenMissing = getChapterHiddenChallengeCount(chapter) - getChapterClearedHiddenChallengeCount(chapter);
         if (!chapterHiddenClaimed[chapter] && hiddenMissing > 0 && hiddenMissing <= 1
@@ -11228,6 +11230,10 @@ public class GameView extends View {
 
     private String buildChapterMasteryPropRewardText() {
         int chapter = getChapterIndex(levelIndex);
+        return buildChapterMasteryPropRewardText(chapter);
+    }
+
+    private String buildChapterMasteryPropRewardText(int chapter) {
         if (isRainbowValleyChapter(chapter)) {
             return " 极光+1";
         } else if (isCrystalTowerChapter(chapter)) {
@@ -11254,6 +11260,10 @@ public class GameView extends View {
 
     private String buildChapterElitePropRewardText() {
         int chapter = getChapterIndex(levelIndex);
+        return buildChapterElitePropRewardText(chapter);
+    }
+
+    private String buildChapterElitePropRewardText(int chapter) {
         if (isRainbowValleyChapter(chapter)) {
             return " 罗盘+1";
         } else if (isCrystalTowerChapter(chapter)) {
@@ -11280,6 +11290,10 @@ public class GameView extends View {
 
     private String buildChapterRankPropRewardText() {
         int chapter = getChapterIndex(levelIndex);
+        return buildChapterRankPropRewardText(chapter);
+    }
+
+    private String buildChapterRankPropRewardText(int chapter) {
         if (isRainbowValleyChapter(chapter)) {
             return " 极光+1 罗盘+1";
         } else if (isCrystalTowerChapter(chapter)) {
@@ -12443,7 +12457,7 @@ public class GameView extends View {
         }
 
         int starMissing = CHAPTER_SIZE * 3 - getChapterStars(chapter);
-        String rewardText = "奖净化+1" + buildChapterMasteryPropRewardText();
+        String rewardText = "奖净化+1" + buildChapterMasteryPropRewardText(chapter);
         if (starMissing <= 0) {
             return "下一目标 " + chapterNames[chapter] + "满星大师" + rewardText;
         }
@@ -12460,7 +12474,7 @@ public class GameView extends View {
         }
 
         int rankMissing = getChapterRankRewardTarget() - getChapterRankScore(chapter);
-        String rewardText = "奖潮汐+1" + buildChapterRankPropRewardText();
+        String rewardText = "奖潮汐+1" + buildChapterRankPropRewardText(chapter);
         if (rankMissing <= 0) {
             return "下一目标 " + chapterNames[chapter] + "评级奖励" + rewardText;
         }
@@ -12478,7 +12492,7 @@ public class GameView extends View {
         }
 
         int clearedElite = getChapterClearedEliteCount(chapter);
-        String rewardText = "奖流星+1" + buildChapterElitePropRewardText();
+        String rewardText = "奖流星+1" + buildChapterElitePropRewardText(chapter);
         if (clearedElite >= eliteCount) {
             return "下一目标 " + chapterNames[chapter] + "精英奖励" + rewardText;
         }
