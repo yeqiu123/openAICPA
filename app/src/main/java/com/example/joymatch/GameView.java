@@ -7353,6 +7353,10 @@ public class GameView extends View {
                 + "  赛季 " + seasonLevels + "/" + getNextSeasonLevelTarget()
                 + "关 " + seasonStars + "/" + getNextSeasonStarTarget() + "星" + buildNextSeasonRewardHint(),
                 seasonTextRect, 11, Color.WHITE);
+        if (isAchievementRewardNear()) {
+            // 成就奖励临近时在总览条上闪光，让玩家知道再补一点就有道具奖励。
+            drawChapterProgressGoalSpark(canvas, right - dp(8), top + dp(4));
+        }
         drawSeasonProgressBar(canvas, left, top + dp(30), right);
         if (isSeasonRewardNear()) {
             // 赛季奖励临近时在总览进度条上闪光，提醒玩家继续推进或补星。
@@ -7376,6 +7380,12 @@ public class GameView extends View {
             }
         }
         return NONE;
+    }
+
+    private boolean isAchievementRewardNear() {
+        int index = getNextAchievementRewardIndex();
+        int missing = index == NONE ? 99 : index + 1 - getClaimedAchievementCount();
+        return missing > 0 && missing <= 2;
     }
 
     private String buildNextSeasonRewardHint() {
