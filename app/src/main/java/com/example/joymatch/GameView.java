@@ -6993,7 +6993,8 @@ public class GameView extends View {
     private String buildNextDailyChallengeRewardHint() {
         int nextStreak = getNextDailyChallengeMilestone();
         int prop = getDailyChallengeMilestoneProp(nextStreak);
-        return prop == NONE ? "" : " 到" + nextStreak + "奖" + getPropName(prop)
+        int missingStreak = Math.max(1, nextStreak - dailyChallengeStreak);
+        return prop == NONE ? "" : " 差" + missingStreak + "连奖" + getPropName(prop)
                 + "+" + getDailyChallengeMilestoneAmount(prop);
     }
 
@@ -12086,11 +12087,12 @@ public class GameView extends View {
             return "";
         }
 
-        int nextStreak = dailyChallengeStreak <= 0 ? 1 : dailyChallengeStreak + 1;
+        int nextStreak = getNextDailyChallengeMilestone();
         int prop = getDailyChallengeMilestoneProp(nextStreak);
         // 主线结算提醒今日挑战，把每日回访奖励接到当前游戏循环。
         return prop == NONE ? "下一目标 每日挑战奖励"
-                : "下一目标 每日挑战奖" + getPropName(prop);
+                : "下一目标 每日挑战差" + Math.max(1, nextStreak - dailyChallengeStreak)
+                + "连奖" + getPropName(prop);
     }
 
     private String buildChestNextGoalText() {
