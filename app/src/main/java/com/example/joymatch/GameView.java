@@ -9071,10 +9071,21 @@ public class GameView extends View {
         for (int prop = 0; prop < PROP_COUNT; prop++) {
             if (isRecommendedPropForLevel(prop)) {
                 // 失败页复用局内推荐逻辑，提示下局优先使用的道具。
-                return "建议下局优先 " + getPropName(prop);
+                return buildFailureRecommendedPropText(prop);
             }
         }
         return "";
+    }
+
+    private String buildFailureRecommendedPropText(int prop) {
+        if (propInventory[prop] > 0) {
+            // 失败页显示推荐道具库存，帮助玩家判断下局能否直接使用。
+            return "建议下局优先 " + getPropName(prop) + " 库存x" + propInventory[prop];
+        }
+        if (coins >= PROP_COSTS[prop]) {
+            return "建议下局优先 " + getPropName(prop) + " 可买" + PROP_COSTS[prop] + "币";
+        }
+        return "建议下局优先 " + getPropName(prop);
     }
 
     private void drawRecommendedPropGlow(Canvas canvas, RectF rect) {
