@@ -7903,26 +7903,58 @@ public class GameView extends View {
     }
 
     private String buildReplayReason(int level) {
+        String rewardSuffix = buildReplayRewardSuffix(level);
         if (levelStars[level] < 3) {
-            return "差" + (3 - levelStars[level]) + "星";
+            return "差" + (3 - levelStars[level]) + "星" + rewardSuffix;
         }
         String challenge = buildReplayChallengeReason(level);
         if (challenge.length() > 0) {
-            return challenge;
+            return challenge + rewardSuffix;
         }
         if (levelRanks[level] >= 4 && !levelPerfectCleared[level]) {
-            return "冲完美";
+            return "冲完美" + rewardSuffix;
         }
         if (levels.get(level).countdownBombCount > 0) {
-            return "拆弹拿护盾";
+            return "拆弹拿护盾" + rewardSuffix;
         }
         if (levels.get(level).musicBoxCount > 0) {
-            return "刷音乐盒储星弦琴";
+            return "刷音乐盒储星弦琴" + rewardSuffix;
         }
         if (getLevelRewardCellCount(levels.get(level)) >= 3) {
-            return "收奖励格冲评级";
+            return "收奖励格冲评级" + rewardSuffix;
         }
-        return "冲" + buildRankText(4);
+        return "冲" + buildRankText(4) + rewardSuffix;
+    }
+
+    private String buildReplayRewardSuffix(int level) {
+        int chapter = getChapterIndex(level);
+        int unlockedCount = getChapterUnlockedCount(chapter);
+        int chestMissing = CHAPTER_CHEST_STARS - getChapterStars(chapter);
+        if (!chapterChestClaimed[chapter] && chestMissing > 0 && chestMissing <= 6) {
+            // 回访理由带上临近章节宝箱，让失败后补关目标更有奖励感。
+            return " 补章箱";
+        }
+        int masteryMissing = CHAPTER_SIZE * 3 - getChapterStars(chapter);
+        if (!chapterMasteryClaimed[chapter] && unlockedCount >= CHAPTER_SIZE
+                && masteryMissing > 0 && masteryMissing <= 6) {
+            return " 冲大师";
+        }
+        int rankMissing = getChapterRankRewardTarget() - getChapterRankScore(chapter);
+        if (!chapterRankClaimed[chapter] && unlockedCount >= CHAPTER_SIZE / 2
+                && rankMissing > 0 && rankMissing <= 8) {
+            return " 冲评级奖";
+        }
+        int hiddenMissing = getChapterHiddenChallengeCount(chapter) - getChapterClearedHiddenChallengeCount(chapter);
+        if (!chapterHiddenClaimed[chapter] && hiddenMissing > 0 && hiddenMissing <= 1
+                && isHiddenChallengeLevel(level) && !levelHiddenChallengesCleared[level]) {
+            return " 冲隐藏奖";
+        }
+        int perfectMissing = unlockedCount - getChapterPerfectClearCount(chapter);
+        if (!chapterPerfectClaimed[chapter] && unlockedCount >= CHAPTER_SIZE
+                && perfectMissing > 0 && perfectMissing <= 3 && !levelPerfectCleared[level]) {
+            return " 冲完美奖";
+        }
+        return "";
     }
 
     private String buildReplayChallengeReason(int levelIndex) {
