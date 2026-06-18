@@ -6096,7 +6096,7 @@ public class GameView extends View {
                 paint.setStyle(Paint.Style.FILL);
                 drawStar(canvas, x + dp(20), y - dp(18), dp(5 + i % 2));
             }
-        } else {
+        } else if (chapter == 19) {
             for (int i = 0; i < 9; i++) {
                 float x = getWidth() * (0.08f + i * 0.10f);
                 float y = getHeight() * (0.15f + (i % 4) * 0.13f);
@@ -6109,6 +6109,23 @@ public class GameView extends View {
                 canvas.drawRoundRect(new RectF(x - dp(14), y + dp(14), x + dp(14), y + dp(24)),
                         dp(5), dp(5), paint);
                 drawStar(canvas, x, y - dp(12), dp(6 + i % 3));
+            }
+        } else {
+            for (int i = 0; i < 10; i++) {
+                float x = getWidth() * (0.07f + i * 0.095f);
+                float y = getHeight() * (0.14f + (i % 5) * 0.105f);
+                // 星糖嘉年华用旋转糖环和烟花星点，突出420关新终章的庆典感。
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setStrokeWidth(dp(2.2f));
+                float spin = (float) (time / 800.0 + i * 0.7f);
+                canvas.drawCircle(x, y, dp(13 + i % 3), paint);
+                canvas.drawLine(x - (float) Math.cos(spin) * dp(13), y - (float) Math.sin(spin) * dp(13),
+                        x + (float) Math.cos(spin) * dp(13), y + (float) Math.sin(spin) * dp(13), paint);
+                canvas.drawLine(x - (float) Math.sin(spin) * dp(13), y + (float) Math.cos(spin) * dp(13),
+                        x + (float) Math.sin(spin) * dp(13), y - (float) Math.cos(spin) * dp(13), paint);
+                paint.setStyle(Paint.Style.FILL);
+                drawStar(canvas, x + dp(18), y - dp(16), dp(5 + i % 3));
+                canvas.drawCircle(x - dp(18), y + dp(14), dp(3 + i % 2), paint);
             }
         }
     }
