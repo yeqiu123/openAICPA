@@ -389,6 +389,7 @@ public class GameView extends View {
     private int lastDailyGoalReward;
     private int rewardTargetMilestone;
     private int rewardObstacleMilestone;
+    private int lastObstacleMilestoneReward;
     private int rewardComboMilestone;
     private int rewardKeyMilestone;
     private int rewardCellClearedCount;
@@ -894,6 +895,7 @@ public class GameView extends View {
         countdownBombExploded = false;
         rewardTargetMilestone = 0;
         rewardObstacleMilestone = 0;
+        lastObstacleMilestoneReward = 0;
         rewardComboMilestone = 0;
         rewardKeyMilestone = 0;
         rewardCellClearedCount = 0;
@@ -5477,7 +5479,8 @@ public class GameView extends View {
         int obstacleMilestone = clearedObstacles / 6;
         if (obstacleMilestone > rewardObstacleMilestone) {
             // 清障越积极，道具补给越快。
-            addProp(PROP_BOMB, obstacleMilestone - rewardObstacleMilestone);
+            lastObstacleMilestoneReward = obstacleMilestone - rewardObstacleMilestone;
+            addProp(PROP_BOMB, lastObstacleMilestoneReward);
             rewardObstacleMilestone = obstacleMilestone;
             lastTaskRewardType = 2;
             lastGiftReward = 0;
@@ -10440,7 +10443,7 @@ public class GameView extends View {
         } else if (lastTaskRewardType == 1 && age < 900) {
             text = "收集奖励";
         } else if (lastTaskRewardType == 2 && age < 900) {
-            text = "清障奖励";
+            text = "清障奖励 炸弹+" + Math.max(1, lastObstacleMilestoneReward);
         } else if (lastTaskRewardType == 3 && age < 900) {
             text = lastEnergyRewardProp == NONE ? "连击奖励" : "能量爆发 " + getPropName(lastEnergyRewardProp);
         } else if (lastTaskRewardType == 4 && age < 900) {
@@ -11078,6 +11081,10 @@ public class GameView extends View {
             // 拆弹护盾属于局内阶段奖励，也显示到结算明细里。
             lines.add("拆弹奖励 护盾+1");
         }
+        if (lastObstacleMilestoneReward > 0) {
+            // 清障里程碑补给进入结算，鼓励玩家主动处理障碍拿道具。
+            lines.add("清障奖励 炸弹+" + lastObstacleMilestoneReward);
+        }
         if (lastMusicBoxReward > 0) {
             // 终章音乐盒的星弦琴补给也显示到奖励明细，避免被普通消除反馈吞掉。
             lines.add("音乐盒 星弦琴+" + lastMusicBoxReward);
@@ -11159,7 +11166,8 @@ public class GameView extends View {
                 || lastChapterMasteryReward > 0 || lastChapterEliteReward > 0 || lastChapterRankReward > 0
                 || lastChapterHiddenReward > 0 || lastChapterPerfectReward > 0
                 || lastSeasonReward > 0 || lastDailyChallengeMilestoneProp != NONE
-                || rewardCellClearedCount >= 3 || rewardBombMilestone > 0 || lastMusicBoxReward > 0
+                || rewardCellClearedCount >= 3 || rewardBombMilestone > 0 || lastObstacleMilestoneReward > 0
+                || lastMusicBoxReward > 0
                 || lastMusicBoxMilestoneReward > 0)) {
             drawRewardSparkles(canvas, getWidth() / 2f, getHeight() * 0.42f - dp(12));
         }
