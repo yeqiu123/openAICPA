@@ -12154,13 +12154,15 @@ public class GameView extends View {
     private String buildSeasonNextGoalText() {
         int levelMissing = getNextSeasonLevelTarget() - seasonLevels;
         int starMissing = getNextSeasonStarTarget() - seasonStars;
+        int prop = getSeasonRewardProp(seasonRewardStep + 1);
+        String rewardText = prop == NONE ? "" : "奖" + getPropName(prop) + "+" + getSeasonRewardAmount(prop);
         if (levelMissing <= 0 || starMissing <= 0) {
-            return "下一目标 赛季奖励可冲";
+            return "下一目标 赛季奖励可冲" + rewardText;
         }
         if (levelMissing <= 2 || starMissing <= 6) {
             // 通关后提示赛季差额，把日常推进和补星都接到长期奖励。
-            return starMissing <= levelMissing * 3 ? "下一目标 赛季差" + starMissing + "星"
-                    : "下一目标 赛季差" + levelMissing + "关";
+            return starMissing <= levelMissing * 3 ? "下一目标 赛季差" + starMissing + "星" + rewardText
+                    : "下一目标 赛季差" + levelMissing + "关" + rewardText;
         }
         return "";
     }
