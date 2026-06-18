@@ -2549,6 +2549,10 @@ public class GameView extends View {
             // 糖晶塔芯能制造爆炸棋，智能提示优先指向可打开连锁的落点。
             priority += 20;
         }
+        if (goldenEgg[row][col] > 0) {
+            // 黄金蛋会给高价值金币奖励，智能提示优先指向关键经济补给点。
+            priority += 15;
+        }
         if (coinPouch[row][col] > 0) {
             // 金币袋会补经济资源，智能提示优先指向可拿后续道具余量的奖励点。
             priority += 15;
@@ -6228,6 +6232,13 @@ public class GameView extends View {
                 obstacleText += " 能+" + lastStardustJarReward;
             }
         }
+        if (level.goldenEggCount > 0) {
+            // 黄金蛋会补高价值金币，HUD单独显示剩余和本局经济收益。
+            obstacleText += " 金蛋" + getGoldenEggRemainingCount();
+            if (lastGoldenEggReward > 0) {
+                obstacleText += " 金+" + lastGoldenEggReward;
+            }
+        }
         if (level.coinPouchCount > 0) {
             // 金币袋会补金币资源，HUD单独显示剩余和本局经济收益。
             obstacleText += " 袋" + getCoinPouchRemainingCount();
@@ -8278,6 +8289,9 @@ public class GameView extends View {
         } else if (getResonanceDrumRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 敲共鸣鼓进爆发";
+        } else if (getGoldenEggRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            return "推荐 " + getPropName(prop) + " 砸黄金蛋补经济";
         } else if (getCoinPouchRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 收金币袋补经济";
@@ -8452,6 +8466,11 @@ public class GameView extends View {
             // 共鸣鼓会立刻开启爆发节奏，推荐精准道具优先打出连击窗口。
             return true;
         }
+        if (getGoldenEggRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            // 黄金蛋能给高价值金币，推荐精准道具优先拿到道具经济。
+            return true;
+        }
         if (getCoinPouchRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             // 金币袋能补后续道具经济，推荐精准道具优先收取资源。
@@ -8591,6 +8610,10 @@ public class GameView extends View {
         if (getResonanceDrumRemainingCount() > 0) {
             // 共鸣鼓失败后提示优先敲响，把爆发窗口提前打出来。
             return "建议下局优先敲共鸣鼓";
+        }
+        if (getGoldenEggRemainingCount() > 0) {
+            // 黄金蛋失败后提示优先敲开，帮助下局更早拿到高价值金币补给。
+            return "建议下局优先砸黄金蛋";
         }
         if (getCoinPouchRemainingCount() > 0) {
             // 金币袋失败后提示优先收集，帮助下局更早拿到道具经济余量。
@@ -9240,10 +9263,18 @@ public class GameView extends View {
 
         float centerX = rect.right - dp(18);
         float centerY = rect.top + dp(19);
+        float pulse = 0.55f + 0.45f * (float) Math.sin(System.currentTimeMillis() / 225.0);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(2 + pulse * 2));
+        paint.setColor(Color.argb((int) (85 + pulse * 90), 255, 196, 64));
+        canvas.drawRoundRect(new RectF(rect.left + dp(5), rect.top + dp(5),
+                rect.right - dp(5), rect.bottom - dp(5)), dp(13), dp(13), paint);
+        paint.setStyle(Paint.Style.FILL);
         paint.setColor(Color.argb(225, 255, 196, 64));
         canvas.drawOval(new RectF(centerX - dp(10), centerY - dp(13), centerX + dp(10), centerY + dp(13)), paint);
         paint.setColor(Color.argb(180, 255, 255, 255));
         canvas.drawCircle(centerX - dp(3), centerY - dp(5), dp(3), paint);
+        postInvalidateOnAnimation();
     }
 
     private void drawCoinPouch(Canvas canvas, int row, int col, RectF rect) {
@@ -10227,6 +10258,8 @@ public class GameView extends View {
         }
         if (level.goldenEggCount > 0) {
             goalText += "  黄金蛋 " + level.goldenEggCount;
+            // 开场说明黄金蛋收益，让玩家知道它能补高价值金币。
+            goalText += "  砸蛋补金币";
         }
         if (level.coinPouchCount > 0) {
             goalText += "  金币袋 " + level.coinPouchCount;
@@ -10411,6 +10444,8 @@ public class GameView extends View {
             return "策略 火箭/罗盘优先开极光";
         } else if (level.resonanceDrumCount > 0) {
             return "策略 火箭/罗盘优先敲共鸣";
+        } else if (level.goldenEggCount > 0) {
+            return "策略 火箭/罗盘优先砸黄金蛋";
         } else if (level.coinPouchCount > 0) {
             return "策略 火箭/罗盘优先收金币袋";
         } else if (level.paintBucketCount > 0) {
@@ -10976,6 +11011,10 @@ public class GameView extends View {
             // 共鸣鼓剩余量单独复盘，提示下局优先开启爆发节奏。
             appendFailureProgressPart(text, "共鸣剩", getResonanceDrumRemainingCount());
         }
+        if (level.goldenEggCount > 0) {
+            // 黄金蛋剩余量单独复盘，提示下局优先拿高价值金币补给。
+            appendFailureProgressPart(text, "黄金蛋剩", getGoldenEggRemainingCount());
+        }
         if (level.coinPouchCount > 0) {
             // 金币袋剩余量单独复盘，提示下局优先拿经济补给。
             appendFailureProgressPart(text, "金币袋剩", getCoinPouchRemainingCount());
@@ -11302,6 +11341,18 @@ public class GameView extends View {
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
                 if (coinPouch[row][col] > 0) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    private int getGoldenEggRemainingCount() {
+        int count = 0;
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (goldenEgg[row][col] > 0) {
                     count++;
                 }
             }
