@@ -12511,11 +12511,17 @@ public class GameView extends View {
     }
 
     private String buildSeasonNextGoalText() {
-        int levelMissing = getNextSeasonLevelTarget() - seasonLevels;
-        int starMissing = getNextSeasonStarTarget() - seasonStars;
-        int prop = getSeasonRewardProp(seasonRewardStep + 1);
+        int nextStep = getNextSeasonRewardStep();
+        if (nextStep == NONE) {
+            return "";
+        }
+
+        int levelMissing = nextStep * 8 - seasonLevels;
+        int starMissing = nextStep * 22 - seasonStars;
+        int prop = getSeasonRewardProp(nextStep);
         String rewardText = prop == NONE ? "" : "奖" + getPropName(prop) + "+" + getSeasonRewardAmount(prop);
         if (levelMissing <= 0 || starMissing <= 0) {
+            // 结算页直接追踪最近有道具的赛季档位，避免只看到金币档。
             return "下一目标 赛季奖励可冲" + rewardText;
         }
         if (levelMissing <= 2 || starMissing <= 6) {
