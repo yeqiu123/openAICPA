@@ -12162,7 +12162,9 @@ public class GameView extends View {
             return "下一目标 全开星弦琴已入储备";
         }
         if (!dailyGoalClaimed && dailyGoalProgress >= 6) {
-            return "下一目标 每日目标可领取";
+            // 每日目标可领时直接展示奖励，强化当天继续补星后的兑现感。
+            return "下一目标 每日目标可领 金币+" + (35 + Math.min(15, dailyStreak * 2))
+                    + " " + getDailyGoalRewardText();
         }
         String dailyGoalText = buildDailyGoalNextGoalText();
         if (dailyGoalText.length() > 0) {
