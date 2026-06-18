@@ -12143,10 +12143,13 @@ public class GameView extends View {
             return chapterChestGoalText;
         }
         if (getAvailableStarChests() > 0) {
-            return "下一目标 星级宝箱可领取";
+            // 宝箱可领取时直接显示奖励内容，减少玩家返回地图后的判断成本。
+            return "下一目标 星级宝箱可领 金币+" + (25 + (starChestClaimed + 1) * 5)
+                    + buildStarChestClaimRewardText();
         }
         if (getAvailableRankChests() > 0) {
-            return "下一目标 评级宝箱可领取";
+            return "下一目标 评级宝箱可领 金币+" + (40 + (rankChestClaimed + 1) * 8)
+                    + buildRankChestClaimRewardText();
         }
         String chestGoalText = buildChestNextGoalText();
         if (chestGoalText.length() > 0) {
@@ -12203,6 +12206,16 @@ public class GameView extends View {
         }
         // 结算页复盘本局奖励格进度，避免误导为跨关累计。
         return "本局已收" + rewardCellClearedCount + "奖励格 每3给罗盘";
+    }
+
+    private String buildStarChestClaimRewardText() {
+        int prop = getStarChestRewardProp(starChestClaimed + 1);
+        return prop == NONE ? "" : " " + getPropName(prop) + "+" + getStarChestRewardAmount(prop);
+    }
+
+    private String buildRankChestClaimRewardText() {
+        int prop = getRankChestRewardProp(rankChestClaimed + 1);
+        return prop == NONE ? "" : " " + getPropName(prop) + "+" + getRankChestRewardAmount(prop);
     }
 
     private String buildDailyGoalNextGoalText() {
