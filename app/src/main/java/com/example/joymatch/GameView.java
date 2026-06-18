@@ -6813,10 +6813,12 @@ public class GameView extends View {
         RectF badge = new RectF(rect.right - dp(24), rect.bottom - dp(18), rect.right - dp(4), rect.bottom - dp(4));
         String mark = buildReplayTargetMapMarkText(level);
         boolean rewardGoal = mark.equals("箱") || mark.equals("师") || mark.equals("奖");
-        paint.setColor(rewardGoal ? Color.argb(235, 255, 213, 92) : Color.argb(225, 255, 236, 133));
+        boolean carnivalGoal = mark.equals("嘉");
+        paint.setColor(carnivalGoal ? Color.argb(235, 255, 154, 104)
+                : (rewardGoal ? Color.argb(235, 255, 213, 92) : Color.argb(225, 255, 236, 133)));
         canvas.drawRoundRect(badge, dp(5), dp(5), paint);
-        if (rewardGoal) {
-            // 奖励型回访角标加细描边，和普通补星/补评级推荐做出区分。
+        if (rewardGoal || carnivalGoal) {
+            // 高收益/嘉年华回访角标加细描边，和普通补星补评级推荐做出区分。
             paint.setStyle(Paint.Style.STROKE);
             paint.setStrokeWidth(dp(1));
             paint.setColor(Color.argb(220, 255, 255, 255));
