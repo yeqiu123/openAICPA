@@ -7606,12 +7606,20 @@ public class GameView extends View {
         if (getAvailableStarChests() > 0) {
             return "宝箱+" + (25 + (starChestClaimed + 1) * 5) + buildNextStarChestPropHint();
         }
+        if (isStarChestNear()) {
+            // 临近星级宝箱时直接显示差几星，比总数更容易形成补星目标。
+            return "星差" + (getNextStarChestTarget() - getTotalStars()) + buildNextStarChestPropHint();
+        }
         return "星 " + getTotalStars() + "/" + getNextStarChestTarget() + buildNextStarChestPropHint();
     }
 
     private String buildRankChestLabel() {
         if (getAvailableRankChests() > 0) {
             return "评级+" + (40 + (rankChestClaimed + 1) * 8) + buildNextRankChestPropHint();
+        }
+        if (isRankChestNear()) {
+            // 临近评级宝箱时直接显示评级差额，推动回访冲高分和挑战目标。
+            return "评差" + (getNextRankChestTarget() - getTotalRankScore()) + buildNextRankChestPropHint();
         }
         return "评 " + getTotalRankScore() + "/" + getNextRankChestTarget() + buildNextRankChestPropHint();
     }
