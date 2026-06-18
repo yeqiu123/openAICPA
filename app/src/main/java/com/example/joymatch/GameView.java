@@ -9106,6 +9106,11 @@ public class GameView extends View {
             // 蜂蜜会持续蔓延，失败后提示优先冻结或压制动态障碍。
             return "建议下局优先控蜂蜜";
         }
+        if (isStarCandyCarnivalChapter(getChapterIndex(levelIndex))
+                && (getMusicBoxRemainingCount() > 0 || getFireworksBarrelRemainingCount() > 0)) {
+            // 嘉年华失败时优先提示复合连锁目标，避免只看到单个机关建议。
+            return "建议下局优先抢嘉年华连锁";
+        }
         if (getMusicBoxRemainingCount() > 0) {
             // 音乐盒关失败时直接提示资源目标，帮助下局优先规划星弦琴储备。
             return "建议下局优先开音乐盒";
