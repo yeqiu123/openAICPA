@@ -8121,8 +8121,15 @@ public class GameView extends View {
                 && (levelStars[level] < 3 || levelRanks[level] < 4
                 || (isHiddenChallengeLevel(level) && !levelHiddenChallengesCleared[level])
                 || (levelRanks[level] >= 4 && !levelPerfectCleared[level])
-                // 已完美的音乐盒关仍可作为星弦琴补给点，给后期保留资源型回访目标。
-                || (levelPerfectCleared[level] && levels.get(level).musicBoxCount > 0));
+                // 已完美的资源关仍可作为后期补给点，提升回访价值。
+                || (levelPerfectCleared[level] && (levels.get(level).musicBoxCount > 0
+                || isCarnivalResourceLevel(level))));
+    }
+
+    private boolean isCarnivalResourceLevel(int level) {
+        Level target = levels.get(level);
+        return isStarCandyCarnivalChapter(getChapterIndex(level))
+                && (target.musicBoxCount > 0 || target.fireworksBarrelCount > 0);
     }
 
     private int getReplayPriorityScore(int level) {
@@ -8171,6 +8178,10 @@ public class GameView extends View {
             // 音乐盒关能稳定补星弦琴，补评级时更值得被推荐。
             score += 10;
         }
+        if (isCarnivalResourceLevel(level)) {
+            // 嘉年华复合资源关能同时攒星弦琴和礼炮，提高回访推荐权重。
+            score += 14;
+        }
         if (rewardSuffix.length() > 0) {
             // 推荐排序也考虑章节奖励临近度，让可领奖回访目标更容易浮到前面。
             score += rewardSuffix.contains("章箱") || rewardSuffix.contains("大师") ? 16 : 12;
@@ -8192,6 +8203,9 @@ public class GameView extends View {
         }
         if (levels.get(level).countdownBombCount > 0) {
             return "拆弹拿护盾" + rewardSuffix;
+        }
+        if (isCarnivalResourceLevel(level)) {
+            return "刷嘉年华连锁储礼炮/星弦琴" + rewardSuffix;
         }
         if (levels.get(level).musicBoxCount > 0) {
             return "刷音乐盒储星弦琴" + rewardSuffix;
