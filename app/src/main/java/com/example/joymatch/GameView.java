@@ -8280,6 +8280,9 @@ public class GameView extends View {
             return "推荐 " + getPropName(prop) + " 补1格拿罗盘";
         } else if (chainRemaining > 0 && prop == PROP_CHAIN_BREAKER) {
             return "推荐 " + getPropName(prop) + " 破锁开局";
+        } else if (shellRemaining > 0
+                && (prop == PROP_STARFISH_PICK || prop == PROP_CLEANSE || prop == PROP_HAMMER || prop == PROP_LIGHTNING)) {
+            return "推荐 " + getPropName(prop) + " 破贝壳清障";
         } else if (honeyRemaining > 0 && (prop == PROP_FREEZE || prop == PROP_SNOW_GLOBE)) {
             return "推荐 " + getPropName(prop) + " 压制蜂蜜";
         } else if (targetRemaining > level.targetAmount / 2 && movesLeft <= level.moves / 2
@@ -8433,6 +8436,11 @@ public class GameView extends View {
             return true;
         }
         if (chainRemaining > 0 && prop == PROP_CHAIN_BREAKER) {
+            return true;
+        }
+        if (shellRemaining > 0
+                && (prop == PROP_STARFISH_PICK || prop == PROP_CLEANSE || prop == PROP_HAMMER || prop == PROP_LIGHTNING)) {
+            // 贝壳需要多次打击，推荐清障道具优先打开局面。
             return true;
         }
         if (honeyRemaining > 0 && (prop == PROP_FREEZE || prop == PROP_SNOW_GLOBE)) {
@@ -8626,6 +8634,10 @@ public class GameView extends View {
         if (getMoveChestRemainingCount() > 0) {
             // 步箱失败后提示优先打开，让下局更早拿到补步余量。
             return "建议下局优先开步箱";
+        }
+        if (shellRemaining > 0) {
+            // 贝壳失败后提示优先破壳，避免多层障碍拖慢下局节奏。
+            return "建议下局优先破贝壳";
         }
         if (getMusicBoxRemainingCount() > 0) {
             // 音乐盒关失败时直接提示资源目标，帮助下局优先规划星弦琴储备。
@@ -9256,6 +9268,13 @@ public class GameView extends View {
             return;
         }
 
+        float pulse = 0.55f + 0.45f * (float) Math.sin(System.currentTimeMillis() / 235.0);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(2 + pulse * 2));
+        paint.setColor(Color.argb((int) (75 + pulse * 80), 255, 245, 220));
+        canvas.drawRoundRect(new RectF(rect.left + dp(5), rect.top + dp(5),
+                rect.right - dp(5), rect.bottom - dp(5)), dp(13), dp(13), paint);
+        paint.setStyle(Paint.Style.FILL);
         paint.setColor(shell[row][col] > 1 ? Color.argb(180, 255, 245, 220) : Color.argb(140, 255, 245, 220));
         RectF shellRect = new RectF(rect.left + dp(8), rect.top + dp(10), rect.right - dp(8), rect.bottom - dp(10));
         canvas.drawOval(shellRect, paint);
@@ -9272,6 +9291,7 @@ public class GameView extends View {
             canvas.drawLine(shellRect.centerX(), shellRect.centerY() - dp(6), shellRect.right - dp(10), shellRect.centerY() + dp(4), paint);
         }
         paint.setStyle(Paint.Style.FILL);
+        postInvalidateOnAnimation();
     }
 
     private void drawCoralReef(Canvas canvas, int row, int col, RectF rect) {
@@ -10378,6 +10398,11 @@ public class GameView extends View {
             // 开场说明步箱收益，让玩家优先拿补步资源。
             goalText += "  开箱补步";
         }
+        if (level.shellCount > 0) {
+            goalText += "  贝壳 " + level.shellCount;
+            // 开场说明贝壳是多次打击障碍，提醒优先用清障道具破开。
+            goalText += "  破壳开局";
+        }
         if (getLevelRewardCellCount(level) >= 3) {
             // 开场明确奖励格累计收益，让玩家知道每3格可换一次罗盘补给。
             goalText += "  奖励格每3给罗盘";
@@ -10581,6 +10606,8 @@ public class GameView extends View {
             return "策略 火箭/罗盘优先抢钥匙";
         } else if (level.moveChestCount > 0) {
             return "策略 火箭/罗盘优先开步箱";
+        } else if (level.shellCount > 0) {
+            return "策略 海星镐/净化优先破贝壳";
         } else if (level.musicBoxCount > 0) {
             return "策略 优先开音乐盒铺连击";
         } else if (level.crystalCoreCount > 0) {
@@ -11105,6 +11132,10 @@ public class GameView extends View {
         if (level.moveChestCount > 0) {
             // 步箱剩余量单独复盘，提示下局优先拿补步资源。
             appendFailureProgressPart(text, "步箱剩", getMoveChestRemainingCount());
+        }
+        if (level.shellCount > 0) {
+            // 贝壳剩余量单独复盘，提示下局优先处理多层障碍。
+            appendFailureProgressPart(text, "贝壳剩", shellRemaining);
         }
         if (level.musicBoxCount > 0) {
             // 失败复盘也显示音乐盒剩余，提醒下局优先拿星弦琴储备。
