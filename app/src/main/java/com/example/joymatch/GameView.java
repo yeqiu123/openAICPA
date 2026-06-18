@@ -388,6 +388,7 @@ public class GameView extends View {
     private int lastDailyChallengeMilestoneAmount;
     private int lastDailyGoalReward;
     private int rewardTargetMilestone;
+    private int lastTargetMilestoneReward;
     private int rewardObstacleMilestone;
     private int lastObstacleMilestoneReward;
     private int rewardComboMilestone;
@@ -894,6 +895,7 @@ public class GameView extends View {
         usedContinueThisLevel = false;
         countdownBombExploded = false;
         rewardTargetMilestone = 0;
+        lastTargetMilestoneReward = 0;
         rewardObstacleMilestone = 0;
         lastObstacleMilestoneReward = 0;
         rewardComboMilestone = 0;
@@ -5438,7 +5440,8 @@ public class GameView extends View {
         int targetMilestone = collected / 5;
         if (targetMilestone > rewardTargetMilestone) {
             // 局内阶段奖励，让收集目标也能持续反馈玩家。
-            addProp(PROP_HAMMER, targetMilestone - rewardTargetMilestone);
+            lastTargetMilestoneReward = targetMilestone - rewardTargetMilestone;
+            addProp(PROP_HAMMER, lastTargetMilestoneReward);
             rewardTargetMilestone = targetMilestone;
             lastTaskRewardType = 1;
             lastGiftReward = 0;
@@ -10441,7 +10444,7 @@ public class GameView extends View {
         } else if (honeySpreadCount > 0 && age < 900) {
             text = "蜂蜜蔓延";
         } else if (lastTaskRewardType == 1 && age < 900) {
-            text = "收集奖励";
+            text = "收集奖励 锤子+" + Math.max(1, lastTargetMilestoneReward);
         } else if (lastTaskRewardType == 2 && age < 900) {
             text = "清障奖励 炸弹+" + Math.max(1, lastObstacleMilestoneReward);
         } else if (lastTaskRewardType == 3 && age < 900) {
@@ -11081,6 +11084,10 @@ public class GameView extends View {
             // 拆弹护盾属于局内阶段奖励，也显示到结算明细里。
             lines.add("拆弹奖励 护盾+1");
         }
+        if (lastTargetMilestoneReward > 0) {
+            // 收集里程碑补给进入结算，让目标收集的阶段收益更明确。
+            lines.add("收集奖励 锤子+" + lastTargetMilestoneReward);
+        }
         if (lastObstacleMilestoneReward > 0) {
             // 清障里程碑补给进入结算，鼓励玩家主动处理障碍拿道具。
             lines.add("清障奖励 炸弹+" + lastObstacleMilestoneReward);
@@ -11166,8 +11173,8 @@ public class GameView extends View {
                 || lastChapterMasteryReward > 0 || lastChapterEliteReward > 0 || lastChapterRankReward > 0
                 || lastChapterHiddenReward > 0 || lastChapterPerfectReward > 0
                 || lastSeasonReward > 0 || lastDailyChallengeMilestoneProp != NONE
-                || rewardCellClearedCount >= 3 || rewardBombMilestone > 0 || lastObstacleMilestoneReward > 0
-                || lastMusicBoxReward > 0
+                || rewardCellClearedCount >= 3 || rewardBombMilestone > 0 || lastTargetMilestoneReward > 0
+                || lastObstacleMilestoneReward > 0 || lastMusicBoxReward > 0
                 || lastMusicBoxMilestoneReward > 0)) {
             drawRewardSparkles(canvas, getWidth() / 2f, getHeight() * 0.42f - dp(12));
         }
