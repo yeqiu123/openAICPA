@@ -8633,9 +8633,27 @@ public class GameView extends View {
     }
 
     private int getFirstRecommendedProp() {
+        int priorityProp = getPriorityRecommendedProp();
+        if (priorityProp != NONE) {
+            return priorityProp;
+        }
         for (int prop = 0; prop < PROP_COUNT; prop++) {
             if (isRecommendedPropForLevel(prop)) {
                 return prop;
+            }
+        }
+        return NONE;
+    }
+
+    private int getPriorityRecommendedProp() {
+        if (isStarCandyCarnivalChapter(getChapterIndex(levelIndex))
+                && (getMusicBoxRemainingCount() > 0 || getFireworksBarrelRemainingCount() > 0)) {
+            int[] props = {PROP_STAR_HARP, PROP_FIREWORK_CANNON, PROP_STAR_COMPASS};
+            for (int prop : props) {
+                if (isRecommendedPropForLevel(prop)) {
+                    // 嘉年华关优先展示核心连锁道具，避免被低编号精准道具抢掉推荐条。
+                    return prop;
+                }
             }
         }
         return NONE;
