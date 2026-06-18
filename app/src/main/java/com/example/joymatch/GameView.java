@@ -2549,6 +2549,10 @@ public class GameView extends View {
             // 糖晶塔芯能制造爆炸棋，智能提示优先指向可打开连锁的落点。
             priority += 20;
         }
+        if (windmill[row][col] > 0) {
+            // 风车会横竖扫场，智能提示优先指向能打开整线连锁的资源点。
+            priority += 17;
+        }
         if (jewelBow[row][col] > 0) {
             // 宝石蝴蝶结会补目标色，智能提示优先指向可续收集节奏的资源点。
             priority += 17;
@@ -6216,6 +6220,13 @@ public class GameView extends View {
                 obstacleText += " 能+" + lastStardustJarReward;
             }
         }
+        if (level.windmillCount > 0) {
+            // 风车会扫开整行或整列，HUD单独显示剩余和本局触发次数。
+            obstacleText += " 风" + getWindmillRemainingCount();
+            if (lastWindmillReward > 0) {
+                obstacleText += " 扫+" + lastWindmillReward;
+            }
+        }
         if (level.jewelBowCount > 0) {
             // 宝石蝴蝶结会补目标色，HUD单独显示剩余和本局补色收益。
             obstacleText += " 结" + getJewelBowRemainingCount();
@@ -8245,6 +8256,9 @@ public class GameView extends View {
         } else if (getResonanceDrumRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 敲共鸣鼓进爆发";
+        } else if (getWindmillRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            return "推荐 " + getPropName(prop) + " 转风车扫行列";
         } else if (getJewelBowRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 开蝴蝶结补目标";
@@ -8410,6 +8424,11 @@ public class GameView extends View {
             // 共鸣鼓会立刻开启爆发节奏，推荐精准道具优先打出连击窗口。
             return true;
         }
+        if (getWindmillRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            // 风车能扫开整行或整列，推荐精准道具优先打开线性连锁。
+            return true;
+        }
         if (getJewelBowRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             // 宝石蝴蝶结能把棋子补成目标色，推荐精准道具优先续收集节奏。
@@ -8534,6 +8553,10 @@ public class GameView extends View {
         if (getResonanceDrumRemainingCount() > 0) {
             // 共鸣鼓失败后提示优先敲响，把爆发窗口提前打出来。
             return "建议下局优先敲共鸣鼓";
+        }
+        if (getWindmillRemainingCount() > 0) {
+            // 风车失败后提示优先转动，帮助下局更早扫开整线空间。
+            return "建议下局优先转风车";
         }
         if (getJewelBowRemainingCount() > 0) {
             // 宝石蝴蝶结失败后提示优先打开，帮助下局更早补齐目标色。
@@ -9227,6 +9250,13 @@ public class GameView extends View {
 
         float centerX = rect.right - dp(18);
         float centerY = rect.top + dp(19);
+        float pulse = 0.55f + 0.45f * (float) Math.sin(System.currentTimeMillis() / 205.0);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(2 + pulse * 2));
+        paint.setColor(Color.argb((int) (85 + pulse * 90), 255, 255, 255));
+        canvas.drawRoundRect(new RectF(rect.left + dp(5), rect.top + dp(5),
+                rect.right - dp(5), rect.bottom - dp(5)), dp(13), dp(13), paint);
+        paint.setStyle(Paint.Style.FILL);
         paint.setColor(Color.argb(225, 255, 255, 255));
         for (int i = 0; i < 4; i++) {
             canvas.save();
@@ -10143,6 +10173,8 @@ public class GameView extends View {
         }
         if (level.windmillCount > 0) {
             goalText += "  风车 " + level.windmillCount;
+            // 开场说明风车收益，让玩家优先打开整线清场点。
+            goalText += "  转风扫行列";
         }
         if (level.jewelBowCount > 0) {
             goalText += "  蝴蝶结 " + level.jewelBowCount;
@@ -10312,6 +10344,8 @@ public class GameView extends View {
             return "策略 火箭/罗盘优先开极光";
         } else if (level.resonanceDrumCount > 0) {
             return "策略 火箭/罗盘优先敲共鸣";
+        } else if (level.windmillCount > 0) {
+            return "策略 火箭/罗盘优先转风车";
         } else if (level.jewelBowCount > 0) {
             return "策略 火箭/罗盘优先开蝴蝶结";
         } else if (level.stardustJarCount > 0) {
@@ -10871,6 +10905,10 @@ public class GameView extends View {
             // 共鸣鼓剩余量单独复盘，提示下局优先开启爆发节奏。
             appendFailureProgressPart(text, "共鸣剩", getResonanceDrumRemainingCount());
         }
+        if (level.windmillCount > 0) {
+            // 风车剩余量单独复盘，提示下局优先打开整线清场点。
+            appendFailureProgressPart(text, "风车剩", getWindmillRemainingCount());
+        }
         if (level.jewelBowCount > 0) {
             // 宝石蝴蝶结剩余量单独复盘，提示下局优先补齐目标色。
             appendFailureProgressPart(text, "蝴蝶结剩", getJewelBowRemainingCount());
@@ -11149,6 +11187,18 @@ public class GameView extends View {
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
                 if (jewelBow[row][col] > 0) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    private int getWindmillRemainingCount() {
+        int count = 0;
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (windmill[row][col] > 0) {
                     count++;
                 }
             }
