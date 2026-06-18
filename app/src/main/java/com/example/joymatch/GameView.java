@@ -8450,7 +8450,9 @@ public class GameView extends View {
     private String buildActivePropTip() {
         String name = getPropName(activeProp);
         String previewText = buildActivePropPreviewCountText();
-        String prefix = selectedRow == NONE ? name + " 先点棋盘预览 " : name + " 再点同格确认" + previewText + " ";
+        String stockText = buildActivePropStockText();
+        String prefix = selectedRow == NONE ? name + stockText + " 先点棋盘预览 "
+                : name + stockText + " 再点同格确认" + previewText + " ";
         if (activeProp == PROP_HAMMER) {
             return prefix + "单格清除";
         } else if (activeProp == PROP_BOMB) {
@@ -8479,6 +8481,14 @@ public class GameView extends View {
             return prefix + "剪开锁链藤蔓";
         }
         return prefix + "使用";
+    }
+
+    private String buildActivePropStockText() {
+        if (activeProp == NONE || propInventory[activeProp] <= 0) {
+            return "";
+        }
+        // 选中道具时同步显示来源数量，让玩家确认消耗的是储备还是普通库存。
+        return buildRecommendedPropAvailabilityText(activeProp);
     }
 
     private String buildActivePropPreviewCountText() {
