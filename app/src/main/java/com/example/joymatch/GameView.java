@@ -7051,6 +7051,11 @@ public class GameView extends View {
             // 章节音乐盒关全部解锁后显示，强化终章星弦琴补给追求。
             text += " 乐";
         }
+        if (getChapterCarnivalResourceLevelCount(chapter) > 0
+                && getChapterUnlockedCarnivalResourceLevelCount(chapter) >= getChapterCarnivalResourceLevelCount(chapter)) {
+            // 嘉年华资源关全部解锁后在横幅标出，承接地图上的“嘉”回访目标。
+            text += " 嘉";
+        }
         return text;
     }
 
@@ -7338,6 +7343,7 @@ public class GameView extends View {
                         + buildChapterRewardLevelProgressText(chapter)
                         + buildChapterBombLevelProgressText(chapter)
                         + buildChapterMusicBoxProgressText(chapter)
+                        + buildChapterCarnivalResourceProgressText(chapter)
                         + hiddenStatus + perfectStatus,
                 rankTextRect, 12, Color.WHITE);
         if (shouldPulseChapterProgressGoal(chapter)) {
@@ -7428,6 +7434,15 @@ public class GameView extends View {
         return "  音乐盒 " + getChapterUnlockedMusicBoxLevelCount(chapter) + "/" + musicBoxCount;
     }
 
+    private String buildChapterCarnivalResourceProgressText(int chapter) {
+        int carnivalCount = getChapterCarnivalResourceLevelCount(chapter);
+        if (carnivalCount <= 0) {
+            return "";
+        }
+        // 嘉年华资源关单独显示，方便玩家判断本章还有多少高价值回刷点。
+        return "  嘉年华 " + getChapterUnlockedCarnivalResourceLevelCount(chapter) + "/" + carnivalCount;
+    }
+
     private String buildChapterRewardLevelProgressText(int chapter) {
         int rewardLevelCount = getChapterRewardLevelCount(chapter);
         if (rewardLevelCount <= 0) {
@@ -7460,6 +7475,8 @@ public class GameView extends View {
         int perfectMissing = unlockedCount - getChapterPerfectClearCount(chapter);
         int musicBoxCount = getChapterMusicBoxLevelCount(chapter);
         int unlockedMusicBox = getChapterUnlockedMusicBoxLevelCount(chapter);
+        int carnivalCount = getChapterCarnivalResourceLevelCount(chapter);
+        int unlockedCarnival = getChapterUnlockedCarnivalResourceLevelCount(chapter);
         return (!chapterMasteryClaimed[chapter] && stars >= CHAPTER_CHEST_STARS && fullStarMissing >= 0 && fullStarMissing <= 6)
                 || (!chapterRankClaimed[chapter] && unlockedCount >= CHAPTER_SIZE / 2
                 && rankMissing >= 0 && rankMissing <= 8)
@@ -7471,7 +7488,8 @@ public class GameView extends View {
                 && hiddenMissing >= 0 && hiddenMissing <= 1)
                 || (!chapterPerfectClaimed[chapter] && unlockedCount >= CHAPTER_SIZE
                 && perfectMissing >= 0 && perfectMissing <= 1)
-                || (musicBoxCount > 0 && unlockedMusicBox > 0 && musicBoxCount - unlockedMusicBox <= 1);
+                || (musicBoxCount > 0 && unlockedMusicBox > 0 && musicBoxCount - unlockedMusicBox <= 1)
+                || (carnivalCount > 0 && unlockedCarnival > 0 && carnivalCount - unlockedCarnival <= 1);
     }
 
     private void drawChapterProgressGoalSpark(Canvas canvas, float x, float y) {
@@ -8100,6 +8118,30 @@ public class GameView extends View {
         int count = 0;
         for (int level = start; level < end; level++) {
             if (level <= highestUnlockedLevel && levels.get(level).musicBoxCount > 0) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private int getChapterCarnivalResourceLevelCount(int chapter) {
+        int start = chapter * CHAPTER_SIZE;
+        int end = Math.min(start + CHAPTER_SIZE, levels.size());
+        int count = 0;
+        for (int level = start; level < end; level++) {
+            if (isCarnivalResourceLevel(level)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private int getChapterUnlockedCarnivalResourceLevelCount(int chapter) {
+        int start = chapter * CHAPTER_SIZE;
+        int end = Math.min(start + CHAPTER_SIZE, levels.size());
+        int count = 0;
+        for (int level = start; level < end; level++) {
+            if (level <= highestUnlockedLevel && isCarnivalResourceLevel(level)) {
                 count++;
             }
         }
