@@ -7007,6 +7007,7 @@ public class GameView extends View {
         }
         text += buildNextDailyChallengeRewardHint();
         drawTextFit(canvas, text, dailyChallengeRect, 12, claimed ? Color.WHITE : Color.rgb(33, 37, 56));
+        drawDailyChallengeProgressBar(canvas, dailyChallengeRect, claimed);
         drawDailyGoalEntry(canvas);
     }
 
@@ -7026,6 +7027,23 @@ public class GameView extends View {
             }
         }
         return NONE;
+    }
+
+    private void drawDailyChallengeProgressBar(Canvas canvas, RectF rect, boolean claimed) {
+        int nextStreak = getNextDailyChallengeMilestone();
+        if (nextStreak == NONE) {
+            return;
+        }
+
+        // 每日挑战连胜奖励进度条，让下一次稀有道具奖励距离更直观。
+        float progress = Math.min(1f, dailyChallengeStreak / (float) nextStreak);
+        float left = rect.left + dp(10);
+        float right = rect.right - dp(10);
+        float top = rect.bottom - dp(7);
+        paint.setColor(Color.argb(70, 33, 37, 56));
+        canvas.drawRoundRect(new RectF(left, top, right, top + dp(4)), dp(2), dp(2), paint);
+        paint.setColor(claimed ? Color.argb(190, 255, 236, 133) : Color.argb(220, 33, 37, 56));
+        canvas.drawRoundRect(new RectF(left, top, left + (right - left) * progress, top + dp(4)), dp(2), dp(2), paint);
     }
 
     private void drawDailyGoalEntry(Canvas canvas) {
