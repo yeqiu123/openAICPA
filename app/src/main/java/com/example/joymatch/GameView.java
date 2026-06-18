@@ -8091,7 +8091,8 @@ public class GameView extends View {
         int hiddenMissing = getChapterHiddenChallengeCount(chapter) - getChapterClearedHiddenChallengeCount(chapter);
         if (!chapterHiddenClaimed[chapter] && hiddenMissing > 0 && hiddenMissing <= 1
                 && isHiddenChallengeLevel(level) && !levelHiddenChallengesCleared[level]) {
-            return " 冲隐藏奖";
+            // 隐藏挑战奖励也直接写进回访理由，降低玩家判断补关收益的成本。
+            return " 冲隐藏奖 时钟+1 罗盘+1";
         }
         int perfectMissing = unlockedCount - getChapterPerfectClearCount(chapter);
         if (!chapterPerfectClaimed[chapter] && unlockedCount >= CHAPTER_SIZE
