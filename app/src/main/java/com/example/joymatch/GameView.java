@@ -10465,7 +10465,7 @@ public class GameView extends View {
             text = lastEnergyRewardProp == NONE ? "连击奖励 " + getComboMilestoneRewardText()
                     : "能量爆发 " + getPropName(lastEnergyRewardProp);
         } else if (lastTaskRewardType == 4 && age < 900) {
-            text = "钥匙奖励";
+            text = "钥匙奖励 同色+1";
         } else if (lastTaskRewardType == 5 && age < 900) {
             text = "魔棒生成";
         } else if (lastTaskRewardType == 6 && age < 900) {
@@ -11115,6 +11115,10 @@ public class GameView extends View {
         if (lastComboMilestoneRewardProp != NONE) {
             // 连击里程碑补给也写进结算，强化技巧消除带来的即时收益。
             lines.add("连击奖励 " + getComboMilestoneRewardText());
+        }
+        if (rewardKeyMilestone > 0) {
+            // 钥匙额外目标的强力道具奖励进入结算，强化收齐钥匙的完成感。
+            lines.add("钥匙奖励 同色+1");
         }
         if (lastMusicBoxReward > 0) {
             // 终章音乐盒的星弦琴补给也显示到奖励明细，避免被普通消除反馈吞掉。
