@@ -6103,6 +6103,9 @@ public class GameView extends View {
         }
         if (level.keyCount > 0) {
             obstacleText += " 钥" + keyRemaining;
+            if (rewardKeyMilestone > 0) {
+                obstacleText += " 钥奖";
+            }
         }
         if (level.moveChestCount > 0) {
             // 步箱会直接补步数，HUD单独显示剩余和本局补步收益。
@@ -8616,6 +8619,10 @@ public class GameView extends View {
     }
 
     private String buildFailurePropAdviceText() {
+        if (keyRemaining > 0) {
+            // 钥匙失败后提示优先抢关键格，避免下局只看清障而漏掉收集目标。
+            return "建议下局优先抢钥匙";
+        }
         if (getMoveChestRemainingCount() > 0) {
             // 步箱失败后提示优先打开，让下局更早拿到补步余量。
             return "建议下局优先开步箱";
@@ -10072,6 +10079,12 @@ public class GameView extends View {
             return;
         }
 
+        float pulse = 0.55f + 0.45f * (float) Math.sin(System.currentTimeMillis() / 215.0);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(2 + pulse * 2));
+        paint.setColor(Color.argb((int) (85 + pulse * 90), 255, 236, 118));
+        canvas.drawRoundRect(new RectF(rect.left + dp(5), rect.top + dp(5),
+                rect.right - dp(5), rect.bottom - dp(5)), dp(13), dp(13), paint);
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(dp(3));
         paint.setColor(Color.rgb(255, 236, 118));
@@ -10082,6 +10095,7 @@ public class GameView extends View {
         canvas.drawLine(centerX + dp(6), centerY, centerX + dp(6), centerY + dp(5), paint);
         canvas.drawLine(centerX + dp(11), centerY, centerX + dp(11), centerY + dp(4), paint);
         paint.setStyle(Paint.Style.FILL);
+        postInvalidateOnAnimation();
     }
 
     private void drawMoveChest(Canvas canvas, int row, int col, RectF rect) {
@@ -10356,6 +10370,8 @@ public class GameView extends View {
         String goalText = "收集 " + level.targetAmount + "  清障 " + getLevelObstacleCount(level);
         if (level.keyCount > 0) {
             goalText += "  钥匙 " + level.keyCount;
+            // 开场说明钥匙收齐收益，让额外目标更有动力。
+            goalText += "  收齐送道具";
         }
         if (level.moveChestCount > 0) {
             goalText += "  步箱 " + level.moveChestCount;
@@ -11081,6 +11097,10 @@ public class GameView extends View {
         if (level.countdownBombCount > 0) {
             appendFailureProgressPart(text, "炸弹剩", getCountdownBombRemainingCount());
             appendFailureProgressPart(text, "炸弹急", getCountdownBombUrgency());
+        }
+        if (level.keyCount > 0) {
+            // 钥匙剩余量单独复盘，提示下局优先处理收集关键格。
+            appendFailureProgressPart(text, "钥匙剩", keyRemaining);
         }
         if (level.moveChestCount > 0) {
             // 步箱剩余量单独复盘，提示下局优先拿补步资源。
