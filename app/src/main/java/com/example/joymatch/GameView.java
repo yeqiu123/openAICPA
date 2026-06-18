@@ -6660,6 +6660,15 @@ public class GameView extends View {
     }
 
     private String buildReplayTargetMapMarkText(int level) {
+        String rewardSuffix = buildReplayRewardSuffix(level);
+        if (rewardSuffix.contains("章箱")) {
+            // 地图角标同步章节奖励目标，方便玩家一眼识别高收益回访关。
+            return "箱";
+        } else if (rewardSuffix.contains("大师")) {
+            return "师";
+        } else if (rewardSuffix.contains("评级") || rewardSuffix.contains("隐藏") || rewardSuffix.contains("完美")) {
+            return "奖";
+        }
         if (levelStars[level] < 3) {
             return "星";
         }
