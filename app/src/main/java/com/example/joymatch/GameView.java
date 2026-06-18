@@ -9080,12 +9080,16 @@ public class GameView extends View {
     private String buildFailureRecommendedPropText(int prop) {
         if (propInventory[prop] > 0) {
             // 失败页显示推荐道具库存，帮助玩家判断下局能否直接使用。
-            return "建议下局优先 " + getPropName(prop) + " 库存x" + propInventory[prop];
+            return "建议下局优先 " + getPropName(prop) + buildRecommendedPropAvailabilityText(prop);
         }
         if (coins >= PROP_COSTS[prop]) {
             return "建议下局优先 " + getPropName(prop) + " 可买" + PROP_COSTS[prop] + "币";
         }
         return "建议下局优先 " + getPropName(prop);
+    }
+
+    private String buildRecommendedPropAvailabilityText(int prop) {
+        return propReserve[prop] > 0 ? " 储备x" + propReserve[prop] : " 库存x" + propInventory[prop];
     }
 
     private void drawRecommendedPropGlow(Canvas canvas, RectF rect) {
@@ -11009,7 +11013,7 @@ public class GameView extends View {
         for (int prop = 0; prop < PROP_COUNT; prop++) {
             if (isRecommendedPropForLevel(prop)) {
                 // 开场策略补上具体可用道具，减少玩家进入关卡后的选择成本。
-                return propInventory[prop] > 0 ? "推荐" + getPropName(prop) + "x" + propInventory[prop]
+                return propInventory[prop] > 0 ? "推荐" + getPropName(prop) + buildRecommendedPropAvailabilityText(prop)
                         : "推荐" + getPropName(prop) + "可买" + PROP_COSTS[prop] + "币";
             }
         }
