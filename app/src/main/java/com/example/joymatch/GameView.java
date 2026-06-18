@@ -3769,7 +3769,7 @@ public class GameView extends View {
     private String buildNextDailyLoginRewardHint() {
         int nextStreak = getNextDailyLoginMilestone();
         int prop = getDailyLoginRewardProp(nextStreak);
-        return prop == NONE ? "" : " 到" + nextStreak + "奖" + getPropName(prop)
+        return prop == NONE ? "" : " 签差" + Math.max(1, nextStreak - dailyStreak) + "天奖" + getPropName(prop)
                 + "+" + getDailyLoginRewardAmount(prop);
     }
 
