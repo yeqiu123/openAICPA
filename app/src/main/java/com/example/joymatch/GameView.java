@@ -7353,6 +7353,16 @@ public class GameView extends View {
         int replayLevel = findReplayTargetLevel();
         paint.setColor(replayLevel >= 0 ? Color.argb(120, 255, 236, 133) : Color.argb(70, 255, 255, 255));
         canvas.drawRoundRect(replayHintRect, dp(10), dp(10), paint);
+        if (replayLevel >= 0) {
+            // 智能推荐入口可直接进关，轻微脉冲让回访目标更容易被注意到。
+            float pulse = 0.5f + 0.5f * (float) Math.sin(System.currentTimeMillis() / 240.0);
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(dp(1.4f));
+            paint.setColor(Color.argb((int) (120 + pulse * 80), 255, 236, 133));
+            canvas.drawRoundRect(replayHintRect, dp(10), dp(10), paint);
+            paint.setStyle(Paint.Style.FILL);
+            postInvalidateOnAnimation();
+        }
 
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setTextSize(sp(11));
