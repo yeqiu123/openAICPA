@@ -3018,6 +3018,23 @@ public class GameView extends View {
                 + "+" + getWinStreakMilestoneAmount(nextStreak, prop);
     }
 
+    private void drawWinStreakProgressBar(Canvas canvas, RectF rect) {
+        int nextStreak = getNextWinStreakMilestone();
+        if (dailyChallengeMode || nextStreak == NONE || winStreak <= 0) {
+            return;
+        }
+
+        // HUD 连胜小进度条把连续通关奖励变成更明确的短线目标。
+        float progress = Math.min(1f, winStreak / (float) nextStreak);
+        float right = rect.right - dp(4);
+        float left = Math.max(rect.left, right - dp(112));
+        float top = rect.bottom + dp(5);
+        paint.setColor(Color.argb(70, 33, 37, 56));
+        canvas.drawRoundRect(new RectF(left, top, right, top + dp(3)), dp(1.5f), dp(1.5f), paint);
+        paint.setColor(Color.argb(205, 116, 219, 214));
+        canvas.drawRoundRect(new RectF(left, top, left + (right - left) * progress, top + dp(3)), dp(1.5f), dp(1.5f), paint);
+    }
+
     private int getNextWinStreakMilestone() {
         for (int streak = winStreak + 1; streak <= winStreak + 15; streak++) {
             if (getWinStreakMilestoneProp(streak) != NONE) {
@@ -6131,6 +6148,7 @@ public class GameView extends View {
         RectF coinRect = new RectF(getWidth() * 0.48f, dp(92), getWidth() - dp(18), dp(110));
         drawTextFitRight(canvas, coinText, coinRect, 15, Color.WHITE);
         drawDailyLoginProgressBar(canvas, coinRect);
+        drawWinStreakProgressBar(canvas, coinRect);
         String obstacleText = "冰" + iceRemaining + " 蜜" + honeyRemaining + " 石" + stoneRemaining
                 + " 藤" + vineRemaining + " 锁" + chainRemaining;
         if (level.shellCount > 0) {
