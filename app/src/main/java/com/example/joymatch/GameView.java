@@ -8280,6 +8280,8 @@ public class GameView extends View {
             return "推荐 " + getPropName(prop) + " 补1格拿罗盘";
         } else if (chainRemaining > 0 && prop == PROP_CHAIN_BREAKER) {
             return "推荐 " + getPropName(prop) + " 破锁开局";
+        } else if (vineRemaining > 0 && prop == PROP_CHAIN_BREAKER) {
+            return "推荐 " + getPropName(prop) + " 剪藤蔓开路";
         } else if (shellRemaining > 0
                 && (prop == PROP_STARFISH_PICK || prop == PROP_CLEANSE || prop == PROP_HAMMER || prop == PROP_LIGHTNING)) {
             return "推荐 " + getPropName(prop) + " 破贝壳清障";
@@ -8442,6 +8444,10 @@ public class GameView extends View {
             return true;
         }
         if (chainRemaining > 0 && prop == PROP_CHAIN_BREAKER) {
+            return true;
+        }
+        if (vineRemaining > 0 && prop == PROP_CHAIN_BREAKER) {
+            // 藤蔓会封住棋子移动，推荐破锁钳优先剪开通路。
             return true;
         }
         if (shellRemaining > 0
@@ -8654,6 +8660,10 @@ public class GameView extends View {
         if (chainRemaining > 0) {
             // 链锁失败后提示优先破锁，避免封锁区域拖慢开局节奏。
             return "建议下局优先破链锁";
+        }
+        if (vineRemaining > 0) {
+            // 藤蔓失败后提示优先剪开，让下局更早恢复棋盘流动。
+            return "建议下局优先剪藤蔓";
         }
         if (shellRemaining > 0) {
             // 贝壳失败后提示优先破壳，避免多层障碍拖慢下局节奏。
@@ -9258,7 +9268,12 @@ public class GameView extends View {
             return;
         }
 
+        float pulse = 0.55f + 0.45f * (float) Math.sin(System.currentTimeMillis() / 235.0);
         paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(2 + pulse * 2));
+        paint.setColor(Color.argb((int) (75 + pulse * 80), 42, 132, 78));
+        canvas.drawRoundRect(new RectF(rect.left + dp(5), rect.top + dp(5),
+                rect.right - dp(5), rect.bottom - dp(5)), dp(13), dp(13), paint);
         paint.setStrokeWidth(dp(4));
         paint.setColor(Color.argb(190, 42, 132, 78));
         canvas.drawLine(rect.left + dp(8), rect.top + dp(10), rect.right - dp(8), rect.bottom - dp(10), paint);
@@ -9267,6 +9282,7 @@ public class GameView extends View {
         paint.setColor(Color.argb(210, 120, 203, 142));
         canvas.drawCircle(rect.left + rect.width() * 0.28f, rect.top + rect.height() * 0.35f, dp(4), paint);
         canvas.drawCircle(rect.left + rect.width() * 0.72f, rect.top + rect.height() * 0.65f, dp(4), paint);
+        postInvalidateOnAnimation();
     }
 
     private void drawGift(Canvas canvas, int row, int col, RectF rect) {
@@ -10468,6 +10484,11 @@ public class GameView extends View {
             // 开场说明链锁会封住棋盘，提醒优先用破锁钳打开空间。
             goalText += "  破锁开局";
         }
+        if (level.vineCount > 0) {
+            goalText += "  藤蔓 " + level.vineCount;
+            // 开场说明藤蔓会限制交换，提醒优先剪开移动通路。
+            goalText += "  剪藤开路";
+        }
         if (level.shellCount > 0) {
             goalText += "  贝壳 " + level.shellCount;
             // 开场说明贝壳是多次打击障碍，提醒优先用清障道具破开。
@@ -10682,6 +10703,8 @@ public class GameView extends View {
             return "策略 火箭/罗盘优先开步箱";
         } else if (level.chainCount > 0) {
             return "策略 破锁钳优先开链";
+        } else if (level.vineCount > 0) {
+            return "策略 破锁钳优先剪藤蔓";
         } else if (level.shellCount > 0) {
             return "策略 海星镐/净化优先破贝壳";
         } else if (level.coralReefCount > 0) {
@@ -11214,6 +11237,10 @@ public class GameView extends View {
         if (level.chainCount > 0) {
             // 链锁剩余量单独复盘，提示下局优先打开被封区域。
             appendFailureProgressPart(text, "链锁剩", chainRemaining);
+        }
+        if (level.vineCount > 0) {
+            // 藤蔓剩余量单独复盘，提示下局优先恢复棋盘移动空间。
+            appendFailureProgressPart(text, "藤蔓剩", vineRemaining);
         }
         if (level.shellCount > 0) {
             // 贝壳剩余量单独复盘，提示下局优先处理多层障碍。
