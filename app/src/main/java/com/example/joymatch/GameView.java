@@ -6880,10 +6880,10 @@ public class GameView extends View {
     private String buildChapterMapBadgeText(int chapter) {
         String text = "";
         if (getChapterStars(chapter) >= CHAPTER_SIZE * 3) {
-            text += " 满";
+            text += chapterMasteryClaimed[chapter] ? " 满" : " 满奖";
         } else if (!chapterChestClaimed[chapter] && getChapterStars(chapter) >= CHAPTER_CHEST_STARS) {
             // 章节宝箱可领取时直接写进横幅，减少玩家在地图上寻找奖励入口的成本。
-            text += " 箱";
+            text += " 箱奖";
         } else if (!chapterChestClaimed[chapter] && getChapterUnlockedCount(chapter) >= CHAPTER_SIZE) {
             int missingStars = Math.max(0, CHAPTER_CHEST_STARS - getChapterStars(chapter));
             if (missingStars > 0 && missingStars <= 6) {
@@ -6891,19 +6891,20 @@ public class GameView extends View {
             }
         }
         if (getChapterRankScore(chapter) >= getChapterRankRewardTarget()) {
-            text += " 评";
+            // 横幅只在奖励未领取时加“奖”，已领取保持短标记避免文字拥挤。
+            text += chapterRankClaimed[chapter] ? " 评" : " 评奖";
         }
         if (getChapterEliteCount(chapter) > 0 && getChapterClearedEliteCount(chapter) >= getChapterEliteCount(chapter)) {
-            text += " 精";
+            text += chapterEliteClaimed[chapter] ? " 精" : " 精奖";
         }
         if (getChapterHiddenChallengeCount(chapter) > 0
                 && getChapterClearedHiddenChallengeCount(chapter) >= getChapterHiddenChallengeCount(chapter)) {
             // 章节横幅也显示隐藏挑战收集状态，让地图总览更有完成感。
-            text += " 隐";
+            text += chapterHiddenClaimed[chapter] ? " 隐" : " 隐奖";
         }
         if (getChapterUnlockedCount(chapter) >= CHAPTER_SIZE
                 && getChapterPerfectClearCount(chapter) >= getChapterUnlockedCount(chapter)) {
-            text += " 完";
+            text += chapterPerfectClaimed[chapter] ? " 完" : " 完奖";
         }
         if (getChapterRewardLevelCount(chapter) > 0
                 && getChapterUnlockedRewardLevelCount(chapter) >= getChapterRewardLevelCount(chapter)) {
