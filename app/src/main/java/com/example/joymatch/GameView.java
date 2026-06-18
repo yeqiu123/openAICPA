@@ -7533,9 +7533,13 @@ public class GameView extends View {
         drawMapChestProgressBar(canvas, rankChestRect, getTotalRankScore(), getNextRankChestTarget(), getAvailableRankChests() > 0);
         if (getAvailableStarChests() > 0) {
             drawClaimableMapChestSpark(canvas, starChestRect);
+        } else if (isStarChestNear()) {
+            drawNearMapChestSpark(canvas, starChestRect);
         }
         if (getAvailableRankChests() > 0) {
             drawClaimableMapChestSpark(canvas, rankChestRect);
+        } else if (isRankChestNear()) {
+            drawNearMapChestSpark(canvas, rankChestRect);
         }
         drawStarChestNotice(canvas, top);
     }
@@ -7555,6 +7559,19 @@ public class GameView extends View {
         postInvalidateOnAnimation();
     }
 
+    private void drawNearMapChestSpark(Canvas canvas, RectF rect) {
+        // 宝箱临近可领取时给轻提示，鼓励玩家再补几星或评级。
+        float pulse = 0.45f + 0.45f * (float) Math.sin(System.currentTimeMillis() / 220.0);
+        float x = rect.right - dp(11);
+        float y = rect.top + dp(9);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(1));
+        paint.setColor(Color.argb((int) (95 + pulse * 70), 255, 236, 133));
+        canvas.drawCircle(x, y, dp(5) + pulse * dp(2), paint);
+        paint.setStyle(Paint.Style.FILL);
+        postInvalidateOnAnimation();
+    }
+
     private void drawMapChestProgressBar(Canvas canvas, RectF rect, int current, int target, boolean claimable) {
         if (claimable) {
             return;
@@ -7569,6 +7586,16 @@ public class GameView extends View {
         canvas.drawRoundRect(new RectF(left, top, right, top + dp(4)), dp(2), dp(2), paint);
         paint.setColor(Color.argb(190, 255, 236, 133));
         canvas.drawRoundRect(new RectF(left, top, left + (right - left) * progress, top + dp(4)), dp(2), dp(2), paint);
+    }
+
+    private boolean isStarChestNear() {
+        int missing = getNextStarChestTarget() - getTotalStars();
+        return missing > 0 && missing <= 6;
+    }
+
+    private boolean isRankChestNear() {
+        int missing = getNextRankChestTarget() - getTotalRankScore();
+        return missing > 0 && missing <= 8;
     }
 
     private int getLevelMapPageCount() {
