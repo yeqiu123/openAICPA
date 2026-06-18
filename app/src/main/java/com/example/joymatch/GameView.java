@@ -66,7 +66,7 @@ public class GameView extends View {
     private static final int CHAPTER_SIZE = 20;
     private static final int CHAPTER_COUNT = 21;
     private static final int CHAPTER_CHEST_STARS = 45;
-    private static final int ACHIEVEMENT_COUNT = 40;
+    private static final int ACHIEVEMENT_COUNT = 44;
     private static final int NONE = -1;
     private static final int SPECIAL_NORMAL = 0;
     private static final int SPECIAL_ROW = 1;
@@ -3149,9 +3149,13 @@ public class GameView extends View {
         checkAchievement(35, getTotalStars() >= 1140, 1080);
         checkAchievement(36, getTotalRankScore() >= 2200, 1120);
         checkAchievement(37, getFullyClearedChapterCount() >= CHAPTER_COUNT, 1200);
-        // 400关版本追加终局星数与评级成就，给满级玩家继续刷SSS的目标。
+        // 420关版本追加终局星数与评级成就，给满级玩家继续刷SSS的目标。
         checkAchievement(38, getTotalStars() >= 1200, 1260);
         checkAchievement(39, getTotalRankScore() >= 2400, 1320);
+        checkAchievement(40, highestUnlockedLevel >= 400, 1080);
+        checkAchievement(41, getChapterStars(CHAPTER_COUNT - 1) >= CHAPTER_SIZE * 3, 1420);
+        checkAchievement(42, getTotalStars() >= LEVEL_COUNT * 3, 1560);
+        checkAchievement(43, getTotalRankScore() >= LEVEL_COUNT * 6, 1680);
     }
 
     private void checkAchievement(int index, boolean reached, int reward) {
@@ -3204,8 +3208,12 @@ public class GameView extends View {
             return PROP_STAR_HARP;
         } else if (index == 35 || index == 37 || index == 38) {
             return PROP_SNOW_GLOBE;
-        } else if (index == 39) {
+        } else if (index == 39 || index == 41 || index == 43) {
             return PROP_STAR_HARP;
+        } else if (index == 40) {
+            return PROP_FIREWORK_CANNON;
+        } else if (index == 42) {
+            return PROP_STAR_COMPASS;
         }
         return NONE;
     }
@@ -3213,7 +3221,7 @@ public class GameView extends View {
     private int getAchievementRewardAmount(int index) {
         if (getAchievementRewardProp(index) == NONE) {
             return 0;
-        } else if (index == 39) {
+        } else if (index == 39 || index >= 41) {
             return 3;
         } else if (index >= 23) {
             return 2;
