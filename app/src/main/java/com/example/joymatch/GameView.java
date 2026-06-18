@@ -6086,7 +6086,12 @@ public class GameView extends View {
             canvas.drawRoundRect(new RectF(getWidth() - dp(106), dp(58), getWidth() - dp(18), dp(86)),
                     dp(13), dp(13), paint);
         }
-        canvas.drawText("步数 " + movesLeft, getWidth() - dp(22), dp(78), textPaint);
+        String moveText = "步数 " + movesLeft;
+        if (lastComebackAssistMoves > 0) {
+            // 卡关助力在HUD中保留轻提示，避免开场提示淡出后玩家忘记本局补偿。
+            moveText += " 助+" + lastComebackAssistMoves;
+        }
+        canvas.drawText(moveText, getWidth() - dp(22), dp(78), textPaint);
         String coinText = "金币 " + coins;
         if (dailyRewardAmount > 0) {
             coinText += " +" + dailyRewardAmount;
