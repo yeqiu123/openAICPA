@@ -4083,7 +4083,10 @@ public class GameView extends View {
     }
 
     private int getStarChestRewardProp(int claimedCount) {
-        if (claimedCount % 16 == 0) {
+        if (claimedCount == LEVEL_COUNT * 3 / STAR_CHEST_STEP) {
+            // 420关满星宝箱追加终局奖励，给全星收集一个更醒目的收束目标。
+            return PROP_STAR_HARP;
+        } else if (claimedCount % 16 == 0) {
             return PROP_SNOW_GLOBE;
         } else if (claimedCount % 12 == 0) {
             return PROP_BUBBLE_WAND;
@@ -4096,6 +4099,9 @@ public class GameView extends View {
     }
 
     private int getStarChestRewardAmount(int prop) {
+        if (prop == PROP_STAR_HARP) {
+            return 2;
+        }
         return prop == PROP_SNOW_GLOBE ? 2 : (prop == NONE ? 0 : 1);
     }
 
@@ -4111,7 +4117,10 @@ public class GameView extends View {
     }
 
     private int getRankChestRewardProp(int claimedCount) {
-        if (claimedCount % 8 == 0) {
+        if (claimedCount == LEVEL_COUNT * 6 / RANK_CHEST_STEP) {
+            // 全评级宝箱给星弦琴，强化终局冲SSS的长期目标。
+            return PROP_STAR_HARP;
+        } else if (claimedCount % 8 == 0) {
             return PROP_FIREWORK_CANNON;
         } else if (claimedCount % 4 == 0) {
             return PROP_MOON_TICKET;
@@ -4120,6 +4129,9 @@ public class GameView extends View {
     }
 
     private int getRankChestRewardAmount(int prop) {
+        if (prop == PROP_STAR_HARP) {
+            return 3;
+        }
         return prop == PROP_MOON_TICKET ? 2 : (prop == NONE ? 0 : 1);
     }
 
