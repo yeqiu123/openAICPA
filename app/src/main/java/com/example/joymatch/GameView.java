@@ -2549,6 +2549,10 @@ public class GameView extends View {
             // 糖晶塔芯能制造爆炸棋，智能提示优先指向可打开连锁的落点。
             priority += 20;
         }
+        if (jewelBow[row][col] > 0) {
+            // 宝石蝴蝶结会补目标色，智能提示优先指向可续收集节奏的资源点。
+            priority += 17;
+        }
         if (musicBox[row][col] > 0) {
             // 音乐盒能产出可储备星弦琴，智能提示优先指向能开盒的走法。
             priority += 24;
@@ -6212,6 +6216,13 @@ public class GameView extends View {
                 obstacleText += " 能+" + lastStardustJarReward;
             }
         }
+        if (level.jewelBowCount > 0) {
+            // 宝石蝴蝶结会补目标色，HUD单独显示剩余和本局补色收益。
+            obstacleText += " 结" + getJewelBowRemainingCount();
+            if (lastJewelBowReward > 0) {
+                obstacleText += " 目标+" + lastJewelBowReward;
+            }
+        }
         if (level.wishLampCount > 0) {
             // 许愿灯直接推进收集目标，HUD单独显示剩余和本局许愿收益。
             obstacleText += " 愿" + getWishLampRemainingCount();
@@ -8234,6 +8245,9 @@ public class GameView extends View {
         } else if (getResonanceDrumRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 敲共鸣鼓进爆发";
+        } else if (getJewelBowRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            return "推荐 " + getPropName(prop) + " 开蝴蝶结补目标";
         } else if (getStardustJarRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             return "推荐 " + getPropName(prop) + " 开星尘罐铺方向";
@@ -8396,6 +8410,11 @@ public class GameView extends View {
             // 共鸣鼓会立刻开启爆发节奏，推荐精准道具优先打出连击窗口。
             return true;
         }
+        if (getJewelBowRemainingCount() > 0
+                && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
+            // 宝石蝴蝶结能把棋子补成目标色，推荐精准道具优先续收集节奏。
+            return true;
+        }
         if (getStardustJarRemainingCount() > 0
                 && (prop == PROP_ROCKET || prop == PROP_LIGHTNING || prop == PROP_STAR_COMPASS || prop == PROP_HAMMER)) {
             // 星尘罐能补能量并制造方向特效，推荐精准道具提前铺连锁。
@@ -8515,6 +8534,10 @@ public class GameView extends View {
         if (getResonanceDrumRemainingCount() > 0) {
             // 共鸣鼓失败后提示优先敲响，把爆发窗口提前打出来。
             return "建议下局优先敲共鸣鼓";
+        }
+        if (getJewelBowRemainingCount() > 0) {
+            // 宝石蝴蝶结失败后提示优先打开，帮助下局更早补齐目标色。
+            return "建议下局优先开宝石蝴蝶结";
         }
         if (getStardustJarRemainingCount() > 0) {
             // 星尘罐失败后提示优先打开，把方向特效和能量收益提前打出来。
@@ -9226,6 +9249,13 @@ public class GameView extends View {
             return;
         }
 
+        float pulse = 0.55f + 0.45f * (float) Math.sin(System.currentTimeMillis() / 210.0);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(dp(2 + pulse * 2));
+        paint.setColor(Color.argb((int) (90 + pulse * 90), 255, 139, 176));
+        canvas.drawRoundRect(new RectF(rect.left + dp(5), rect.top + dp(5),
+                rect.right - dp(5), rect.bottom - dp(5)), dp(13), dp(13), paint);
+        paint.setStyle(Paint.Style.FILL);
         float centerX = rect.left + rect.width() * 0.24f;
         float centerY = rect.top + dp(20);
         paint.setColor(Color.argb(220, 255, 139, 176));
@@ -9235,6 +9265,7 @@ public class GameView extends View {
         canvas.drawCircle(centerX, centerY, dp(6), paint);
         paint.setColor(Color.WHITE);
         canvas.drawCircle(centerX - dp(2), centerY - dp(2), dp(2), paint);
+        postInvalidateOnAnimation();
     }
 
     private void drawStardustJar(Canvas canvas, int row, int col, RectF rect) {
@@ -10115,6 +10146,8 @@ public class GameView extends View {
         }
         if (level.jewelBowCount > 0) {
             goalText += "  蝴蝶结 " + level.jewelBowCount;
+            // 开场说明宝石蝴蝶结收益，让玩家优先用它补齐目标色。
+            goalText += "  开结补目标";
         }
         if (level.stardustJarCount > 0) {
             goalText += "  星尘罐 " + level.stardustJarCount;
@@ -10279,6 +10312,8 @@ public class GameView extends View {
             return "策略 火箭/罗盘优先开极光";
         } else if (level.resonanceDrumCount > 0) {
             return "策略 火箭/罗盘优先敲共鸣";
+        } else if (level.jewelBowCount > 0) {
+            return "策略 火箭/罗盘优先开蝴蝶结";
         } else if (level.stardustJarCount > 0) {
             return "策略 火箭/罗盘优先开星尘";
         } else if (level.wishLampCount > 0) {
@@ -10836,6 +10871,10 @@ public class GameView extends View {
             // 共鸣鼓剩余量单独复盘，提示下局优先开启爆发节奏。
             appendFailureProgressPart(text, "共鸣剩", getResonanceDrumRemainingCount());
         }
+        if (level.jewelBowCount > 0) {
+            // 宝石蝴蝶结剩余量单独复盘，提示下局优先补齐目标色。
+            appendFailureProgressPart(text, "蝴蝶结剩", getJewelBowRemainingCount());
+        }
         if (level.stardustJarCount > 0) {
             // 星尘罐剩余量单独复盘，提示下局优先拿能量和方向特效。
             appendFailureProgressPart(text, "星尘剩", getStardustJarRemainingCount());
@@ -11098,6 +11137,18 @@ public class GameView extends View {
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
                 if (resonanceDrum[row][col] > 0) {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    private int getJewelBowRemainingCount() {
+        int count = 0;
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (jewelBow[row][col] > 0) {
                     count++;
                 }
             }
