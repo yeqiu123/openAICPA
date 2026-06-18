@@ -7354,6 +7354,10 @@ public class GameView extends View {
                 + "关 " + seasonStars + "/" + getNextSeasonStarTarget() + "星" + buildNextSeasonRewardHint(),
                 seasonTextRect, 11, Color.WHITE);
         drawSeasonProgressBar(canvas, left, top + dp(30), right);
+        if (isSeasonRewardNear()) {
+            // 赛季奖励临近时在总览进度条上闪光，提醒玩家继续推进或补星。
+            drawChapterProgressGoalSpark(canvas, right - dp(8), top + dp(33));
+        }
     }
 
     private String buildNextAchievementRewardHint() {
@@ -7402,6 +7406,12 @@ public class GameView extends View {
         canvas.drawRoundRect(new RectF(left, top, right, top + dp(6)), dp(3), dp(3), paint);
         paint.setColor(Color.argb(210, 255, 213, 92));
         canvas.drawRoundRect(new RectF(left, top, left + (right - left) * progress, top + dp(6)), dp(3), dp(3), paint);
+    }
+
+    private boolean isSeasonRewardNear() {
+        int levelMissing = getNextSeasonLevelTarget() - seasonLevels;
+        int starMissing = getNextSeasonStarTarget() - seasonStars;
+        return levelMissing <= 2 || starMissing <= 6;
     }
 
     private void drawReplayHintEntry(Canvas canvas) {
