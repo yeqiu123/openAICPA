@@ -12159,7 +12159,9 @@ public class GameView extends View {
         int missingStars = CHAPTER_CHEST_STARS - getChapterStars(chapter);
         if (missingStars > 0 && missingStars <= 6) {
             // 章节宝箱临近时在结算页提示，推动玩家回头补齐本章星数。
-            return "下一目标 " + chapterNames[chapter] + "章箱差" + missingStars + "星";
+            int prop = getChapterChestRewardProp(chapter);
+            String rewardText = prop == NONE ? "" : "奖" + getPropName(prop) + "+" + getChapterChestRewardAmount(chapter);
+            return "下一目标 " + chapterNames[chapter] + "章箱差" + missingStars + "星" + rewardText;
         }
         return "";
     }
@@ -12202,12 +12204,13 @@ public class GameView extends View {
         }
 
         int rankMissing = getChapterRankRewardTarget() - getChapterRankScore(chapter);
+        String rewardText = "奖潮汐+1" + buildChapterRankPropRewardText();
         if (rankMissing <= 0) {
-            return "下一目标 " + chapterNames[chapter] + "评级奖励";
+            return "下一目标 " + chapterNames[chapter] + "评级奖励" + rewardText;
         }
         if (rankMissing <= 8) {
             // 通关后提示章节评级差额，推动玩家回头冲S/SS/SSS。
-            return "下一目标 " + chapterNames[chapter] + "评级差" + rankMissing;
+            return "下一目标 " + chapterNames[chapter] + "评级差" + rankMissing + rewardText;
         }
         return "";
     }
