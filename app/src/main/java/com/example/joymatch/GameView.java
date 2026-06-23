@@ -11902,6 +11902,12 @@ public class GameView extends View {
             // 蜂蜜剩余量单独复盘，提示下局优先冻结控蔓延。
             appendFailureProgressPart(text, "蜂蜜剩", honeyRemaining);
         }
+        if (isStarCandyCarnivalChapter(getChapterIndex(levelIndex))
+                && (level.musicBoxCount > 0 || level.fireworksBarrelCount > 0)) {
+            // 嘉年华复合资源关单独汇总剩余量，方便失败后直接判断连锁补给压力。
+            appendFailureProgressPart(text, "嘉年华剩",
+                    getMusicBoxRemainingCount() + getFireworksBarrelRemainingCount());
+        }
         if (level.musicBoxCount > 0) {
             // 失败复盘也显示音乐盒剩余，提醒下局优先拿星弦琴储备。
             appendFailureProgressPart(text, "音乐盒剩", getMusicBoxRemainingCount());
