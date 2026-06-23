@@ -8257,7 +8257,8 @@ public class GameView extends View {
             return "拆弹拿护盾" + rewardSuffix;
         }
         if (isCarnivalResourceLevel(level)) {
-            return "刷嘉年华连锁储礼炮/星弦琴" + rewardSuffix;
+            // 嘉年华回访理由带出资源点数量，方便玩家判断这关值不值得回刷。
+            return "刷嘉年华" + getLevelCarnivalResourceCount(levels.get(level)) + "点储礼炮/星弦琴" + rewardSuffix;
         }
         if (levels.get(level).musicBoxCount > 0) {
             return "刷音乐盒储星弦琴" + rewardSuffix;
@@ -11420,6 +11421,10 @@ public class GameView extends View {
                 + level.luckyStarCount + level.luckyCloverCount + level.mysteryBoxCount + level.pearlCount
                 + level.carouselCount + level.ferrisTicketCount + level.fireworksBarrelCount + level.starportBeaconCount
                 + level.meteorTrailCount + level.rainbowArcCount + level.crystalCoreCount + level.musicBoxCount;
+    }
+
+    private int getLevelCarnivalResourceCount(Level level) {
+        return level.musicBoxCount + level.fireworksBarrelCount;
     }
 
     private void showFeedback(int combo, int cleared) {
