@@ -6308,6 +6308,11 @@ public class GameView extends View {
             obstacleText += " 收奖" + rewardCellClearedCount;
         }
         int musicBoxCount = getMusicBoxRemainingCount();
+        if (isStarCandyCarnivalChapter(getChapterIndex(levelIndex))
+                && (level.musicBoxCount > 0 || level.fireworksBarrelCount > 0)) {
+            // 嘉年华复合资源关在HUD里汇总显示，方便玩家随时判断连锁补给压力。
+            obstacleText += " 嘉" + getCarnivalResourceRemainingCount();
+        }
         if (level.musicBoxCount > 0) {
             // 音乐盒是可储备星弦琴的资源点，HUD显示剩余和已收数量。
             obstacleText += " 乐" + musicBoxCount;
@@ -11905,8 +11910,7 @@ public class GameView extends View {
         if (isStarCandyCarnivalChapter(getChapterIndex(levelIndex))
                 && (level.musicBoxCount > 0 || level.fireworksBarrelCount > 0)) {
             // 嘉年华复合资源关单独汇总剩余量，方便失败后直接判断连锁补给压力。
-            appendFailureProgressPart(text, "嘉年华剩",
-                    getMusicBoxRemainingCount() + getFireworksBarrelRemainingCount());
+            appendFailureProgressPart(text, "嘉年华剩", getCarnivalResourceRemainingCount());
         }
         if (level.musicBoxCount > 0) {
             // 失败复盘也显示音乐盒剩余，提醒下局优先拿星弦琴储备。
@@ -12083,6 +12087,10 @@ public class GameView extends View {
             }
         }
         return count;
+    }
+
+    private int getCarnivalResourceRemainingCount() {
+        return getMusicBoxRemainingCount() + getFireworksBarrelRemainingCount();
     }
 
     private int getMoveChestRemainingCount() {
