@@ -7621,10 +7621,14 @@ public class GameView extends View {
         textPaint.setTextAlign(Paint.Align.CENTER);
         textPaint.setTextSize(sp(11));
         textPaint.setColor(Color.WHITE);
-        String text = replayLevel >= 0 ? "智能推荐 " + chapterNames[getChapterIndex(replayLevel)]
-                + " 第" + (replayLevel + 1) + "关  " + buildReplayReason(replayLevel)
+        String text = replayLevel >= 0 ? buildReplayHintEntryText(replayLevel)
                 : "已通关卡暂无补星目标";
         drawTextFit(canvas, text, replayHintRect, 11, Color.WHITE);
+    }
+
+    private String buildReplayHintEntryText(int replayLevel) {
+        return "智能推荐 " + chapterNames[getChapterIndex(replayLevel)] + " 第" + (replayLevel + 1)
+                + "关  " + buildReplayReason(replayLevel);
     }
 
     private void drawTextFit(Canvas canvas, String text, RectF rect, float baseSize, int color) {
@@ -9204,7 +9208,7 @@ public class GameView extends View {
         if (isStarCandyCarnivalChapter(getChapterIndex(levelIndex))
                 && (getMusicBoxRemainingCount() > 0 || getFireworksBarrelRemainingCount() > 0)) {
             // 嘉年华失败时优先提示复合连锁目标，避免只看到单个机关建议。
-            return "建议下局优先抢嘉年华连锁";
+            return "建议下局优先抢嘉年华连锁 剩" + getCarnivalResourceRemainingCount() + "点";
         }
         if (getMusicBoxRemainingCount() > 0) {
             // 音乐盒关失败时直接提示资源目标，帮助下局优先规划星弦琴储备。
