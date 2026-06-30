@@ -6206,7 +6206,7 @@ public class GameView extends View {
                         dp(5), dp(5), paint);
                 drawStar(canvas, x, y - dp(12), dp(6 + i % 3));
             }
-        } else {
+        } else if (chapter == 20) {
             for (int i = 0; i < 10; i++) {
                 float x = getWidth() * (0.07f + i * 0.095f);
                 float y = getHeight() * (0.14f + (i % 5) * 0.105f);
@@ -6222,6 +6222,55 @@ public class GameView extends View {
                 paint.setStyle(Paint.Style.FILL);
                 drawStar(canvas, x + dp(18), y - dp(16), dp(5 + i % 3));
                 canvas.drawCircle(x - dp(18), y + dp(14), dp(3 + i % 2), paint);
+            }
+        } else if (chapter == 21) {
+            for (int i = 0; i < 10; i++) {
+                float x = getWidth() * (0.07f + i * 0.095f);
+                float y = getHeight() * (0.14f + (i % 5) * 0.105f);
+                // 星海糖瀑用垂落糖瀑和星点，给 420 关后的扩展章节更强区分度。
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setStrokeWidth(dp(2.4f));
+                float sway = (float) Math.sin(time / 650.0 + i) * dp(8);
+                canvas.drawLine(x, y - dp(18), x + sway, y + dp(24), paint);
+                canvas.drawLine(x + dp(8), y - dp(12), x + sway + dp(12), y + dp(18), paint);
+                paint.setStyle(Paint.Style.FILL);
+                drawStar(canvas, x + sway, y + dp(28), dp(5 + i % 3));
+                canvas.drawCircle(x - dp(15), y - dp(10), dp(3 + i % 2), paint);
+            }
+        } else if (chapter == 22) {
+            for (int i = 0; i < 10; i++) {
+                float x = getWidth() * (0.07f + i * 0.095f);
+                float y = getHeight() * (0.14f + (i % 5) * 0.105f);
+                // 霓虹糖塔用塔形折线和脉冲光点，强化高难终盘的速度感。
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setStrokeWidth(dp(2.2f));
+                Path tower = new Path();
+                tower.moveTo(x, y - dp(22));
+                tower.lineTo(x + dp(14), y + dp(22));
+                tower.lineTo(x - dp(14), y + dp(22));
+                tower.close();
+                canvas.drawPath(tower, paint);
+                canvas.drawLine(x - dp(9), y, x + dp(9), y, paint);
+                paint.setStyle(Paint.Style.FILL);
+                float pulse = (float) Math.abs(Math.sin(time / 500.0 + i));
+                canvas.drawCircle(x, y - dp(5), dp(3 + pulse * 3), paint);
+                drawStar(canvas, x + dp(17), y - dp(16), dp(5 + i % 2));
+            }
+        } else {
+            for (int i = 0; i < 10; i++) {
+                float x = getWidth() * (0.07f + i * 0.095f);
+                float y = getHeight() * (0.14f + (i % 5) * 0.105f);
+                // 蜜彩乐园终章把糖环、舞台灯和星光合并，作为当前主线终点的视觉收束。
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setStrokeWidth(dp(2.4f));
+                float spin = (float) (time / 760.0 + i * 0.6f);
+                canvas.drawArc(new RectF(x - dp(18), y - dp(18), x + dp(18), y + dp(18)),
+                        spin * 18f, 250, false, paint);
+                canvas.drawLine(x - dp(15), y + dp(20), x, y - dp(16), paint);
+                canvas.drawLine(x + dp(15), y + dp(20), x, y - dp(16), paint);
+                paint.setStyle(Paint.Style.FILL);
+                canvas.drawCircle(x, y, dp(4 + i % 2), paint);
+                drawStar(canvas, x + dp(18), y - dp(17), dp(6 + i % 3));
             }
         }
     }
