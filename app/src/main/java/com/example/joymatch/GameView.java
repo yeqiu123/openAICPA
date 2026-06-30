@@ -3578,6 +3578,10 @@ public class GameView extends View {
             addReserveProp(PROP_STAR_HARP, 2);
             addReserveProp(PROP_FIREWORK_CANNON, 1);
             addReserveProp(PROP_STAR_COMPASS, 1);
+        } else if (isExtendedFinalChapter(chapter)) {
+            addReserveProp(PROP_STAR_HARP, 2);
+            addReserveProp(PROP_SNOW_GLOBE, 1);
+            addReserveProp(PROP_STAR_COMPASS, 1);
         }
         prefs.edit()
                 .putBoolean(KEY_CHAPTER_MASTERY_PREFIX + chapter, true)
@@ -3629,6 +3633,10 @@ public class GameView extends View {
             addReserveProp(PROP_BUBBLE_WAND, 1);
         } else if (isStarCandyCarnivalChapter(chapter)) {
             addReserveProp(PROP_STAR_HARP, 1);
+            addReserveProp(PROP_FIREWORK_CANNON, 1);
+        } else if (isExtendedFinalChapter(chapter)) {
+            addReserveProp(PROP_STAR_HARP, 1);
+            addReserveProp(PROP_SNOW_GLOBE, 1);
             addReserveProp(PROP_FIREWORK_CANNON, 1);
         }
         prefs.edit()
@@ -3690,6 +3698,10 @@ public class GameView extends View {
             addReserveProp(PROP_STAR_HARP, 2);
             addReserveProp(PROP_SNOW_GLOBE, 1);
             addReserveProp(PROP_STAR_COMPASS, 1);
+        } else if (isExtendedFinalChapter(chapter)) {
+            addReserveProp(PROP_STAR_HARP, 2);
+            addReserveProp(PROP_SNOW_GLOBE, 1);
+            addReserveProp(PROP_BUBBLE_WAND, 1);
         }
         prefs.edit()
                 .putBoolean(KEY_CHAPTER_RANK_PREFIX + chapter, true)
@@ -3782,6 +3794,10 @@ public class GameView extends View {
 
     private boolean isStarCandyCarnivalChapter(int chapter) {
         return chapterNames[chapter].equals("星糖嘉年华");
+    }
+
+    private boolean isExtendedFinalChapter(int chapter) {
+        return chapter >= 21;
     }
 
     private int getChapterRankRewardTarget() {
@@ -11605,6 +11621,8 @@ public class GameView extends View {
             return " 星弦琴+1 雪花球+1 礼炮+1";
         } else if (isStarCandyCarnivalChapter(chapter)) {
             return " 星弦琴+2 礼炮+1 罗盘+1";
+        } else if (isExtendedFinalChapter(chapter)) {
+            return " 星弦琴+2 雪花球+1 罗盘+1";
         }
         return buildFireworksChapterRewardText(chapter);
     }
@@ -11637,6 +11655,8 @@ public class GameView extends View {
             return " 星弦琴+1 泡泡棒+1";
         } else if (isStarCandyCarnivalChapter(chapter)) {
             return " 星弦琴+1 礼炮+1";
+        } else if (isExtendedFinalChapter(chapter)) {
+            return " 星弦琴+1 雪花球+1 礼炮+1";
         }
         return buildFireworksChapterRewardText(chapter);
     }
@@ -11669,6 +11689,8 @@ public class GameView extends View {
             return " 星弦琴+1 雪花球+1 泡泡棒+1";
         } else if (isStarCandyCarnivalChapter(chapter)) {
             return " 星弦琴+2 雪花球+1 罗盘+1";
+        } else if (isExtendedFinalChapter(chapter)) {
+            return " 星弦琴+2 雪花球+1 泡泡棒+1";
         }
         return buildFireworksChapterRewardText(chapter) + buildFireworksChapterCompassText(chapter);
     }
