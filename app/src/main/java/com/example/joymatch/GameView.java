@@ -58,13 +58,13 @@ public class GameView extends View {
     private static final String KEY_HAPTIC_ENABLED = "haptic_enabled";
     private static final int BOARD_SIZE = 8;
     private static final int TILE_KINDS = 6;
-    private static final int LEVEL_COUNT = 420;
+    private static final int LEVEL_COUNT = 480;
     private static final int LEVELS_PER_PAGE = 60;
     private static final int CONTINUE_COST = 10;
     private static final int STAR_CHEST_STEP = 30;
     private static final int RANK_CHEST_STEP = 45;
     private static final int CHAPTER_SIZE = 20;
-    private static final int CHAPTER_COUNT = 21;
+    private static final int CHAPTER_COUNT = 24;
     private static final int CHAPTER_CHEST_STARS = 45;
     private static final int ACHIEVEMENT_COUNT = 44;
     private static final int NONE = -1;
@@ -110,14 +110,14 @@ public class GameView extends View {
             PROP_FREEZE, PROP_STARFISH_PICK, PROP_AURORA_ORB, PROP_MOON_TICKET, PROP_FIREWORK_CANNON,
             PROP_AURORA_ORB, PROP_STAR_COMPASS, PROP_BUBBLE_WAND, PROP_FIREWORK_CANNON, PROP_SNOW_GLOBE,
             PROP_STAR_COMPASS, PROP_CLOCK, PROP_AURORA_ORB, PROP_STAR_HARP, PROP_STAR_HARP,
-            PROP_FIREWORK_CANNON
+            PROP_FIREWORK_CANNON, PROP_STAR_COMPASS, PROP_SNOW_GLOBE, PROP_STAR_HARP
     };
     private static final int[] CHAPTER_CHEST_PROP_AMOUNTS = {
             1, 1, 1, 1, 1,
             1, 1, 1, 1, 1,
             1, 1, 1, 1, 2,
             1, 1, 1, 2, 2,
-            2
+            2, 2, 2, 2
     };
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -226,7 +226,10 @@ public class GameView extends View {
             Color.rgb(174, 156, 255),
             Color.rgb(255, 132, 186),
             Color.rgb(112, 222, 196),
-            Color.rgb(255, 170, 104)
+            Color.rgb(255, 170, 104),
+            Color.rgb(92, 194, 255),
+            Color.rgb(255, 126, 154),
+            Color.rgb(146, 228, 128)
     };
     private final int[] chapterBottomColors = {
             Color.rgb(255, 151, 132),
@@ -249,10 +252,13 @@ public class GameView extends View {
             Color.rgb(166, 231, 255),
             Color.rgb(255, 223, 122),
             Color.rgb(255, 168, 122),
-            Color.rgb(148, 228, 255)
+            Color.rgb(148, 228, 255),
+            Color.rgb(255, 231, 122),
+            Color.rgb(176, 235, 255),
+            Color.rgb(255, 196, 104)
     };
     private final String[] chapterNames = {
-            "糖果森林", "云朵海湾", "果冻火山", "薄荷花园", "星光梦境", "蜂蜜工坊", "珊瑚集市", "极光城堡", "月光游乐园", "烟花星港", "流星彩虹谷", "奇迹糖晶塔", "泡泡星河岛", "花火薄荷城", "星霜糖果港", "彩云琉璃境", "蜜星钟楼", "极彩乐章谷", "星弦幻音台", "糖彩乐园剧场", "星糖嘉年华"
+            "糖果森林", "云朵海湾", "果冻火山", "薄荷花园", "星光梦境", "蜂蜜工坊", "珊瑚集市", "极光城堡", "月光游乐园", "烟花星港", "流星彩虹谷", "奇迹糖晶塔", "泡泡星河岛", "花火薄荷城", "星霜糖果港", "彩云琉璃境", "蜜星钟楼", "极彩乐章谷", "星弦幻音台", "糖彩乐园剧场", "星糖嘉年华", "星海糖瀑", "霓虹糖塔", "蜜彩乐园终章"
     };
 
     private int levelIndex = 0;
@@ -798,6 +804,46 @@ public class GameView extends View {
                 bubbleWand += i % 6 == 1 ? 1 : 0;
                 snowGlobe += i % 6 == 3 ? 1 : 0;
                 starHarp += i % 4 == 1 ? 1 : 0;
+            }
+            if (i >= 420) {
+                // 新增 3 个终章章节，把炸弹倒计时、音乐盒和糖晶塔芯组合成更强的后期挑战。
+                targetScore += 2200 + (i - 420) * 110;
+                targetAmount += 8 + (i - 420) / 6;
+                moves = Math.max(20, moves + 4);
+                honeyCount = Math.min(22, honeyCount + (i % 4 == 0 ? 1 : 0));
+                stoneCount = Math.min(15, stoneCount + (i % 5 == 1 ? 1 : 0));
+                vineCount = Math.min(18, vineCount + (i % 6 == 2 ? 1 : 0));
+                chainCount = Math.min(19, chainCount + (i % 4 == 3 ? 1 : 0));
+                shellCount = Math.min(16, shellCount + (i % 5 == 4 ? 1 : 0));
+                flowerCount = Math.min(14, flowerCount + (i % 6 == 5 ? 1 : 0));
+                coralReefCount = Math.min(12, coralReefCount + (i % 7 == 6 ? 1 : 0));
+                keyCount = Math.min(9, keyCount + (i % 8 == 7 ? 1 : 0));
+                moveChestCount += i % 5 == 0 ? 1 : 0;
+                goldenEggCount += i % 8 == 2 ? 1 : 0;
+                coinPouchCount += i % 9 == 3 ? 1 : 0;
+                paintBucketCount += i % 7 == 4 ? 1 : 0;
+                windmillCount += i % 6 == 5 ? 1 : 0;
+                jewelBowCount += i % 8 == 6 ? 1 : 0;
+                stardustJarCount += i % 4 == 2 ? 1 : 0;
+                wishLampCount += i % 5 == 3 ? 1 : 0;
+                resonanceDrumCount += i % 4 == 0 ? 1 : 0;
+                auroraPrismCount += i % 3 == 2 ? 1 : 0;
+                rainbowBottleCount += i % 4 == 1 ? 1 : 0;
+                energyPotionCount += i % 5 == 4 ? 1 : 0;
+                luckyStarCount += i % 6 == 0 ? 1 : 0;
+                luckyCloverCount += i % 7 == 1 ? 1 : 0;
+                fireworksBarrelCount += i % 3 == 1 ? 1 : 0;
+                starportBeaconCount += i % 4 == 3 ? 1 : 0;
+                meteorTrailCount += i % 3 == 2 ? 1 : 0;
+                rainbowArcCount += i % 4 == 2 ? 1 : 0;
+                crystalCoreCount += i % 3 == 0 ? 1 : 0;
+                musicBoxCount += i % 2 == 1 ? 1 : 0;
+                countdownBombCount += i % 5 == 4 ? 1 : 0;
+                fireworkCannon += i % 3 == 2 ? 1 : 0;
+                starCompass += i % 4 == 0 ? 1 : 0;
+                bubbleWand += i % 5 == 1 ? 1 : 0;
+                snowGlobe += i % 4 == 3 ? 1 : 0;
+                starHarp += i % 3 == 1 ? 1 : 0;
             }
             int moveLimitGoal = i >= 18 && i % 4 == 0 ? Math.max(8, moves - 5) : 0;
             int comboGoal = i >= 22 && i % 5 == 0 ? 3 + (i / 25) : 0;
